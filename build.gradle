@@ -1,0 +1,21 @@
+subprojects {
+    apply plugin: 'maven-publish'
+
+    group 'tigase.rpi.home'
+    version '1.0.0-SNAPSHOT'
+
+    publishing {
+        repositories {
+            mavenLocal()
+        }
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        maven {url "http://maven-repo.tigase.org/repository/release"}
+        maven {url "http://maven-repo.tigase.org/repository/snapshot"}
+        jcenter()
+    }
+}

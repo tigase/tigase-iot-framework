@@ -1,0 +1,12 @@
+.gradle/
+.idea/
+
+/devices/target
+/devices/build
+
+/library/target
+/library/build
+
+/runtime/target
+/runtime/build
+

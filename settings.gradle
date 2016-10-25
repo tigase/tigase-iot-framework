@@ -1,0 +1,14 @@
+rootProject.name = 'tigase-pi-home'
+include ':library'
+include ':devices'
+include ':runtime'
+
+def prefixSubprojectNames(children, prefix) {
+	children.each {
+		it.name = prefix + it.name;
+		prefixSubprojectNames(it.children, prefix)
+	}
+}
+prefixSubprojectNames(rootProject.children, "tigase-pi-home-")
+include 'tigase-pi-home-devices'
+

@@ -1,0 +1,23 @@
+xmppService () {
+    default () {
+        jid = "test@example.com"
+        password = "Pa$$w0rd"
+        ignoreCertificateErrors = true
+    }
+}
+
+presencePublisherDemo (class: 'tigase.rpi.home.runtime.PresencePublisherDemo', exportable: true) {
+
+}
+
+lightsDimmer (class: 'tigase.rpi.home.devices.LightDimmer', exportable: true) {
+    transmitterPin = 17
+}
+
+lightSensor (class: 'tigase.rpi.home.sensors.light.BH1750', exportable: true) {
+    address = 35
+}
+
+test12 (class: 'tigase.rpi.home.runtime.Test', exportable: true) {
+
+}
