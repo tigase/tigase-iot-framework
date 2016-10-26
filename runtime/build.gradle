@@ -23,7 +23,6 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile project(':tigase-pi-home-library')
-    compile project(':tigase-pi-home-devices')
     compile group: 'tigase', name: 'tigase-server', version: '7.2.0-SNAPSHOT'
     compile 'tigase:jaxmpp-j2se:3.2.0-SNAPSHOT'
     compile 'tigase:jaxmpp-adhoc:3.2.0-SNAPSHOT'

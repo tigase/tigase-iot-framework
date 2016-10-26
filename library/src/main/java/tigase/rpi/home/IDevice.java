@@ -5,8 +5,6 @@ package tigase.rpi.home;
  */
 public interface IDevice<V> {
 
-	String getId();
-
 	String getName();
 
 	IValue<V> getValue();

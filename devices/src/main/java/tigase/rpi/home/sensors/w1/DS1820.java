@@ -15,8 +15,8 @@ public class DS1820 extends W1AbstractPeriodDevice<Temperature> {
 
 	private static final Logger log = Logger.getLogger(DS1820.class.getCanonicalName());
 
-	protected DS1820(long period, com.pi4j.io.w1.W1Device w1Device) {
-		super(period, w1Device);
+	public DS1820() {
+		super(60 * 1000);
 	}
 
 	@Override
@@ -28,7 +28,7 @@ public class DS1820 extends W1AbstractPeriodDevice<Temperature> {
 			if (data.length < 2) {
 				return null;
 			}
-			double value = Double.parseDouble(data[1]);
+			double value = Double.parseDouble(data[1]) / 1000;
 
 			return new Temperature(TemperatureScale.CELSIUS, value);
 		} catch (IOException ex) {

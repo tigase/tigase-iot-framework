@@ -34,11 +34,12 @@ import java.util.stream.Collectors;
  */
 @Bean(name = "xmppService", parent = Kernel.class)
 @Autostart
-public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWithDefaultBeanClass {
+public class XmppService
+		implements tigase.rpi.home.XmppService, RegistrarBeanWithDefaultBeanClass {
 
 	private final Map<String, Jaxmpp> instancesByName = new ConcurrentHashMap<>();
 
-	private final Map<SessionObject, Jaxmpp>  instancesBySessionObject = new ConcurrentHashMap<>();
+	private final Map<SessionObject, Jaxmpp> instancesBySessionObject = new ConcurrentHashMap<>();
 
 	private final List<Jaxmpp> anonymousInstances = new ArrayList<>();
 
@@ -88,8 +89,9 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 	}
 
 	public void setJaxmppBeans(ArrayList<JaxmppBean> jaxmppBeans) {
-		if (jaxmppBeans == null)
+		if (jaxmppBeans == null) {
 			jaxmppBeans = new ArrayList<>();
+		}
 		HashSet<JaxmppBean> oldBeans = new HashSet<>(this.jaxmppBeans);
 		HashSet<JaxmppBean> newBeans = new HashSet<>(jaxmppBeans);
 
@@ -107,8 +109,9 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 	}
 
 	public void setXmppBridges(ArrayList<XmppBridge> xmppBridges) {
-		if (xmppBridges == null)
+		if (xmppBridges == null) {
 			xmppBridges = new ArrayList<>();
+		}
 		Set<Class<? extends XmppModule>> oldRequiredModules = new HashSet<>();
 		Set<Class<? extends XmppModule>> newRequiredModules = new HashSet<>();
 		this.xmppBridges.forEach(xmppBridge -> oldRequiredModules.addAll(xmppBridge.getRequiredXmppModules()));
@@ -116,8 +119,12 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 
 		this.xmppBridges = xmppBridges;
 
-		oldRequiredModules.stream().filter(cls -> !newRequiredModules.contains(cls)).forEach(cls -> unregisterXmppModule(cls));
-		newRequiredModules.stream().filter(cls -> !oldRequiredModules.contains(cls)).forEach(cls -> registerXmppModule(cls));
+		oldRequiredModules.stream()
+				.filter(cls -> !newRequiredModules.contains(cls))
+				.forEach(cls -> unregisterXmppModule(cls));
+		newRequiredModules.stream()
+				.filter(cls -> !oldRequiredModules.contains(cls))
+				.forEach(cls -> registerXmppModule(cls));
 	}
 
 	protected void registerXmppModule(Class<? extends XmppModule> moduleClass) {
@@ -181,8 +188,9 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 
 		@Override
 		public void beanConfigurationChanged(Collection<String> collection) {
-			if (!jaxmpp.isConnected())
+			if (!jaxmpp.isConnected()) {
 				return;
+			}
 
 			if (collection.contains("jid") || collection.contains("password") || collection.contains("domain")) {
 				try {
@@ -199,6 +207,7 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 				xmppService.getRequiredModules().forEach(moduleCls -> {
 					registerXmppModule(moduleCls);
 				});
+				eventBus.fire(new JaxmppAddedEvent(jaxmpp));
 				scheduleReconnection();
 			}
 		}
@@ -210,6 +219,7 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 				if (scheduledTask != null) {
 					scheduledTask.cancel(true);
 				}
+				eventBus.fire(new JaxmppRemovedEvent(jaxmpp));
 				log.log(Level.INFO, "Disconnecting client " + name);
 				jaxmpp.disconnect(false);
 			} catch (JaxmppException ex) {
@@ -237,22 +247,22 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 				try {
 					if (PresenceModule.class.isAssignableFrom(moduleClass)) {
 						PresenceStore presenceStore = PresenceModule.getPresenceStore(jaxmpp.getSessionObject());
-						if(presenceStore == null) {
+						if (presenceStore == null) {
 							presenceStore = new J2SEPresenceStore();
 							PresenceModule.setPresenceStore(jaxmpp.getSessionObject(), presenceStore);
 						}
-						jaxmpp.set((Property)presenceStore);
+						jaxmpp.set((Property) presenceStore);
 					}
 					if (RosterModule.class.isAssignableFrom(moduleClass)) {
 						RosterStore rosterStore = RosterModule.getRosterStore(jaxmpp.getSessionObject());
-						if(rosterStore == null) {
+						if (rosterStore == null) {
 							rosterStore = new DefaultRosterStore();
 							RosterModule.setRosterStore(jaxmpp.getSessionObject(), rosterStore);
 						}
-						jaxmpp.set((Property)rosterStore);
+						jaxmpp.set((Property) rosterStore);
 					}
 					jaxmpp.getModulesManager().register(moduleClass.newInstance());
-				} catch (InstantiationException|IllegalAccessException ex) {
+				} catch (InstantiationException | IllegalAccessException ex) {
 					log.log(Level.WARNING, "Failed to register module " + moduleClass, ex);
 				}
 			}
@@ -266,10 +276,11 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 		}
 
 		protected void scheduleReconnection() {
-			if (shutdown)
+			if (shutdown) {
 				return;
+			}
 
-			scheduledTask = scheduledExecutorService.schedule(()-> {
+			scheduledTask = scheduledExecutorService.schedule(() -> {
 				try {
 					if (domain != null) {
 						jaxmpp.getConnectionConfiguration().setUserJID((BareJID) null);
@@ -336,4 +347,25 @@ public class XmppService implements tigase.rpi.home.XmppService, RegistrarBeanWi
 		}
 
 	}
+
+	public static class JaxmppAddedEvent {
+
+		public final Jaxmpp jaxmpp;
+
+		public JaxmppAddedEvent(Jaxmpp jaxmpp) {
+			this.jaxmpp = jaxmpp;
+		}
+
+	}
+
+	public static class JaxmppRemovedEvent {
+
+		public final Jaxmpp jaxmpp;
+
+		public JaxmppRemovedEvent(Jaxmpp jaxmpp) {
+			this.jaxmpp = jaxmpp;
+		}
+
+	}
+
 }

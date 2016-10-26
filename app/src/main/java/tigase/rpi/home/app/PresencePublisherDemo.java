@@ -1,4 +1,4 @@
-package tigase.rpi.home.runtime;
+package tigase.rpi.home.app;
 
 import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -9,6 +9,7 @@ import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.rpi.home.RequiredXmppModules;
 import tigase.rpi.home.XmppBridge;
+import tigase.rpi.home.runtime.XmppService;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 public class PresencePublisherDemo
 		implements XmppBridge, Initializable, UnregisterAware, PresenceModule.OwnPresenceStanzaFactory {
 
-	private static final Logger log = Logger.getLogger(PresencePublisherDemo.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(tigase.rpi.home.app.PresencePublisherDemo.class.getCanonicalName());
 
 	@Inject
 	private XmppService xmppService;

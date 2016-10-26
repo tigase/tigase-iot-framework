@@ -10,3 +10,5 @@
 /runtime/target
 /runtime/build
 
+/app/target
+/app/build

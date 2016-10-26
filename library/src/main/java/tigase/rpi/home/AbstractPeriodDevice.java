@@ -33,9 +33,9 @@ public abstract class AbstractPeriodDevice<T> extends AbstractDevice<T> implemen
 	protected abstract T readValue();
 
 	protected void refresh() {
-		log.log(Level.SEVERE, getId() + "refreshing..");
+		log.log(Level.FINEST, "{0}, refreshing..", getName());
 		T val = readValue();
-		log.log(Level.SEVERE, getId() + "got data: " + val.toString());
+		log.log(Level.FINEST, "{0}, got data: {1}", new Object[] { getName(), val });
 		updateValue(new Value(val));
 	}
 

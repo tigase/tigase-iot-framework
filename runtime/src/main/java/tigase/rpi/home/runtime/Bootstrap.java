@@ -6,7 +6,6 @@ import tigase.eventbus.EventBusFactory;
 import tigase.kernel.core.BeanConfig;
 import tigase.kernel.core.Kernel;
 import tigase.rpi.home.Autostart;
-import tigase.rpi.home.sensors.light.BH1750;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,17 +56,14 @@ public class Bootstrap {
 
 	public void start() {
 		kernel.getDependencyManager().getBeanConfigs().stream().forEach(bc -> {
-			log.log(Level.SEVERE, "1: found bean config " + bc.getBeanName() + ", class = " + bc.getClazz());
+			log.log(Level.FINEST, "1: found bean config " + bc.getBeanName() + ", class = " + bc.getClazz());
 		});
 
 		initializeAutostartBeans(kernel);
 
 		kernel.getDependencyManager().getBeanConfigs().stream().forEach(bc -> {
-			log.log(Level.SEVERE, "2: found bean config " + bc.getBeanName() + ", class = " + bc.getClazz());
+			log.log(Level.FINEST, "2: found bean config " + bc.getBeanName() + ", class = " + bc.getClazz());
 		});
-
-		log.log(Level.SEVERE, "Light level, lux = " + ((BH1750) kernel.getInstance("lightSensor")).getValue());
-		kernel.getInstance("test12");
 	}
 
 	public void stop() {

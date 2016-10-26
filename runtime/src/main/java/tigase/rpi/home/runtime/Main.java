@@ -1,7 +1,6 @@
 package tigase.rpi.home.runtime;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.*;
 import java.util.logging.LogManager;
 
 /**
@@ -27,7 +26,26 @@ public class Main {
 								"java.util.logging.FileHandler.level=ALL\n" + "java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter\n" + "java.util.logging.FileHandler.pattern=home.log\n" +
 								"java.util.logging.SimpleFormatter.format=%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %5$s%6$s%n")
 								.getBytes()));
-		File configFile = new File(args[0]);
+
+		File configFile = null;
+		if (args.length > 0) {
+			configFile = new File(args[0]);
+		} else {
+			configFile = File.createTempFile("config", "dsl");
+			try (InputStream is = Main.class.getClassLoader().getResourceAsStream("etc/config.dsl")) {
+				try (OutputStream os = new FileOutputStream(configFile)) {
+					byte[] buf = new byte[1024];
+					int read = 0;
+					while ((read = is.read(buf, 0, buf.length)) != -1) {
+						os.write(buf, 0, read);
+					}
+					os.flush();
+					os.close();
+				}
+				is.close();
+			}
+			configFile.deleteOnExit();
+		}
 
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.init(configFile);

@@ -2,6 +2,7 @@ rootProject.name = 'tigase-pi-home'
 include ':library'
 include ':devices'
 include ':runtime'
+include ':app'
 
 def prefixSubprojectNames(children, prefix) {
 	children.each {
@@ -10,5 +11,4 @@ def prefixSubprojectNames(children, prefix) {
 	}
 }
 prefixSubprojectNames(rootProject.children, "tigase-pi-home-")
-include 'tigase-pi-home-devices'
 

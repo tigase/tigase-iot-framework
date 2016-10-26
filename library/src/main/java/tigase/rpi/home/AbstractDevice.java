@@ -14,9 +14,6 @@ public abstract class AbstractDevice<T> implements IDevice<T> {
 
 	private static final Logger log = Logger.getLogger(AbstractDevice.class.getCanonicalName());
 
-	@ConfigField(desc = "Device ID")
-	private String id;
-
 	@ConfigField(desc = "Device name")
 	private String name;
 
@@ -25,16 +22,12 @@ public abstract class AbstractDevice<T> implements IDevice<T> {
 
 	private IValue<T> value;
 
-	public String getId(){
-		return id;
-	}
-
 	public String getName() {
 		return name;
 	}
 
 	protected void fireEvent(Object event) {
-		log.log(Level.INFO, "{0} - firing event {1}", new Object[] { getId(), event });
+		log.log(Level.FINEST, "{0}, firing event {1}", new Object[] { getName(), event });
 		eventBus.fire(event);
 	}
 
