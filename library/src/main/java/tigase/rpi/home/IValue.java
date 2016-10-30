@@ -9,6 +9,6 @@ public interface IValue<T> {
 
 	LocalDateTime getTimestamp();
 
-	<T> T getValue();
+	T getValue();
 
 }
