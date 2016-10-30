@@ -3,13 +3,13 @@ package tigase.rpi.home.sensors.pir;
 import com.pi4j.io.gpio.*;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
+import tigase.bot.AbstractDevice;
+import tigase.bot.IValue;
+import tigase.bot.Value;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.rpi.home.AbstractDevice;
-import tigase.rpi.home.IValue;
-import tigase.rpi.home.Value;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;

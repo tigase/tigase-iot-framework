@@ -1,14 +1,14 @@
 package tigase.rpi.home.app;
 
 import com.pi4j.temperature.TemperatureScale;
+import tigase.bot.AbstractDevice;
+import tigase.bot.Autostart;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.rpi.home.AbstractDevice;
-import tigase.rpi.home.Autostart;
 import tigase.rpi.home.devices.LightDimmer;
 import tigase.rpi.home.sensors.light.BH1750;
 import tigase.rpi.home.sensors.w1.DS1820;

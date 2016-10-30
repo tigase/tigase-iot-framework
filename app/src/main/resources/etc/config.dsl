@@ -22,10 +22,10 @@ w1Master (class: 'tigase.rpi.home.sensors.w1.W1Master', exportable: true) {
     period = 15000
 }
 
-tempPublisher (class: 'tigase.rpi.home.app.TemparaturePubSubPublisher', exportable: true) {
+tempPublisher (class: 'tigase.rpi.home.app.TemperaturePubSubPublisher', exportable: true) {
     PEP = true
 }
 
-test12 (class: 'tigase.rpi.home.app.Test', exportable: true) {
-
-}
+# test12 (class: 'tigase.rpi.home.app.Test', exportable: true) {
+#
+#}

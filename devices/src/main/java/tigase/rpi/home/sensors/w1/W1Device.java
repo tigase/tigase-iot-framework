@@ -1,6 +1,6 @@
 package tigase.rpi.home.sensors.w1;
 
-import tigase.rpi.home.IDevice;
+import tigase.bot.IDevice;
 
 /**
  * Created by andrzej on 24.10.2016.

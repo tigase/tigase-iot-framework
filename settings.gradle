@@ -1,7 +1,5 @@
 rootProject.name = 'tigase-pi-home'
-include ':library'
 include ':devices'
-include ':runtime'
 include ':app'
 
 def prefixSubprojectNames(children, prefix) {

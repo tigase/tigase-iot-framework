@@ -1,5 +1,8 @@
 package tigase.rpi.home.app;
 
+import tigase.bot.RequiredXmppModules;
+import tigase.bot.XmppBridge;
+import tigase.bot.XmppService;
 import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
@@ -7,9 +10,6 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
-import tigase.rpi.home.RequiredXmppModules;
-import tigase.rpi.home.XmppBridge;
-import tigase.rpi.home.runtime.XmppService;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

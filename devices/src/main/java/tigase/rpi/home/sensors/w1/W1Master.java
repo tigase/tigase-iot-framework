@@ -1,5 +1,6 @@
 package tigase.rpi.home.sensors.w1;
 
+import tigase.bot.Autostart;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.RegistrarBean;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 /**
  * Created by andrzej on 24.10.2016.
  */
+@Autostart
 public class W1Master
 		implements RegistrarBean, Initializable, UnregisterAware {
 
@@ -51,7 +53,8 @@ public class W1Master
 
 	@Override
 	public void initialize() {
-		future = scheduledExecutorService.scheduleAtFixedRate(() -> updateDevices(), 0, period, TimeUnit.MILLISECONDS);
+		updateDevices();
+		future = scheduledExecutorService.scheduleAtFixedRate(() -> updateDevices(), period, period, TimeUnit.MILLISECONDS);
 	}
 
 	protected void updateDevices() {

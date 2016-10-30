@@ -1,5 +1,6 @@
 package tigase.rpi.home.app;
 
+import tigase.bot.runtime.AbstractPubSubPublisher;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -14,7 +15,6 @@ import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import tigase.jaxmpp.j2se.Jaxmpp;
-import tigase.rpi.home.runtime.AbstractPubSubPublisher;
 
 import java.util.ArrayList;
 import java.util.HashSet;

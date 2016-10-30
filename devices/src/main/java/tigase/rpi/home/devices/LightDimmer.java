@@ -1,9 +1,9 @@
 package tigase.rpi.home.devices;
 
+import tigase.bot.AbstractDevice;
+import tigase.bot.IExecutorDevice;
+import tigase.bot.Value;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.rpi.home.AbstractDevice;
-import tigase.rpi.home.IExecutorDevice;
-import tigase.rpi.home.Value;
 
 import java.util.Arrays;
 import java.util.List;
