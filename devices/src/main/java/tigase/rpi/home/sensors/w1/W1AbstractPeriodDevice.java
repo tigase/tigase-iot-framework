@@ -21,15 +21,10 @@ public abstract class W1AbstractPeriodDevice<T> extends AbstractPeriodDevice<T>
 		return w1Device;
 	}
 
-	public void setW1Device(com.pi4j.io.w1.W1Device w1Device) {
-		this.w1Device = w1Device;
-		initialize();
-	}
-
 	@Override
 	public void initialize() {
 		if (w1Device == null) {
-			return;
+			w1Device = W1Master.KNOWN_DEVICES.get(getName());
 		}
 		super.initialize();
 	}

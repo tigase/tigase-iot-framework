@@ -1,4 +1,4 @@
-package tigase.rpi.home.app;
+package tigase.rpi.home.app.pubsub;
 
 import tigase.bot.runtime.AbstractPubSubPublisher;
 import tigase.jaxmpp.core.client.JID;
@@ -26,14 +26,14 @@ import java.util.stream.Collectors;
 /**
  * Created by andrzej on 25.10.2016.
  */
-public abstract class AbstractDevicePubSubPublisher
+public abstract class AbstractDevicePubSubPublisherOld
 		extends AbstractPubSubPublisher {
 
-	private static final Logger log = Logger.getLogger(AbstractDevicePubSubPublisher.class.getCanonicalName());
+	private static final Logger log = Logger.getLogger(AbstractDevicePubSubPublisherOld.class.getCanonicalName());
 
 	private Set<String> nodesReady = new HashSet<>();
 
-	public AbstractDevicePubSubPublisher() {
+	public AbstractDevicePubSubPublisherOld() {
 		rootNode = "devices";
 	}
 
@@ -106,7 +106,7 @@ public abstract class AbstractDevicePubSubPublisher
 										 @Override
 										 public void onPublish(String itemId) {
 											 log.log(Level.FINEST, "{0}, item published at {1}/{2} as {3}",
-													 new Object[]{AbstractDevicePubSubPublisher.this.name, pubsubJid,
+													 new Object[]{AbstractDevicePubSubPublisherOld.this.name, pubsubJid,
 																  stateNode, itemId});
 										 }
 									 });
@@ -258,14 +258,14 @@ public abstract class AbstractDevicePubSubPublisher
 					protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
 										  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
 						log.log(Level.WARNING, "{0}, failed to create device node - {1} {2}",
-								new Object[]{AbstractDevicePubSubPublisher.this.name, errorCondition,
+								new Object[]{AbstractDevicePubSubPublisherOld.this.name, errorCondition,
 											 pubSubErrorCondition});
 					}
 
 					@Override
 					public void onSuccess(Stanza stanza) throws JaxmppException {
 						log.log(Level.FINEST, "{0}, node {1}/{2} created",
-								new Object[]{AbstractDevicePubSubPublisher.this.name, pubsubJid, node});
+								new Object[]{AbstractDevicePubSubPublisherOld.this.name, pubsubJid, node});
 						nodesReady.add(node);
 						if (nodeCreated != null) {
 							nodeCreated.nodeCreated();
@@ -275,7 +275,7 @@ public abstract class AbstractDevicePubSubPublisher
 					@Override
 					public void onTimeout() throws JaxmppException {
 						log.log(Level.WARNING, "{0}, failed to create device node - {1}",
-								new Object[]{AbstractDevicePubSubPublisher.this.name, "request timeout!"});
+								new Object[]{AbstractDevicePubSubPublisherOld.this.name, "request timeout!"});
 					}
 				});
 	}

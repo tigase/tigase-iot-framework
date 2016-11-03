@@ -73,4 +73,5 @@ public class TemperatureFormatter
 
 		return null;
 	}
+
 }

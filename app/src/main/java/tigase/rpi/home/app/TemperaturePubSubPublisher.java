@@ -6,6 +6,7 @@ import tigase.bot.IValue;
 import tigase.eventbus.HandleEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.kernel.beans.Inject;
+import tigase.rpi.home.app.pubsub.AbstractDevicePubSubPublisherOld;
 import tigase.rpi.home.sensors.w1.DS1820;
 import tigase.rpi.home.sensors.w1.W1Master;
 import tigase.rpi.home.values.Temperature;
@@ -19,7 +20,7 @@ import java.util.logging.Logger;
  */
 @Autostart
 public class TemperaturePubSubPublisher
-		extends AbstractDevicePubSubPublisher {
+		extends AbstractDevicePubSubPublisherOld {
 
 	private static final Logger log = Logger.getLogger(TemperaturePubSubPublisher.class.getCanonicalName());
 

@@ -9,6 +9,4 @@ public interface W1Device<V> extends IDevice<V> {
 
 	com.pi4j.io.w1.W1Device getW1Device();
 
-	void setW1Device(com.pi4j.io.w1.W1Device device);
-
 }

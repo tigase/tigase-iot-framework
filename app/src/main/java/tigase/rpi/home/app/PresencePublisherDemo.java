@@ -1,5 +1,6 @@
 package tigase.rpi.home.app;
 
+import tigase.bot.Autostart;
 import tigase.bot.RequiredXmppModules;
 import tigase.bot.XmppBridge;
 import tigase.bot.XmppService;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 /**
  * Created by andrzej on 23.10.2016.
  */
+@Autostart
 @RequiredXmppModules({PresenceModule.class})
 public class PresencePublisherDemo
 		implements XmppBridge, Initializable, UnregisterAware, PresenceModule.OwnPresenceStanzaFactory {

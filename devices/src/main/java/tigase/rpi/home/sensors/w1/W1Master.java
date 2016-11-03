@@ -26,6 +26,8 @@ import java.util.logging.Logger;
 public class W1Master
 		implements RegistrarBean, Initializable, UnregisterAware {
 
+	public static final Map<String, com.pi4j.io.w1.W1Device> KNOWN_DEVICES = new ConcurrentHashMap<>();
+
 	private static final Logger log = Logger.getLogger(W1Master.class.getCanonicalName());
 
 	private final com.pi4j.io.w1.W1Master w1Master;
@@ -62,9 +64,10 @@ public class W1Master
 		List<com.pi4j.io.w1.W1Device> deviceList = w1Master.getDevices();
 		List<String> found = new ArrayList<>();
 		deviceList.forEach(w1Device -> {
-			String id = "w1-" + w1Device.getId();
+			String id = "w1-" + w1Device.getId().trim();
 			found.add(id);
 			if (!registeredDevices.contains(id)) {
+				KNOWN_DEVICES.put(id, w1Device);
 				registerDeviceBean(w1Device);
 			}
 		});
@@ -73,6 +76,7 @@ public class W1Master
 		while (iter.hasNext()) {
 			String id = iter.next();
 			if (!found.contains(id)) {
+				KNOWN_DEVICES.remove(id);
 				parentKernel.unregister(id);
 				iter.remove();
 			}
@@ -89,6 +93,7 @@ public class W1Master
 		registeredDevices.forEach(beanName -> {
 			W1Device bean = parentKernel.getInstance(beanName);
 			parentKernel.unregister(beanName);
+			KNOWN_DEVICES.remove(beanName);
 			if (bean instanceof UnregisterAware) {
 				((UnregisterAware) bean).beforeUnregister();
 			}
@@ -103,11 +108,8 @@ public class W1Master
 		}
 
 		try {
-			String beanName = "w1-" + device.getId();
+			String beanName = "w1-" + device.getId().trim();
 			parentKernel.registerBean(beanName).asClass(beanClass).exec();
-			W1Device w1DeviceBean = parentKernel.getInstance(beanName);
-			w1DeviceBean.setW1Device(device);
-
 			registeredDevices.add(beanName);
 		} catch (SecurityException ex) {
 			log.log(Level.WARNING, "Could not instantiate class " + beanClass.getCanonicalName(), ex);
