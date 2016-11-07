@@ -3,26 +3,121 @@ package tigase.rpi.home.app.pubsub;
 import tigase.bot.AbstractDevice;
 import tigase.bot.IDevice;
 import tigase.bot.IValue;
+import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.Element;
+import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
-import tigase.rpi.home.app.ValueFormatter;
+import tigase.kernel.beans.UnregisterAware;
+import tigase.kernel.beans.config.ConfigField;
+import tigase.rpi.home.app.DeviceNodesHelper;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Created by andrzej on 31.10.2016.
  */
 public class DevicePubSubPublisher
-		extends AbstractDevicePubSubPublisher {
+		implements PubSubNodesManager.PubSubNodeAware, Initializable, UnregisterAware {
 
 	private static final Logger log = Logger.getLogger(DevicePubSubPublisher.class.getCanonicalName());
 
+	@ConfigField(desc = "Devices root node")
+	private String devicesRootNode = "devices";
+
+	@ConfigField(desc = "Devcies node name")
+	private String devicesNodeName = "Devices";
+
 	@Inject
-	private List<ValueFormatter> formatters;
+	protected List<IDevice> devices;
+
+	@Inject
+	protected EventBus eventBus;
+
+	private PubSubNodesManager.Node rootNode;
+	private Set<String> stateNodes = Collections.synchronizedSet(new HashSet<>());
+
+	@Inject
+	private ExtendedPubSubNodesManager pubSubNodesManager;
+
+	@Override
+	public List<PubSubNodesManager.Node> getRequiredNodes() {
+		return Collections.singletonList(rootNode);
+	}
+
+	public void initialize() {
+		eventBus.registerAll(this);
+		try {
+			rootNode = DeviceNodesHelper.createDevicesRootNode(devicesRootNode, devicesNodeName);
+
+			devices.forEach(this::addDevice);
+		} catch (JaxmppException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	@Override
+	public void beforeUnregister() {
+		eventBus.unregisterAll(this);
+	}
+
+	public void setDevices(List<IDevice> devices) {
+		List<IDevice> oldDevices = this.devices;
+		this.devices = devices;
+
+		if (oldDevices != null) {
+			oldDevices.stream().filter(device -> !devices.contains(device)).forEach(this::removeDevice);
+		}
+		this.devices.stream()
+				.filter(device -> oldDevices == null || oldDevices.contains(device))
+				.forEach(this::addDevice);
+
+		if (pubSubNodesManager != null) {
+			pubSubNodesManager.updateRequiredNodes();
+		}
+	}
+
+	public void addDevice(IDevice device) {
+		if (rootNode == null) {
+			return;
+		}
+
+		try {
+			PubSubNodesManager.Node deviceNode = DeviceNodesHelper.createDeviceNode(devicesRootNode, device);
+			rootNode.addChild(deviceNode);
+
+			deviceNode.addChild(DeviceNodesHelper.createDeviceStateNode(devicesRootNode, device));
+		} catch (JaxmppException ex) {
+			log.log(Level.WARNING, "could not add child node for device " + device, ex);
+		}
+	}
+
+	public void removeDevice(IDevice device) {
+		if (rootNode == null) {
+			return;
+		}
+
+		String deviceNodeName = devicesRootNode + "/" + device.getName();
+		List<PubSubNodesManager.Node> toRemove = rootNode.getChildren()
+				.stream()
+				.filter(node -> node.getNodeName().equals(deviceNodeName))
+				.collect(Collectors.toList());
+		toRemove.forEach(rootNode::removeChild);
+	}
+
+	@HandleEvent
+	public void nodeReady(PubSubNodesManager.NodeReady nodeReady) {
+		if (stateNodes.contains(nodeReady.node)) {
+			String deviceId = DeviceNodesHelper.getDeviceIdFromNode(nodeReady.node);
+			devices.stream().filter(device -> device.getName().equals(deviceId)).forEach(this::publishDeviceValue);
+		}
+	}
 
 	@HandleEvent
 	public void valueChanged(AbstractDevice.ValueChangeEvent event) {
@@ -33,28 +128,13 @@ public class DevicePubSubPublisher
 		publishValue(event.source, event.newValue);
 	}
 
+	protected void publishDeviceValue(IDevice source) {
+		publishValue(source, source.getValue());
+	}
+
 	protected void publishValue(IDevice source, IValue value) {
-		formatters.stream().filter(formatter -> formatter.isSupported(value)).forEach(formatter -> {
-			try {
-				Element result = formatter.toElement(value);
-				if (result == null) {
-					log.log(Level.FINE, "formatter {0} failed to return result for value {1}",
-							new Object[]{formatter, value});
-					return;
-				}
-
-				publishState(source, result);
-			} catch (JaxmppException ex) {
-				log.log(Level.WARNING,
-						"formatter " + formatter + " thrown exception while formatting value " + value, ex);
-			}
-		});
+		String node = DeviceNodesHelper.getDeviceStateNodeName(devicesRootNode, source);
+		pubSubNodesManager.publish(node, null, value);
 	}
 
-	@Override
-	protected void nodesReady(IDevice device) {
-		IValue value = device.getValue();
-
-		publishValue(device, value);
-	}
 }

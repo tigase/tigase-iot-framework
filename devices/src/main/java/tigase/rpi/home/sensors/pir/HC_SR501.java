@@ -10,6 +10,7 @@ import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
+import tigase.rpi.home.IConfigurationAware;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * Created by andrzej on 23.10.2016.
  */
 public class HC_SR501 extends AbstractDevice<Boolean>
-		implements Initializable, UnregisterAware, GpioPinListenerDigital {
+		implements Initializable, UnregisterAware, GpioPinListenerDigital, IConfigurationAware {
 
 	@ConfigField(desc = "WiringPi Pin number")
 	private int pin = 5;

@@ -4,6 +4,7 @@ import tigase.bot.AbstractDevice;
 import tigase.bot.IExecutorDevice;
 import tigase.bot.Value;
 import tigase.kernel.beans.config.ConfigField;
+import tigase.rpi.home.IConfigurationAware;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class LightDimmer
 		extends AbstractDevice<Integer>
-		implements IExecutorDevice<Integer> {
+		implements IExecutorDevice<Integer>, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(LightDimmer.class.getCanonicalName());
 

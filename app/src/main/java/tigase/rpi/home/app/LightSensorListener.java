@@ -6,23 +6,28 @@ import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.rpi.home.app.pubsub.DevicePubSubListener;
+import tigase.rpi.home.IConfigurationAware;
+import tigase.rpi.home.app.pubsub.ExtendedPubSubNodesManager;
+import tigase.rpi.home.app.pubsub.PubSubNodesManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Created by andrzej on 02.11.2016.
  */
-public class LightSensorListener implements DevicePubSubListener.DeviceListener, Initializable, UnregisterAware {
+public class LightSensorListener implements PubSubNodesManager.NodesObserver, Initializable, UnregisterAware,
+											IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(LightSensorListener.class.getCanonicalName());
 
 	@ConfigField(desc = "Observed device nodes")
 	private ArrayList<String> observes;
+
+	@ConfigField(desc = "Bean name")
+	private String name;
 
 	@Inject
 	private EventBus eventBus;
@@ -33,8 +38,13 @@ public class LightSensorListener implements DevicePubSubListener.DeviceListener,
 	}
 
 	@Override
-	public List<String> getObservedDevicesNodes() {
-		return observes.stream().map(device -> device + "/state").collect(Collectors.toList());
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	public List<String> getObservedNodes() {
+		return observes;
 	}
 
 	@Override
@@ -43,7 +53,7 @@ public class LightSensorListener implements DevicePubSubListener.DeviceListener,
 	}
 
 	@HandleEvent
-	public void onValueChanged(DevicePubSubListener.ValueChangedEvent event) {
+	public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
 		if (observes.contains(event.sourceId)) {
 			log.log(Level.INFO, "received new event from " + event.sourceId + " with value " + event);
 		}
