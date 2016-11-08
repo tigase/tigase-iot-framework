@@ -58,8 +58,4 @@ public abstract class I2CAbstractPeriodDevice<T> extends AbstractPeriodDevice<T>
 		super.initialize();
 	}
 
-	@Override
-	public void beforeUnregister() {
-		super.beforeUnregister();
-	}
 }
