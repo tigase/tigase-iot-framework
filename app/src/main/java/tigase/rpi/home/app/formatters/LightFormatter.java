@@ -28,7 +28,7 @@ public class LightFormatter extends AbstractValueFormatter<Light> {
 		numeric.setAttribute("momentary", "true");
 		numeric.setAttribute("automaticReadout", "true");
 		numeric.setAttribute("value", String.valueOf(value.getValue()));
-		numeric.setAttribute("unit", "lm");
+		numeric.setAttribute("unit", value.getUnit().toString());
 
 		timestampElem.addChild(numeric);
 
@@ -45,7 +45,14 @@ public class LightFormatter extends AbstractValueFormatter<Light> {
 
 		LocalDateTime timestamp = parseTimestampElement(elem);
 		Integer value  = Integer.parseInt(numeric.getAttribute("value"));
+		String unitStr = numeric.getAttribute("unit");
 
-		return new Light(value, timestamp);
+		for (Light.Unit unit : Light.Unit.values()) {
+			if (unit.toString().equals(unitStr)) {
+				return new Light(value, unit, timestamp);
+			}
+		}
+
+		return null;
 	}
 }

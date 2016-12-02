@@ -9,12 +9,35 @@ import java.time.LocalDateTime;
  */
 public class Light extends Value<Integer> {
 
-	public Light(int value) {
+	private final Unit unit;
+
+	public Light(int value, Unit unit) {
 		super(value);
+		this.unit = unit;
 	}
 
-	public Light(int value, LocalDateTime timestamp) {
+	public Light(int value, Unit unit, LocalDateTime timestamp) {
 		super(value, timestamp);
+		this.unit = unit;
 	}
 
+	public Unit getUnit() {
+		return unit;
+	}
+
+	public enum Unit {
+		lm("lm"),
+		percent("%");
+
+		private final String value;
+
+		Unit(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return value;
+		}
+	}
 }

@@ -4,6 +4,7 @@ import tigase.bot.IValue;
 import tigase.eventbus.HandleEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
+import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.kernel.beans.Inject;
 import tigase.rpi.home.app.ValueFormatter;
@@ -43,6 +44,12 @@ public class ExtendedPubSubNodesManager
 
 	@HandleEvent
 	public void receivedItem(PubSubModule.NotificationReceivedHandler.NotificationReceivedEvent event) {
+		if (log.isLoggable(Level.FINEST)) {
+			try {
+				log.log(Level.FINEST, "received PubSub event from {0} with payload {1}",
+						new Object[]{event.getNodeName(), event.getPayload().getAsString()});
+			} catch (XMLException ex) {}
+		}
 		formatters.stream().map(formatter -> {
 			try {
 				return formatter.fromElement(event.getPayload());

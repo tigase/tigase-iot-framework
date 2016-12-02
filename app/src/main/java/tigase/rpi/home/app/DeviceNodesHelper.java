@@ -36,7 +36,7 @@ public class DeviceNodesHelper {
 		String deviceNode = getDeviceNodeName(rootNode, device);
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", "State");
-		config.addTextSingleField("pubsub#node_type", "collection");
+		config.addTextSingleField("pubsub#node_type", "leaf");
 		config.addTextSingleField("pubsub#access_model", "presence");
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#collection", deviceNode);

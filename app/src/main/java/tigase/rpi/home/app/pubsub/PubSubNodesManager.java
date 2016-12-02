@@ -311,7 +311,8 @@ public class PubSubNodesManager
 
 	@Override
 	protected void jaxmppConnected(Jaxmpp jaxmpp) {
-		jaxmpp.getModule(FeatureProviderModule.class).setFeatures(this, features);
+		FeatureProviderModule module = jaxmpp.getModule(FeatureProviderModule.class);
+		module.setFeatures(this, features);
 		ensureNodeExists(jaxmpp);
 	}
 

@@ -9,4 +9,5 @@ def prefixSubprojectNames(children, prefix) {
 	}
 }
 prefixSubprojectNames(rootProject.children, "tigase-pi-home-")
+include 'client-library'
 

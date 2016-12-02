@@ -30,7 +30,7 @@ public class BH1750
 			throw new RuntimeException("Read error: read only " + r + " bytes");
 		}
 
-		return new Light((data[0] << 8) | data[1]);
+		return new Light((data[0] << 8) | data[1], Light.Unit.lm);
 	}
 
 }

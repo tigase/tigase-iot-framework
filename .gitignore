@@ -12,3 +12,6 @@
 
 /app/target
 /app/build
+
+/client-library/target
+/client-library/build

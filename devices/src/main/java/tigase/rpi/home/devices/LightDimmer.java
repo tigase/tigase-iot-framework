@@ -2,9 +2,9 @@ package tigase.rpi.home.devices;
 
 import tigase.bot.AbstractDevice;
 import tigase.bot.IExecutorDevice;
-import tigase.bot.Value;
 import tigase.kernel.beans.config.ConfigField;
 import tigase.rpi.home.IConfigurationAware;
+import tigase.rpi.home.values.Light;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,37 +15,49 @@ import java.util.logging.Logger;
  * Created by andrzej on 24.10.2016.
  */
 public class LightDimmer
-		extends AbstractDevice<Integer>
+		extends AbstractDevice<Light>
 		implements IExecutorDevice<Integer>, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(LightDimmer.class.getCanonicalName());
 
-	private static final List<Integer> knownLightLevels = Arrays.asList(20, 60);
+	private static final List<Integer> knownLightLevels = Arrays.asList(10, 20, 40, 60, 80,100);
 
 	@ConfigField(desc = "Path to TransmitRF.py file")
 	private String pathToTransmitRF;
 
 	public synchronized void setValue(Integer lightLevel) {
-		if (lightLevel == 0) {
+		setValue(new Light(lightLevel, Light.Unit.percent));
+	}
+
+	public synchronized void setValue(Light light) {
+		Light currentValue = getValue();
+		if (currentValue != null && light.getValue() == currentValue.getValue()) {
+			return;
+		}
+		if (log.isLoggable(Level.FINEST)) {
+			log.log(Level.FINEST, getName() + "{0}, setting value to {1} from {2}",
+					new Object[]{getName(), light.getValue(), (currentValue == null ? 0 : currentValue.getValue())});
+		}
+		if (light.getValue() == 0) {
 			sendCode("off");
-			updateValue(new Value<>(lightLevel));
+			updateValue(light);
 			return;
 		}
 
 		sendCode("on");
-		sendCode("on");
+		//sendCode("on");
 		try {
-			Thread.sleep(200);
+			Thread.sleep(500);
 		} catch (InterruptedException e) {
 
 		}
 		for (int i = 0; i < knownLightLevels.size(); i++) {
 			int level = knownLightLevels.get(i);
 
-			if (lightLevel < level || (i + 1 == knownLightLevels.size())) {
+			if (light.getValue() <= level || (i + 1 == knownLightLevels.size())) {
+				//sendCode(String.valueOf(level));
 				sendCode(String.valueOf(level));
-				sendCode(String.valueOf(level));
-				updateValue(new Value<>(level));
+				updateValue(light);
 				break;
 			}
 		}
