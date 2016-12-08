@@ -13,8 +13,8 @@ public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractP
 
 	protected com.pi4j.io.w1.W1Device w1Device;
 
-	protected W1AbstractPeriodDevice(long period) {
-		super(period);
+	protected W1AbstractPeriodDevice(String type, long period) {
+		super(type, period);
 	}
 
 	@Override

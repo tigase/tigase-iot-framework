@@ -16,7 +16,7 @@ public class BH1750
 		implements Initializable, UnregisterAware {
 
 	public BH1750() {
-		super(60 * 1000);
+		super("light-sensor", 60 * 1000);
 	}
 
 	@Override

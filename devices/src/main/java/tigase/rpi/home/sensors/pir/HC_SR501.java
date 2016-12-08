@@ -38,6 +38,10 @@ public class HC_SR501
 	private GpioPinDigitalInput input;
 	private ScheduledFuture future;
 
+	public HC_SR501() {
+		super("movement-sensor");
+	}
+
 	@Override
 	public void beforeUnregister() {
 		input.removeListener(this);

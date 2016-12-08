@@ -30,8 +30,8 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 
 	private I2CBus i2cBus;
 
-	public I2CAbstractPeriodDevice(long period) {
-		super(period);
+	public I2CAbstractPeriodDevice(String type, long period) {
+		super(type, period);
 	}
 
 	protected abstract T readValue(I2CDevice device) throws IOException;

@@ -8,9 +8,10 @@ import tigase.jaxmpp.core.client.eventbus.Event;
 import tigase.jaxmpp.core.client.eventbus.EventHandler;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
+import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
-import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
+import tigase.jaxmpp.core.client.xmpp.forms.TextSingleField;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubErrorCondition;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
@@ -32,6 +33,7 @@ public abstract class Device<S extends Device.IValue> {
 	private final String name;
 
 	private S value;
+	private ValueChangedHandler<S> observer;
 
 	public Device(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
 		this.jaxmpp = jaxmpp;
@@ -50,17 +52,42 @@ public abstract class Device<S extends Device.IValue> {
 			return;
 		}
 
-		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", name);
-		jaxmpp.getModule(PubSubModule.class).configureNode(pubsubJid.getBareJid(), node, config, new AsyncCallback() {
+		jaxmpp.getModule(PubSubModule.class).getNodeConfiguration(pubsubJid.getBareJid(), node, new PubSubModule.NodeConfigurationAsyncCallback() {
 			@Override
-			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-				callback.onError(error);
+			protected void onReceiveConfiguration(IQ responseStanza, String node, JabberDataElement config) {
+				try {
+					TextSingleField field = config.getField("pubsub#title");
+					if (field == null) {
+						config.addTextSingleField("pubsub#title", name);
+					} else {
+						field.setFieldValue(name);
+					}
+					jaxmpp.getModule(PubSubModule.class).configureNode(pubsubJid.getBareJid(), node, config, new AsyncCallback() {
+						@Override
+						public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+							callback.onError(error);
+						}
+
+						@Override
+						public void onSuccess(Stanza responseStanza) throws JaxmppException {
+							callback.onSuccess(name);
+						}
+
+						@Override
+						public void onTimeout() throws JaxmppException {
+							callback.onError(null);
+						}
+					});
+
+				} catch (JaxmppException ex) {
+					callback.onError(XMPPException.ErrorCondition.internal_server_error);
+				}
 			}
 
 			@Override
-			public void onSuccess(Stanza responseStanza) throws JaxmppException {
-				callback.onSuccess(name);
+			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
+				callback.onError(errorCondition);
 			}
 
 			@Override
@@ -79,7 +106,7 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	public void getValue(final Callback<S> callback) throws JaxmppException {
-		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), node, null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
+		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), node + "/state", null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
 			@Override
 			protected void onRetrieve(IQ responseStanza, String nodeName, Collection<Item> items) {
 				S value = null;
@@ -137,6 +164,40 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	public void retrieveConfiguration(final Callback<Configuration> callback) throws JaxmppException {
+		Device.retrieveConfiguration(jaxmpp, pubsubJid, node, callback);
+	}
+
+	public void setConfiguration(final JabberDataElement config, final Callback<Configuration> callback) throws JaxmppException {
+		Element timestamp = ElementFactory.create("timestamp");
+		final Date date = new Date();
+		timestamp.setAttribute("value", new DateTimeFormat().format(date));
+
+		timestamp.addChild(config);
+
+		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node + "/config", null, timestamp, new PubSubModule.PublishAsyncCallback() {
+			@Override
+			public void onTimeout() throws JaxmppException {
+				callback.onError(null);
+			}
+
+			@Override
+			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
+				callback.onError(errorCondition);
+			}
+
+			@Override
+			public void onPublish(String itemId) {
+				callback.onSuccess(new Configuration(config, date));
+			}
+		});
+	}
+
+	public void setObserver(ValueChangedHandler<S> observer) {
+		this.observer = observer;
+	}
+
 	protected static Configuration parseConfig(Element payload) throws JaxmppException {
 		Element valueEl = payload.getFirstChild();
 		Date timestamp = parseTimestamp(payload);
@@ -161,13 +222,16 @@ public abstract class Device<S extends Device.IValue> {
 		}
 
 		value = newValue;
+		if (observer != null) {
+			observer.valueChanged(value);
+		}
 
 		jaxmpp.getEventBus().fire(new ValueChangedHandler.ValueChangedEvent<S>(newValue));
 	}
 
 	protected void setValue(final S newValue, final Callback<S> callback) throws JaxmppException {
 		Element payload = encodeToPayload(newValue);
-		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node, null, payload, new AsyncCallback() {
+		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node + "/state", null, payload, new AsyncCallback() {
 			@Override
 			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
 				callback.onError(error);

@@ -7,14 +7,12 @@ import tigase.jaxmpp.core.client.eventbus.EventHandler;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
+import tigase.jaxmpp.core.client.xmpp.forms.Field;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
-import tigase.rpi.home.client.devices.LightDimmer;
-import tigase.rpi.home.client.devices.LightSensor;
-import tigase.rpi.home.client.devices.MovementSensor;
-import tigase.rpi.home.client.devices.TemperatureSensor;
+import tigase.rpi.home.client.devices.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,11 +52,22 @@ public class Devices {
 				processNotification(nodeName, payload);
 			}
 		});
+
+		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, new JaxmppCore.LoggedInHandler() {
+			@Override
+			public void onLoggedIn(SessionObject sessionObject) {
+				try {
+					refreshDevices();
+				} catch (JaxmppException ex) {
+					log.log(Level.WARNING, "Failed to refresh devices list", ex);
+				}
+			}
+		});
 	}
 
 	private Device getDeviceByNode(String nodeName) {
 		for (Device device : devices) {
-			if (device.getNode().equals(nodeName))
+			if (nodeName.startsWith(device.getNode()))
 				return device;
 		}
 
@@ -93,20 +102,25 @@ public class Devices {
 		devices.clear();
 		final JID pubsubJid = getPubSubJid();
 		jaxmpp.getModule(DiscoveryModule.class).getItems(pubsubJid, devicesNode, new DiscoveryModule.DiscoItemsAsyncCallback() {
+
+			private Integer counter;
+
 			@Override
 			public void onInfoReceived(String node, ArrayList<DiscoveryModule.Item> items) throws XMLException {
+				counter = items.size();
 				for (final DiscoveryModule.Item item : items) {
 					try {
-						Device.retrieveConfiguration(jaxmpp, pubsubJid, node, new Device.Callback<Device.Configuration>() {
+						Device.retrieveConfiguration(jaxmpp, pubsubJid, item.getNode(), new Device.Callback<Device.Configuration>() {
 
 							@Override
 							public void onError(XMPPException.ErrorCondition error) {
-
+								checkAndNotify();
 							}
 
 							@Override
 							public void onSuccess(Device.Configuration config) {
 								devices.add(createDevice(item, config));
+								checkAndNotify();
 							}
 						});
 					} catch (JaxmppException ex) {
@@ -124,13 +138,27 @@ public class Devices {
 			public void onTimeout() throws JaxmppException {
 				// ignoring for now
 			}
+
+			private void checkAndNotify() {
+				synchronized (this) {
+					counter--;
+					if (counter == 0) {
+						jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
+					}
+				}
+			}
 		});
+
 	}
 
 	protected Device createDevice(DiscoveryModule.Item item, Device.Configuration config) {
 		// TODO - use field from config to select device class!
 		try {
-			String type = (String) config.getValue().getField("type").getFieldValue();
+			Field field = config.getValue().getField("type");
+			if (field == null) {
+				return null;
+			}
+			String type = (String) field.getFieldValue();
 			if (type == null) {
 				return null;
 			}
@@ -138,6 +166,8 @@ public class Devices {
 			switch (type) {
 				case "movement-sensor":
 					return new MovementSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+				case "tv-sensor":
+					return new TvSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "light-dimmer":
 					return new LightDimmer(jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "light-sensor":

@@ -1,13 +1,33 @@
+group 'tigase.rpi.home'
 version '1.0.0'
 
 apply plugin: 'java'
 
 sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
+//sourceSets.main.resources {
+//    srcDirs = ["src/main/java"]
+//    includes = ["**/*.java"]
+//}
+
+jar {
+    from('src/main/java') {
+        include '**/*'
+    }
+}
 dependencies {
     compile 'tigase:jaxmpp-pubsub:3.2.0-SNAPSHOT'
     compile 'tigase:jaxmpp-im:3.2.0-SNAPSHOT'

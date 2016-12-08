@@ -16,7 +16,7 @@ public class DS1820 extends W1AbstractPeriodDevice<Temperature> {
 	private static final Logger log = Logger.getLogger(DS1820.class.getCanonicalName());
 
 	public DS1820() {
-		super(60 * 1000);
+		super("temperature-sensor", 60 * 1000);
 	}
 
 	@Override

@@ -170,7 +170,11 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 														  Item item = items.iterator().next();
 														  try {
 															  ConfigValue config = formatter.fromElement(item.getPayload());
-															  applyConfigurion(aware.getName(), config.getValue());
+															  if (config == null || config.getValue().getField("type") == null) {
+															  	  publishCurrentConfig(pubSubModule, event.pubSubJid, nodeName, aware);
+															  } else {
+																  applyConfigurion(aware.getName(), config.getValue());
+															  }
 														  } catch (JaxmppException ex) {
 															  log.log(Level.WARNING,
 																	  "failed to parse retrieved configuration", ex);

@@ -25,6 +25,10 @@ public class LightDimmer
 	@ConfigField(desc = "Path to TransmitRF.py file")
 	private String pathToTransmitRF;
 
+	public LightDimmer() {
+		super("light-dimmer");
+	}
+
 	public synchronized void setValue(Integer lightLevel) {
 		setValue(new Light(lightLevel, Light.Unit.percent));
 	}
