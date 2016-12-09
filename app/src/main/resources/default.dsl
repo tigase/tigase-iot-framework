@@ -49,9 +49,9 @@ pubSubNodesManager (class: 'tigase.rpi.home.app.pubsub.ExtendedPubSubNodesManage
     PEP = true
 }
 
-lightSensorListener (class: 'tigase.rpi.home.app.LightSensorListener', exportable: true) {
-    observes = [ "devices/lightSensor/state", "devices/w1-28-0000084a4859/state" ]
-}
+#lightSensorListener (class: 'tigase.rpi.home.app.LightSensorListener', exportable: true) {
+#    observes = [ "devices/lightSensor/state", "devices/w1-28-0000084a4859/state" ]
+#}
 
 deviceConfigManager (class: 'tigase.rpi.home.app.DeviceConfigurationPubSubManager', exportable: true) {
 

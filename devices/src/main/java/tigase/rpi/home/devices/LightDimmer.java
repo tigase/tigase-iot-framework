@@ -48,13 +48,15 @@ public class LightDimmer
 			return;
 		}
 
-		sendCode("on");
-		//sendCode("on");
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
+		if (currentValue == null || currentValue.getValue() == 0) {
+			sendCode("on");
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
 
+			}
 		}
+		//sendCode("on");
 		for (int i = 0; i < knownLightLevels.size(); i++) {
 			int level = knownLightLevels.get(i);
 
@@ -72,6 +74,7 @@ public class LightDimmer
 			Process process = new ProcessBuilder("python", pathToTransmitRF, code).start();
 			int result = process.waitFor();
 			log.log(Level.FINEST, "{0}, got result from RF transmitter = {1}", new Object[]{getName(), result});
+			Thread.sleep(200);
 		} catch (Exception e) {
 			log.log(Level.WARNING, getName() + ", failed to send code " + code, e);
 		}
