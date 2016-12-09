@@ -1,0 +1,207 @@
+<!DOCTYPE>
+<html>
+    <head>
+        <meta name='gwt:module' content='tigase.rpi.home.client.Main=tigase.rpi.home.client.Main'>
+        <title>Main</title>
+    </head>
+    <body>
+        <script type="text/javascript"  src="tigase.rpi.home.client.Main/tigase.rpi.home.client.Main.nocache.js"></script>
+		<style is="custom-style">
+body {
+	margin: 0px;
+	padding: 0px;
+	font-family: Arial Unicode MS, Arial, sans-serif;
+	background-color: #0099cc;
+}
+
+div.auth {
+	background-color: #1a282d;
+}
+
+/* AUTH */
+.auth > div {
+	background-color: whitesmoke;
+	border: 1px solid #e5e5e5;
+	position: absolute;
+	width: 570px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 2em;
+}
+
+.auth .auth-header {
+	font-size: 1.5em;
+	color: #0099cc;
+}
+
+.auth .auth-label {
+	padding-top: 1em;
+    font-weight: bold;
+}
+
+.auth .auth-text-box {
+	width: 100%;
+    border: 1px solid #e5e5e5;
+    font-size: 1.1em;
+    line-height: 1.5em;
+    margin-top: 0.5em;
+    padding: 3px;
+}
+
+.auth .auth-button {
+	color: white;
+    border: 1px solid #2f5bb7;
+    background-color: #0099cc;
+	margin-top: 1.5em;
+    padding: 0.5em 1.2em;
+    font-weight: bold;
+	font-size: 0.8em;
+	border-radius: 0.2em;
+}
+
+.auth .auth-button .disabled {
+    border: 1px solid grey;
+    background-color: lightgrey;
+}
+
+/* TOPBAR */
+.top-bar {
+	color: #0099cc;
+	font-size: 1.5em;
+	background-color: #1a282d;
+}
+
+.top-bar > div {
+	float: left;
+	margin: 0px 1em;
+}
+	
+.top-bar > div.close-action {
+	float: right;
+	font-weight: bold;
+}
+
+
+app-toolbar {
+	background-color: #4285f4;
+	color: #fff;
+	margin: 20px 0;
+}
+a > paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+.flex-panel {
+	display: -webkit-flex;
+	display: flex;
+	width: 100%;
+	//background-color: orange;
+	justify-content: space-around;
+	flex-wrap: wrap;
+}
+
+.flex-device-item {
+	margin: 1em;
+	padding: 1.5em;
+	flex-grow: 0;
+	width: 10em;
+	height: 10em;
+	background-color: rgba(255,255,255,0.8);
+	border-radius: 2em;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.flex-device-item > .icon {
+	font-size: 4em;
+	float: left;
+}
+
+.flex-device-item > .header {
+	padding-top: 0.5em;
+	float: right;
+	font-size: 2em;
+}
+
+.flex-device-item.light-sensor > .header {
+	font-size: 2em;
+	width: 50%;
+}
+
+.flex-device-item > .label {
+	clear: both;
+	font-size: 1.5em;
+}
+
+/* Dialog window */
+.dialog-window {
+	background-color: white;
+	border: 1px solid #e5e5e5;
+	width: 570px;
+	padding: 1em;
+    border-radius: 1em;
+}
+
+.dialog-window table.jabberDataForm {
+	width: 570px;
+}
+
+/* Context menu */
+.context-menu {
+	font-size:1.2em;
+	display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 570px;
+}
+.context-menu > * {
+	padding: 0.3em;
+}
+.context-menu > div {
+	border-top: 1px solid gray;
+}
+.context-menu > div:first-child {
+	padding-top: 0em;
+	border-top: 0px;
+}
+.context-menu > div:last-child {
+	padding-bottom: 0em;
+}
+
+.context-menu > input.gwt-TextBox {
+	font-size: 0.8em;
+}
+
+.context-menu > .gwt-Button {
+	color: white;
+    border: 1px solid #2f5bb7;
+    background-color: #0099cc;
+	margin-top: 1.5em;
+    padding: 0.5em 1.2em;
+    font-weight: bold;
+	font-size: 0.8em;
+	border-radius: 0.2em;
+}
+
+/* Configuration editor */
+table.jabberDataForm {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+table.jabberDataForm td {
+	width: 50%;
+	text-align: left;
+}
+
+table.jabberDataForm td > * {
+	width: 100%;
+	padding: 0.2em 0px;
+	font-size: 0.8em;
+}
+table.jabberDataForm td > div.gwt-Label {
+	font-size: 1em;
+}
+		</style>
+    </body>
+</html>
