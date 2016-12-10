@@ -1,7 +1,7 @@
 package tigase.rpi.home.devices;
 
-import tigase.bot.AbstractDevice;
-import tigase.bot.IExecutorDevice;
+import tigase.bot.iot.AbstractSensor;
+import tigase.bot.iot.IExecutorDevice;
 import tigase.kernel.beans.config.ConfigField;
 import tigase.rpi.home.IConfigurationAware;
 import tigase.rpi.home.values.Light;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * Created by andrzej on 24.10.2016.
  */
 public class LightDimmer
-		extends AbstractDevice<Light>
+		extends AbstractSensor<Light>
 		implements IExecutorDevice<Integer>, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(LightDimmer.class.getCanonicalName());

@@ -1,6 +1,6 @@
 package tigase.rpi.home.app.formatters;
 
-import tigase.bot.IValue;
+import tigase.bot.iot.IValue;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;

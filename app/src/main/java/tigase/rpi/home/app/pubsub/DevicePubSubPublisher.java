@@ -1,8 +1,9 @@
 package tigase.rpi.home.app.pubsub;
 
-import tigase.bot.AbstractDevice;
-import tigase.bot.IDevice;
-import tigase.bot.IValue;
+import tigase.bot.iot.AbstractSensor;
+import tigase.bot.iot.IDevice;
+import tigase.bot.iot.ISensor;
+import tigase.bot.iot.IValue;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -35,7 +36,7 @@ public class DevicePubSubPublisher
 	private String devicesNodeName = "Devices";
 
 	@Inject
-	protected List<IDevice> devices;
+	protected List<ISensor> devices;
 
 	@Inject
 	protected EventBus eventBus;
@@ -67,8 +68,8 @@ public class DevicePubSubPublisher
 		eventBus.unregisterAll(this);
 	}
 
-	public void setDevices(List<IDevice> devices) {
-		List<IDevice> oldDevices = this.devices;
+	public void setDevices(List<ISensor> devices) {
+		List<ISensor> oldDevices = this.devices;
 		this.devices = devices;
 
 		if (oldDevices != null) {
@@ -120,7 +121,7 @@ public class DevicePubSubPublisher
 	}
 
 	@HandleEvent
-	public void valueChanged(AbstractDevice.ValueChangeEvent event) {
+	public void valueChanged(AbstractSensor.ValueChangeEvent event) {
 		if (!devices.contains(event.source)) {
 			return;
 		}
@@ -128,7 +129,7 @@ public class DevicePubSubPublisher
 		publishValue(event.source, event.newValue);
 	}
 
-	protected void publishDeviceValue(IDevice source) {
+	protected void publishDeviceValue(ISensor source) {
 		publishValue(source, source.getValue());
 	}
 

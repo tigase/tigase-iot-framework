@@ -1,6 +1,6 @@
 package tigase.rpi.home.sensors.pir;
 
-import tigase.bot.AbstractPeriodDevice;
+import tigase.bot.iot.AbstractPeriodSensor;
 import tigase.kernel.beans.config.ConfigField;
 import tigase.rpi.home.IConfigurationAware;
 import tigase.rpi.home.values.Movement;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Created by andrzej on 02.12.2016.
  */
 public class AndroidTv
-		extends AbstractPeriodDevice<Movement>
+		extends AbstractPeriodSensor<Movement>
 		implements IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(AndroidTv.class.getCanonicalName());

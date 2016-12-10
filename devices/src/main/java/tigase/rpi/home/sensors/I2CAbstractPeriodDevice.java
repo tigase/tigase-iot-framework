@@ -3,8 +3,8 @@ package tigase.rpi.home.sensors;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
-import tigase.bot.AbstractPeriodDevice;
-import tigase.bot.IValue;
+import tigase.bot.iot.AbstractPeriodSensor;
+import tigase.bot.iot.IValue;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * Created by andrzej on 23.10.2016.
  */
-public abstract class I2CAbstractPeriodDevice<T extends IValue> extends AbstractPeriodDevice<T>
+public abstract class I2CAbstractPeriodDevice<T extends IValue> extends AbstractPeriodSensor<T>
 		implements Initializable, UnregisterAware, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(I2CAbstractPeriodDevice.class.getCanonicalName());

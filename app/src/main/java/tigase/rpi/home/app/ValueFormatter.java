@@ -1,6 +1,6 @@
 package tigase.rpi.home.app;
 
-import tigase.bot.IValue;
+import tigase.bot.iot.IValue;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 

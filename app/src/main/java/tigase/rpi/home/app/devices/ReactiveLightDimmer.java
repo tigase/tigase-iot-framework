@@ -1,6 +1,6 @@
 package tigase.rpi.home.app.devices;
 
-import tigase.bot.IValue;
+import tigase.bot.iot.IValue;
 import tigase.eventbus.HandleEvent;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;

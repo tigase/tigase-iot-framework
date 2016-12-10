@@ -3,7 +3,7 @@ package tigase.rpi.home.sensors.pir;
 import com.pi4j.io.gpio.*;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
-import tigase.bot.AbstractDevice;
+import tigase.bot.iot.AbstractSensor;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * Created by andrzej on 23.10.2016.
  */
 public class HC_SR501
-		extends AbstractDevice<Movement>
+		extends AbstractSensor<Movement>
 		implements Initializable, UnregisterAware, GpioPinListenerDigital, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(HC_SR501.class.getCanonicalName());

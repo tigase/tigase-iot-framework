@@ -2,7 +2,7 @@ package tigase.rpi.home.values;
 
 import com.pi4j.temperature.TemperatureConversion;
 import com.pi4j.temperature.TemperatureScale;
-import tigase.bot.Value;
+import tigase.bot.iot.Value;
 
 import java.time.LocalDateTime;
 

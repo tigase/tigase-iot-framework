@@ -1,6 +1,6 @@
 package tigase.rpi.home.app.pubsub;
 
-import tigase.bot.Value;
+import tigase.bot.iot.Value;
 import tigase.component.DSLBeanConfigurator;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;

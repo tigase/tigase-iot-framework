@@ -1,6 +1,6 @@
 package tigase.rpi.home.values;
 
-import tigase.bot.Value;
+import tigase.bot.iot.Value;
 
 import java.time.LocalDateTime;
 

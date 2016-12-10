@@ -1,8 +1,8 @@
 package tigase.rpi.home.app;
 
 import com.pi4j.temperature.TemperatureScale;
-import tigase.bot.AbstractDevice;
 import tigase.bot.Autostart;
+import tigase.bot.iot.AbstractSensor;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.kernel.beans.Initializable;
@@ -56,7 +56,7 @@ public class Test
 	}
 
 	@HandleEvent
-	public void lightChanged(AbstractDevice.ValueChangeEvent event) {
+	public void lightChanged(AbstractSensor.ValueChangeEvent event) {
 		log.log(Level.FINEST, "{0}, received event: {1}", new Object[]{this.name, event});
 		if (event.source == sensor) {
 			log.log(Level.FINEST, "{0}, got light level: {1}",

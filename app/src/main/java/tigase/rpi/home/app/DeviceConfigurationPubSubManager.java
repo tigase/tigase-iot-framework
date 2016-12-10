@@ -1,6 +1,6 @@
 package tigase.rpi.home.app;
 
-import tigase.bot.IDevice;
+import tigase.bot.iot.IDevice;
 import tigase.rpi.home.IConfigurationAware;
 import tigase.rpi.home.app.pubsub.AbstractConfigurationPubSubManager;
 

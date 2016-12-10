@@ -1,6 +1,6 @@
 package tigase.rpi.home.app;
 
-import tigase.bot.IDevice;
+import tigase.bot.iot.IDevice;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
