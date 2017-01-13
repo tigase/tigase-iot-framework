@@ -4,6 +4,7 @@ version '1.0.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'application'
 
+mainClassName = "tigase.bot.runtime.Main"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

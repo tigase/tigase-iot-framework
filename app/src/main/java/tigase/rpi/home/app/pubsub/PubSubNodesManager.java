@@ -25,6 +25,7 @@ import tigase.kernel.beans.Inject;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -130,7 +131,7 @@ public class PubSubNodesManager
 		List<Node> requiredNode = this.requiredNodes;
 		List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
 		if (existingNodes == null) {
-			existingNodes = new ArrayList<>();
+			existingNodes = new CopyOnWriteArrayList<>();
 			jaxmpp.getSessionObject().setUserProperty("EXISTING_PUBSUB_NODES", existingNodes);
 			retrieveNodes(jaxmpp, null, () -> ensureNodeExists(jaxmpp));
 		} else {
@@ -192,7 +193,6 @@ public class PubSubNodesManager
 			if (existingNodes == null) {
 				return;
 			}
-			existingNodes = new HashSet<>(existingNodes);
 
 			final JID pubsubJid = getPubsubJid(jaxmpp);
 			PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
