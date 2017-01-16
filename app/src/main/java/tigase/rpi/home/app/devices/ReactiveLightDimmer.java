@@ -103,16 +103,17 @@ public class ReactiveLightDimmer
 				}
 			}
 		}
-		// TODO - fix this static name of PubSub node
-		String deviceNode = "devices/" + getName() + "/state";
-		if (deviceNode.contains(event.sourceId) && (value instanceof Light)) {
-			Light newValue = (Light) value;
-			Light oldValue = getValue();
-			if (oldValue == null || (oldValue.getValue() != newValue.getValue()) &&
-					newValue.getTimestamp().isAfter(oldValue.getTimestamp())) {
-				setValue(newValue);
-			}
-		}
+//		// TODO - fix this static name of PubSub node
+//		// TODO - move to ExtendedPubSubNodesManager??
+//		String deviceNode = "devices/" + getName() + "/state";
+//		if (deviceNode.contains(event.sourceId) && (value instanceof Light)) {
+//			Light newValue = (Light) value;
+//			Light oldValue = getValue();
+//			if (oldValue == null || (oldValue.getValue() != newValue.getValue()) &&
+//					newValue.getTimestamp().isAfter(oldValue.getTimestamp())) {
+//				setValue(newValue);
+//			}
+//		}
 	}
 
 	protected void updateState() {
@@ -146,9 +147,6 @@ public class ReactiveLightDimmer
 		List<String> tmp = new ArrayList<>();
 		tmp.addAll(lightSensorPubSubNodes);
 		tmp.addAll(pirSensorPubSubNodes);
-
-		// TODO - fix this static name of PubSub node
-		tmp.add("devices/" + getName() + "/state");
 
 		observedNodes = tmp;
 

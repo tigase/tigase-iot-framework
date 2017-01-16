@@ -30,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by andrzej on 04.11.2016.
@@ -82,7 +83,7 @@ public class PubSubNodesManager
 
 	public synchronized void updateObservedNodes() {
 		this.features.clear();
-		this.observedNodes = observers.stream().flatMap(o -> o.getObservedNodes().stream()).collect(Collectors.toSet());
+		this.observedNodes = observers.stream().flatMap(o -> getObservedNodes(o)).collect(Collectors.toSet());
 		this.observedNodes.stream().map(node -> node + "+notify").forEach(feature -> this.features.add(feature));
 
 		if (xmppService != null) {
@@ -307,6 +308,10 @@ public class PubSubNodesManager
 	@HandleEvent
 	public void onJaxmppAdded(XmppService.JaxmppAddedEvent event) {
 		event.jaxmpp.getModule(FeatureProviderModule.class).setFeatures(this, features);
+	}
+
+	protected Stream<String> getObservedNodes(NodesObserver o) {
+		return o.getObservedNodes().stream();
 	}
 
 	@Override

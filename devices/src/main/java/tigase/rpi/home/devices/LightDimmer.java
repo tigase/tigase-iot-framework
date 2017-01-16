@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class LightDimmer
 		extends AbstractSensor<Light>
-		implements IExecutorDevice<Integer>, IConfigurationAware {
+		implements IExecutorDevice<Light>, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(LightDimmer.class.getCanonicalName());
 
@@ -33,9 +33,11 @@ public class LightDimmer
 		setValue(new Light(lightLevel, Light.Unit.percent));
 	}
 
+	@Override
 	public synchronized void setValue(Light light) {
 		Light currentValue = getValue();
-		if (currentValue != null && light.getValue() == currentValue.getValue()) {
+		if (currentValue != null && light.getValue() == currentValue.getValue()
+				&& light.getTimestamp().isAfter(currentValue.getTimestamp())) {
 			return;
 		}
 		if (log.isLoggable(Level.FINEST)) {
