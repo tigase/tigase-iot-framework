@@ -17,3 +17,6 @@
 /client-library/build
 
 /client/target
+
+/documentation/target
+/documentation/build

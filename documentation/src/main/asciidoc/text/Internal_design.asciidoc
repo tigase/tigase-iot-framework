@@ -1,0 +1,92 @@
+== Internal design
+
+In our design IoT devices are connecting to XMPP server acting as a central hub for all IoT devices.
+For communication IoT devices use PubSub component deployed on XMPP which acts as a message broker.
+
+=== Initialization
+
+After connection application creates PubSub nodes for every device or sensor connected to RPi and registered in application. Node name is always generated in following form:
+`devices/iot-device-id`, where `iot-device-id` is ID of a IoT device connected to RPi. This node is created with type `collection`.
+This newly created node is always a subnode of root PubSub node used by IoT devices named `devices`.
+
+As a result for devices with id's `iot-1`, `iot-2` and `iot-3` at this point we have following nodes created:
+
+devices:: Root node _(collection)_
+devices/iot-1:: Contains data related to iot-1 device _(collection)_
+devices/iot-2:: Contains data related to iot-2 device _(collection)_
+devices/iot-3:: Contains data related to iot-3 device _(collection)_
+
+After this is completed then for every device framework creates 2 leaf subnodes for every device:
+
+config:: Contains configuration of a device (including information about device type, options, etc.)
+state:: Contains current state of a device (and previous states depending on configuration)
+
+So for a device listed about we will get following nodes:
+
+devices:: Root node _(collection)_
+devices/iot-1::: Contains data related to iot-1 device _(collection)_
+devices/iot-1/state:::: Current state of iot-1 device
+devices/iot-1/config:::: Configuration of iot-1 device
+devices/iot-2::: Contains data related to iot-2 device _(collection)_
+devices/iot-2/state:::: Current state of iot-2 device
+devices/iot-2/config:::: Configuration of iot-2 device
+devices/iot-3::: Contains data related to iot-3 device _(collection)_
+devices/iot-3/state:::: Current state of iot-3 device
+devices/iot-3/config:::: Configuration of iot-3 device
+
+At this point application is ready for work.
+
+=== Publishing data from sensors
+
+When a sensor changes it's state it emits event informing application that it's state has changed.
+When application receives this information it serializes it to format similar to format used in
+http://www.xmpp.org/extensions/xep-0323.html:[XEP-0323: Internet of Things - Sensor Data] for data representation
+and publishes this data as a payload to device's state PubSub node, ie. for `iot-1` measuring light intensity
+in `lm` following payload will be published at  `devices/iot-1/state`:
+
+[source,xml]
+----
+<timestamp value="2016-12-10T19:56:26.460Z">
+    <numeric unit="lm" automaticReadout="true" value="37" momentary="true" name="Light"/>
+</timestamp>
+----
+
+=== Reacting on change of sensor state
+
+Executor devices need to listen to changes of state of sensor devices and adjust state. To do so, executor device
+reports to application which sensors it want's to observe and application automatically subscribes to particular
+nodes. After that every change of state published to nodes observer by device will be received from PubSub component
+by application, which will decode it from XML payload and will fire event which will be forwarded to executor device.
+This event will contain important information related to this change, like timestamp, value, unit, etc.
+
+=== Publishing data to device
+
+It is possible to publish value to a device, which allows you to change state of an executor device, ie.
+publish data forcing light to be turned on. Our framework will automatically detect this change of published state
+and forward it to executor device resulting in light being turned on.
+
+=== Configuration
+
+Usually devices keep configuration on device itself. In our design only initial configuration is stored on device,
+which means that there is no need to locally store additional data between restart of a device.
+
+For configuration storage we use `config` PubSub node of a particular device. This way a change to a configuration
+of device, new configuration needs to be published on device configuration node. Updated configuration will be
+automatically retrieved by application and applied to particular device without restart of an application.
+
+We decided to keep in configuration all important information, ie. list of nodes device observes, etc. Due to that
+it is possible to retrieve device configuration in a web based client and change it, ie. to change sensor from
+which temperature is retrieved to adjust temperature in a room.
+
+Configuration in stored in form of a http://xmpp.org/extensions/xep-0004.html:[XEP-0004: Data Forms], which
+makes it flexible and expandable.
+
+=== User Interface
+
+For user interface we decided to use web based application due to fact that using using web page you can manage
+your IoT devices from a computer, mobile phone, tablet or smart tv.
+
+It is very simple to retrieve list of devices as every subnode of a `devices` node represents device.
+Retrieving `config` node of that node allows us you easily to retrieve device type and current configuration,
+while using device type and data retrieved from `state` node allows to easily retrieve and observe state of a
+sensor or a device.

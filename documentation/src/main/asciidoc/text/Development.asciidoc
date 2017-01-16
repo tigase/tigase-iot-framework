@@ -1,0 +1,121 @@
+
+== Development
+Tigase Raspberry Pi Home project is an extended version of https://projects.tigase.org/projects/jaxmpp-bot-framework[Jaxmpp Bot Framework]
+which allows you to take all benefits and use all features provided by Jaxmpp Bot Framework, such as usage of Tigase Kernel as IoC container and so on.
+
+[NOTE]
+For more detailed information about usage of Jaxmpp Bot Framework please look into documentation of Jaxmpp Bot Framework.
+
+[ivalue]
+=== Values
+By default Tigase Raspberry Pi Home requires you to wrap value read from sensor in a class implementing `tigase.bot.iot.IValue`.
+This requirement was introduces to attach timestamp marking time when value was initially read and allows you to add additional
+informations as well, ie. Temperature can be passed with correct scale, etc.
+
+Currently we provided following implementations for storing:
+
+* temperature - `tigase.rpi.home.values.Temperature`
+* light - `tigase.rpi.home.values.Light`
+* movement - `tigase.rpi.home.values.Movement`
+
+For this classes we provide you with proper serializers and parsers used for transferring this values over XMPP protocol.
+
+[WARNING]
+If you decide to add a new class then you will need to implement and provide Tigase Raspberry Pi Home with new parser and serializer (a bean extending `AbstractValueFormatter` with a support for your newly created implementation of `IValue` interface).
+
+[WARNING]
+Additionally you will need to provide proper support for parsing this data in client library as in other case data from your sensor will not be available in UI.
+
+[device-types]
+=== Device types
+In our framework device type is just a string to make it easy to extend it by adding new device/sensor types.
+Currently we provide devices with following device types and only this device types are supported by UI:
+
+* movement-sensor
+* tv-sensor
+* light-dimmer
+* light-sensor
+* temperature-sensor
+
+To add support for a new device type, you need to override `createDevice()` method of `Devices` classes from `client-library` module and add there support for new device type.
+This will add support for a new device type in a client model layer. Additionally you need to add support for this new device inside `DevicesListViewImpl` to add support in a presentation layer.
+
+[NOTE]
+This separation on a client side is create for a reason. It is done in such a way to make presentation layer separate from model layer and allow reuse of a model layer in other clients with different presentation layer.
+
+=== New sensor
+To add support for new a new sensor it is required to create a class which bases on `tigase.bot.iot.AbstractSensor`.
+This simple base class will take over of all required tasks and provide you with access to configuration and event bus.
+
+Next you need to implement support for reading data/value from your sensor.
+When you have received new value, then wrap it in <<ivalue, instance of class implementing interface `tigase.bot.iot.IValue`>> and call `updateValue()` method from your class extending `AbstractSensor`.
+This method will then fire event with new value which will be delivered to every device which will be listening to state changes of your sensor.
+
+Constructor of an `AbstractSensor` class requires in a type of a device as a parameter - string value.
+This value is later on published in configuration of a device and used by UI to detect device type and use proper controls to display sensor and it's state.
+Currently there is only a support for a few <<device-types,device types>>.
+
+[NOTE]
+After you have your class implemented, you need to compile it and add to classpath of Tigase Raspberry Pi Home project and add it to configuration as a `@Bean`
+
+.Example (support for a PIR sensor - HC SR501)
+[source,java]
+----
+include::../../../../../devices/src/main/java/tigase/rpi/home/sensors/pir/HC_SR501.java[]
+----
+
+=== New sensor with periodical reads
+If you want to create a support for a sensor which requires reads from actual sensor from time to time, then you should create class extending `tigase.bot.iot.AbstractPeriodSensor`.
+This class will allow you to specify how often to read from a sensor and implement actual read from a sensor inside `<T extends IValue> T readValue()` method.
+Inside this method you will also need to wrap value you read in <<ivalue, instance of a class implementing `tigase.bot.iot.IValue`>>
+
+Constructor of an `AbstractSensor` class requires in a type of a device as a parameter - string value and default period in which data from sensor will be read.
+Device type is later on published in configuration of a device and used by UI to detect device type and use proper controls to display sensor and it's state.
+Currently there is only a support for a few <<device-types,device types>>.
+
+[NOTE]
+After you have your class implemented, you need to compile it and add to classpath of Tigase Raspberry Pi Home project and add it to configuration as a `@Bean`
+
+[NOTE]
+You may not use `AbstractPeriodSensor` as your direct base class. We provide you with other classes like `I2CAbstractPeriodDevice` or `W1AbstractPeriodDevice`.
+They all are based on `AbstractPeriodSensor` and provide same functionality but allow you to access I2C, 1Wire easier.
+
+[WARNING]
+Usage of `W1AbstractPeriodDevice` is tricky. To use it you need to use `W1Master` bean, enable it and register your implementation within `W1Master` providing it with key - implementation of `com.pi4j.io.w1.W1DeviceType`.
+Classes `tigase.rpi.home.sensors.w1.DS1820` and `tigase.rpi.home.sensors.w1.DS1820DeviceType` are good examples of how to do this.
+
+.Example (support for I2C sensor - BH1750)
+[source,java]
+----
+include::../../../../../devices/src/main/java/tigase/rpi/home/sensors/light/BH1750.java[]
+----
+
+=== New device
+Not all devices are sensors. In typical use case you will have many devices providing some state by measuring data using external sensors and we call them here sensors.
+However very often you will have some devices which need to react on changed state of other devices or react on user action - this we call executor devices.
+
+To implement a new executor device you need to create a new implementation of a sensor (executor device is a sensor as well as it reports it current state), which also implements `IExecutorDevice` inteface:
+[source,java]
+----
+public interface IExecutorDevice<T> {
+
+	void setValue(T value);
+
+}
+----
+
+[NOTE]
+In typical usage `T` should implement `IValue` interface.
+
+This method will be automatically called if new state will be published for this device (new state will be published on a device state node).
+
+If your device requires to listen to states published by other sensors then it needs to implement `NodesObserver` with method `getObserverdNodes()` which needs to return list of state node in which your device is interrested in.
+Additionally you will have to implement following method:
+[source,java]
+-----
+@HandleEvent
+public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
+}
+-----
+It will be called whenever new state/value will be published by any sensor or a device. You need to check `source` variable of a `ValueChangedEvent` to look for a node of a device in which state you are interested in.
+In `value` variable of a `ValueChangedEvent` you will find newly published device state which node you will find in `source` variable.

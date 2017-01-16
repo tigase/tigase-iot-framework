@@ -1,0 +1,79 @@
+
+== Running
+
+=== Running IoT-XMPP bridge
+Unpack the distribution zip file you created during the build process, then navigate to the directory where it is unpacked.
+Now we may run the bot.
+
+[source,bash]
+----
+$ cd tigase-pi-home-app-1.0.0-SNAPSHOT/
+$ $ ./bin/tigase-pi-home-app
+2016-11-14 10:55:21.716 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultBeanConfigurator
+2016-11-14 10:55:21.760 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultTypesConverter
+2016-11-14 10:55:21.761 [main]             Kernel.injectDependencies()        FINER:    [root] Injecting [tigase.bot.runtime.CustomTypesConverter@304a9d7b] to defaultBeanConfigurator:tigase.component.DSLBeanConfigurator#bean:defaultTypesConverter
+...
+----
+
+Tigase Raspbbery Pi home runtime understands some variables that can control it, they may be displayed using the --help switch.
+
+[source,bash]
+----
+$ ./bin/tigase-pi-home-app- --help
+usage: tigase-pi-home-app- [options] [config_file] [config_file]
+
+Options:
+-h, --help                                   display this screen
+-v, --version                                display version
+-log, --logger-config <file>                 logger configuration file
+-D<key=value>,[key=value]                    set system property
+
+----
+
+Configuration must be store in config file, what is DSL file. In example below we configure one account with internal name `default` and passing credentials for account:
+
+.Sample config.dsl
+[source,dsl]
+----
+xmppService {
+    default () {
+        jid = "home@tigase.org"
+        password = "secret"
+        ignoreCertificateErrors = true
+    }
+}
+----
+
+It is also possible to configure XMPP client to use ANONUMOUS authentication:
+
+.Sample config.dsl for ANONYMOUS authentication
+----
+xmppService {
+  default () {
+    domain = 'example.com'
+  }
+}
+----
+
+TIP: To configure more than one account just add another section inside `xmppService` block with different name.
+
+TIP: To connect to XMPP server for which DNS is not configured just add `server` property to account configuration block with value set to it's address: `server = '10.0.0.3'`
+
+Configuration of Tigase Raspberry Pi Home may be splitted into few files: for example beans definitions and password in separate file.
+
+[WARNING]
+Current version of Tigase Raspberry Pi Home project requires authenticated connection to XMPP server, which means it is not possible to use ANONYMOUS authentication.
+Additionally evert IoT-XMPP bridge needs to use same credentials for authentication to XMPP server (must use same BareJID).
+
+.Example configuration with few devices - uncomment related parts before usage
+[source,dsl]
+----
+include::../../../../../app/src/main/resources/default.dsl[]
+----
+
+
+=== Running Web UI
+Package created during build of Web UI may be deployed to any Java based HTTP server (like ie. Tomcat) or it is possible to unzip content of this archive to any subdirectory and point web server like Apache or NGINX to this directory for serving data.
+
+[NOTE]
+It is best to have Web UI deployed on same server which hosts Tigase XMPP Server (HUB).

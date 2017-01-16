@@ -49,7 +49,7 @@ public class PubSubNodesManager
 	@Inject(nullAllowed = true)
 	protected List<NodesObserver> observers;
 
-	@Inject
+	@Inject(nullAllowed = true)
 	private List<PubSubNodeAware> nodesAware;
 
 	private List<Node> requiredNodes = new ArrayList<>();

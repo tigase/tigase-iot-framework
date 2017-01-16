@@ -25,7 +25,7 @@ public class ExtendedPubSubNodesManager
 
 	private static final Logger log = Logger.getLogger(ExtendedPubSubNodesManager.class.getCanonicalName());
 
-	@Inject
+	@Inject(nullAllowed = true)
 	private List<IExecutorDevice<IValue>> executorDevices;
 
 	@Inject

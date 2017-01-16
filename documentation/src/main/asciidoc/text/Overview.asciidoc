@@ -1,0 +1,13 @@
+== Overview
+
+image::images/hardware.jpg[]
+
+Tigase Raspberry Pi Intelligent Home project is a composite project for more and more popular idea of intelligent homes.
+It is based on Jaxmpp library and Jaxmpp Bot Framework for providing XMPP connectivity between devices.
+
+This project is modular and consist of following modules:
+
+app:: Contains main classes. It is responsible for connectivity and general functionalities.
+devices:: Provides support for particular sensors or executors. It is responible for communication between application and actual devices connected to Raspberry Pi.
+client:: Web based UI for interaction with devices, including device management task
+client-library:: Library for interaction with application installed on Raspberry Pi using XMPP protocol with support for GWT compilation. It provides classes used by UI.

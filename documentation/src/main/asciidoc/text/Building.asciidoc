@@ -1,0 +1,26 @@
+
+== Building
+
+=== Building IoT-XMPP bridge
+
+==== Gradle
+Tigase Raspberry Pi Home binaries can be built with Gradle.
+
+[source,bash]
+----
+./gradlew distZip
+----
+
+In directory `./app/build/distributions/` will be created zip file with application.
+The compressed zip file contains all needed dependencies.  Unzip this file to where you want to run the Tigase Raspbbery
+Pi Home from.
+
+=== Building Web UI
+Tigase Raspberry Pi Home web UI module which can be found in `client` subdirectory requires maven for building.
+
+[source,bash]
+-----
+mvn package
+-----
+
+This will create WAR package in `target` subdirectory.

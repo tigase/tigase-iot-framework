@@ -1,0 +1,56 @@
+
+== User interface
+
+In `client` module of this project there is ready to use web based user interface with support for
+handling devices provided by us.
+
+Web client is capable of:
+
+=== Authentication
+
+Client can connect to XMPP server using WebSocket or BOSH protocol with support for authentication
+which allows you to provide additional security for IoT devices connected to XMPP server.
+
+image::images/client/authentication.png[Authentication page]
+
+=== Displaying devices and data
+
+In user interface you can easily show list of attached devices, it's names and current device state
+data reported from device in easy to understand way.
+
+image::images/client/devices_list.png[List of devices]
+
+=== Listing actions for devices
+
+To execute any action of device or reconfigure device just click on a device icon display on a list.
+Context menu assigned to this device with proper action will appear.
+
+image::images/client/device_actions.png[Device - Context menu]
+
+=== Renaming devices
+
+By default devices are reported with identifiers or names provided by manufacturer however using
+device context menu in UI you can change device names to more meaningful.
+
+image::images/client/device_rename.png[Device - Renaming]
+
+=== Device reconfiguration
+
+Almost every device is somehow configurable, ie. sensors can allow you to change how often read is
+made, while intelligent executor devices may allow you to configure how they react on change of state
+of other sensors.
+
+image::images/client/device_settings.png[Device - Settings]
+
+image::images/client/device_settings_detailed.png[Device - Settings]
+
+=== Changing state of a device
+
+Some of devices provice more that just it's current value, ie. executor devices like +Lights dimmer+
+can allow you to set change it state
+
+image::images/client/dimmer_level.png[Device - Changing dimmer setting]
+
+=== Adjusts to display size
+
+image::images/client/devices_resized.png[Adjusted to different size of screen]

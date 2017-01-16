@@ -13,10 +13,7 @@ import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
 import tigase.rpi.home.app.DeviceNodesHelper;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,7 +32,7 @@ public class DevicePubSubPublisher
 	@ConfigField(desc = "Devcies node name")
 	private String devicesNodeName = "Devices";
 
-	@Inject
+	@Inject(nullAllowed = true)
 	protected List<ISensor> devices;
 
 	@Inject
@@ -69,6 +66,9 @@ public class DevicePubSubPublisher
 	}
 
 	public void setDevices(List<ISensor> devices) {
+		if (devices == null) {
+			devices = new ArrayList<>();
+		}
 		List<ISensor> oldDevices = this.devices;
 		this.devices = devices;
 
