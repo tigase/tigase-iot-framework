@@ -205,37 +205,11 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 		}
 	}
 
-	protected JabberDataElement prepareRootNodeConfig() throws JaxmppException {
-		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", "Devices");
-		config.addTextSingleField("pubsub#node_type", "collection");
-		config.addTextSingleField("pubsub#access_model", "presence");
-		config.addTextSingleField("pubsub#persist_items", "1");
+	protected abstract JabberDataElement prepareRootNodeConfig() throws JaxmppException;
 
-		return config;
-	}
+	protected abstract JabberDataElement prepareNodeConfig(IConfigurationAware configurationAware) throws JaxmppException;
 
-	protected JabberDataElement prepareNodeConfig(IConfigurationAware configurationAware) throws JaxmppException {
-		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", configurationAware.getName());
-		config.addTextSingleField("pubsub#node_type", "collection");
-		config.addTextSingleField("pubsub#access_model", "presence");
-		config.addTextSingleField("pubsub#persist_items", "1");
-		config.addTextSingleField("pubsub#collection", rootNode);
-
-		return config;
-	}
-
-	protected JabberDataElement prepareConfigNodeConfig(String collection) throws JaxmppException {
-		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", "Configuration");
-		config.addTextSingleField("pubsub#node_type", "leaf");
-		config.addTextSingleField("pubsub#access_model", "presence");
-		config.addTextSingleField("pubsub#persist_items", "1");
-		config.addTextSingleField("pubsub#collection", collection);
-
-		return config;
-	}
+	protected abstract JabberDataElement prepareConfigNodeConfig(String collection) throws JaxmppException;
 
 	protected void publishCurrentConfig(PubSubModule pubSubModule, JID pubSubJid, String nodeName, T device) {
 		try {

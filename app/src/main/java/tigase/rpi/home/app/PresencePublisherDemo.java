@@ -2,12 +2,13 @@ package tigase.rpi.home.app;
 
 import tigase.bot.Autostart;
 import tigase.bot.RequiredXmppModules;
-import tigase.bot.XmppBridge;
 import tigase.bot.XmppService;
+import tigase.bot.runtime.AbstractXmppBridge;
 import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
+import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
@@ -20,8 +21,8 @@ import java.util.logging.Logger;
  */
 @Autostart
 @RequiredXmppModules({PresenceModule.class})
-public class PresencePublisherDemo
-		implements XmppBridge, Initializable, UnregisterAware, PresenceModule.OwnPresenceStanzaFactory {
+public class PresencePublisherDemo extends AbstractXmppBridge
+		implements Initializable, UnregisterAware, PresenceModule.OwnPresenceStanzaFactory {
 
 	private static final Logger log = Logger.getLogger(tigase.rpi.home.app.PresencePublisherDemo.class.getCanonicalName());
 
@@ -50,13 +51,20 @@ public class PresencePublisherDemo
 	public void initialize() {
 		xmppService.getAllConnections()
 				.forEach(jaxmpp -> PresenceModule.setOwnPresenceStanzaFactory(jaxmpp.getSessionObject(), this));
-		xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {
-			try {
-				jaxmpp.getModule(PresenceModule.class).sendInitialPresence();
-			} catch (JaxmppException e) {
-				e.printStackTrace();
-			}
-		});
+	}
+
+	@Override
+	protected void jaxmppConnected(Jaxmpp jaxmpp) {
+		try {
+			jaxmpp.getModule(PresenceModule.class).sendInitialPresence();
+		} catch (JaxmppException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	protected void jaxmppDisconnected(Jaxmpp jaxmpp) {
+
 	}
 
 }

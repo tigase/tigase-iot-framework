@@ -52,7 +52,7 @@ public class DevicePubSubPublisher
 	public void initialize() {
 		eventBus.registerAll(this);
 		try {
-			rootNode = DeviceNodesHelper.createDevicesRootNode(devicesRootNode, devicesNodeName);
+			rootNode = DeviceNodesHelper.createDevicesRootNode(devicesRootNode, devicesNodeName, pubSubNodesManager.isPEP());
 
 			devices.forEach(this::addDevice);
 		} catch (JaxmppException ex) {
@@ -73,7 +73,7 @@ public class DevicePubSubPublisher
 		this.devices = devices;
 
 		if (oldDevices != null) {
-			oldDevices.stream().filter(device -> !devices.contains(device)).forEach(this::removeDevice);
+			oldDevices.stream().filter(device -> !this.devices.contains(device)).forEach(this::removeDevice);
 		}
 		this.devices.stream()
 				.filter(device -> oldDevices == null || oldDevices.contains(device))
@@ -90,10 +90,10 @@ public class DevicePubSubPublisher
 		}
 
 		try {
-			PubSubNodesManager.Node deviceNode = DeviceNodesHelper.createDeviceNode(devicesRootNode, device);
+			PubSubNodesManager.Node deviceNode = DeviceNodesHelper.createDeviceNode(devicesRootNode, device, pubSubNodesManager.isPEP());
 			rootNode.addChild(deviceNode);
 
-			deviceNode.addChild(DeviceNodesHelper.createDeviceStateNode(devicesRootNode, device));
+			deviceNode.addChild(DeviceNodesHelper.createDeviceStateNode(devicesRootNode, device, pubSubNodesManager.isPEP()));
 		} catch (JaxmppException ex) {
 			log.log(Level.WARNING, "could not add child node for device " + device, ex);
 		}

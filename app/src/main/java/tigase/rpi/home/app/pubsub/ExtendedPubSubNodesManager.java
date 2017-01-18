@@ -31,6 +31,10 @@ public class ExtendedPubSubNodesManager
 	@Inject
 	private List<ValueFormatter> formatters;
 
+	public ExtendedPubSubNodesManager() {
+		this.rootNode = "devices";
+	}
+
 	public void publish(String node, String itemId, IValue value) {
 		formatters.stream().filter(formatter -> formatter.isSupported(value)).forEach(formatter -> {
 			try {

@@ -29,7 +29,7 @@ public class Devices {
 
 	private final String devicesNode;
 	private final JaxmppCore jaxmpp;
-	private final Boolean pep;
+	private final boolean pep;
 
 	private List<Device> devices = new ArrayList<Device>();
 
@@ -91,7 +91,7 @@ public class Devices {
 	}
 
 	protected JID getPubSubJid() {
-		if (pep != null) {
+		if (pep) {
 			return JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid());
 		} else {
 			return JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());

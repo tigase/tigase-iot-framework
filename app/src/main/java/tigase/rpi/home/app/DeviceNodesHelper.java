@@ -11,33 +11,36 @@ import tigase.rpi.home.app.pubsub.PubSubNodesManager;
  */
 public class DeviceNodesHelper {
 
-	public static PubSubNodesManager.Node createDevicesRootNode(String node, String name) throws JaxmppException {
+	public static PubSubNodesManager.Node createDevicesRootNode(String node, String name, boolean pep) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", name);
 		config.addTextSingleField("pubsub#node_type", "collection");
-		config.addTextSingleField("pubsub#access_model", "presence");
+		config.addTextSingleField("pubsub#access_model", pep ? "presence" : "open");
+		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
 
 		return new PubSubNodesManager.Node(node, config);
 	}
 
-	public static PubSubNodesManager.Node createDeviceNode(String rootNode, IDevice device) throws JaxmppException {
+	public static PubSubNodesManager.Node createDeviceNode(String rootNode, IDevice device, boolean pep) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", device.getName());
 		config.addTextSingleField("pubsub#node_type", "collection");
-		config.addTextSingleField("pubsub#access_model", "presence");
+		config.addTextSingleField("pubsub#access_model", pep ? "presence" : "open");
+		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#collection", rootNode);
 		String node = getDeviceNodeName(rootNode, device);
 		return new PubSubNodesManager.Node(node, config);
 	}
 
-	public static PubSubNodesManager.Node createDeviceStateNode(String rootNode, IDevice device) throws JaxmppException {
+	public static PubSubNodesManager.Node createDeviceStateNode(String rootNode, IDevice device, boolean pep) throws JaxmppException {
 		String deviceNode = getDeviceNodeName(rootNode, device);
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", "State");
 		config.addTextSingleField("pubsub#node_type", "leaf");
-		config.addTextSingleField("pubsub#access_model", "presence");
+		config.addTextSingleField("pubsub#access_model", pep ? "presence" : "open");
+		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#collection", deviceNode);
 		String node = getDeviceStateNodeName(rootNode, device);

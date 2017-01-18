@@ -10,6 +10,7 @@ import tigase.jaxmpp.core.client.XmppModule;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
+import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.modules.capabilities.CapabilitiesModule;
@@ -19,6 +20,7 @@ import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubAsyncCallback;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubErrorCondition;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.kernel.beans.Inject;
@@ -31,6 +33,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static tigase.jaxmpp.core.client.xmpp.modules.capabilities.CapabilitiesModule.NODE_NAME_KEY;
 
 /**
  * Created by andrzej on 04.11.2016.
@@ -70,7 +74,7 @@ public class PubSubNodesManager
 
 		this.observers = observers;
 
-		updateObservedNodes();;
+		updateObservedNodes();
 	}
 
 	@Override
@@ -88,9 +92,25 @@ public class PubSubNodesManager
 
 		if (xmppService != null) {
 			xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {
+				jaxmpp.getSessionObject().setProperty(CapabilitiesModule.VERIFICATION_STRING_KEY, null);
 				PresenceModule presenceModule = jaxmpp.getModule(PresenceModule.class);
 				try {
 					presenceModule.sendInitialPresence();
+					if (!isPEP()) {
+						String ver = jaxmpp.getSessionObject().getProperty(CapabilitiesModule.VERIFICATION_STRING_KEY);
+						final Element c = ElementFactory.create("c", null, "http://jabber.org/protocol/caps");
+						c.setAttribute("hash", "sha-1");
+						String node = jaxmpp.getSessionObject().getProperty(NODE_NAME_KEY);
+						if (node == null) {
+							node = "http://tigase.org/jaxmpp";
+						}
+						c.setAttribute("node", node);
+						c.setAttribute("ver", ver);
+						Presence presence = Stanza.createPresence();
+						presence.setTo(getPubsubJid(jaxmpp));
+						presence.addChild(c);
+						jaxmpp.send(presence);
+					}
 				} catch (JaxmppException ex) {
 					log.log(Level.WARNING, "failed to send update presence", ex);
 				}

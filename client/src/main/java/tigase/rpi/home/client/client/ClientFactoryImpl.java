@@ -6,6 +6,7 @@
 package tigase.rpi.home.client.client;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.i18n.client.Dictionary;
 import com.google.gwt.i18n.client.TimeZone;
 import com.google.web.bindery.event.shared.EventBus;
 import com.google.gwt.place.shared.PlaceController;
@@ -102,7 +103,9 @@ public class ClientFactoryImpl implements ClientFactory {
 		jaxmpp().getModulesManager().register(new PubSubModule());
 		jaxmpp().getModulesManager().register(new CapabilitiesModule());
 
-		devices = new Devices(jaxmpp, true);
+		Dictionary config = Dictionary.getDictionary("config");
+		boolean pep = "true".equals(config.get("pep"));
+		devices = new Devices(jaxmpp, pep);
 		
 		authView = new AuthViewImpl(this);
 		devicesListView = new DevicesListViewImpl(this);
