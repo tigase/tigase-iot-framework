@@ -5,6 +5,7 @@ import com.google.gwt.activity.shared.ActivityMapper;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.place.shared.PlaceController;
 import com.google.gwt.place.shared.PlaceHistoryHandler;
@@ -66,7 +67,7 @@ public class MainEntryPoint implements EntryPoint {
 		eventBus.addHandler(AuthEvent.TYPE, new AuthEvent.Handler() {
 			@Override
 			public void authenticated(JID jid) {
-				if (factory.jaxmpp().getSessionObject().getProperty(SessionObject.USER_BARE_JID) != null) {
+				if (factory.jaxmpp().getSessionObject().getProperty("BINDED_RESOURCE_JID") != null) {
 					placeController.goTo(new DevicesListPlace());
 					//Window.alert("Authenticated as " + jid.toString());
 				} else {
@@ -82,9 +83,20 @@ public class MainEntryPoint implements EntryPoint {
 		eventBus.addHandler(AuthRequestEvent.TYPE, new AuthRequestEvent.Handler() {
 			@Override
 			public void authenticate(JID jid, String password, String boshUrl) {
-				factory.jaxmpp().getConnectionConfiguration().setUserJID(jid.getBareJid());
+				factory.jaxmpp().getConnectionConfiguration().setUserJID(jid != null ? jid.getBareJid() : null);
 				factory.jaxmpp().getConnectionConfiguration().setUserPassword(password);
 				factory.jaxmpp().getConnectionConfiguration().setBoshService(boshUrl);
+				if (jid == null) {
+					int i1 = boshUrl.indexOf("//") + 2;
+					int i2 = boshUrl.indexOf(":", i1);
+					if (i2 == -1) {
+						i2 = boshUrl.indexOf("/", i1);
+					}
+					if (i2 == -1) {
+						i2 = boshUrl.length();
+					}
+					factory.jaxmpp().getConnectionConfiguration().setDomain(boshUrl.substring(i1, i2));
+				}
 				
 				try {
 					factory.jaxmpp().login();

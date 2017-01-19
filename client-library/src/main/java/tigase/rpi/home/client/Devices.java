@@ -8,6 +8,7 @@ import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.Field;
+import tigase.jaxmpp.core.client.xmpp.modules.ResourceBinderModule;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
@@ -91,10 +92,14 @@ public class Devices {
 	}
 
 	protected JID getPubSubJid() {
+		BareJID userJid = jaxmpp.getSessionObject().getUserBareJid();
+		if (userJid == null) {
+			userJid = ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()).getBareJid();
+		}
 		if (pep) {
-			return JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid());
+			return JID.jidInstance(userJid);
 		} else {
-			return JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());
+			return JID.jidInstance("pubsub." + userJid.getDomain());
 		}
 	}
 

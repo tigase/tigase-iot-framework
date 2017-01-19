@@ -8,7 +8,7 @@ Tigase Raspberry Pi Home binaries can be built with Gradle.
 
 [source,bash]
 ----
-./gradlew distZip
+./gradlew publish distZip
 ----
 
 In directory `./app/build/distributions/` will be created zip file with application.
@@ -24,3 +24,6 @@ mvn package
 -----
 
 This will create WAR package in `target` subdirectory.
+
+[NOTE]
+It is required to build base part of a project with Gradle before building Web UI with Maven.

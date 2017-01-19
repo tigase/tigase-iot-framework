@@ -61,9 +61,18 @@ TIP: To connect to XMPP server for which DNS is not configured just add `server`
 
 Configuration of Tigase Raspberry Pi Home may be splitted into few files: for example beans definitions and password in separate file.
 
+Tigase Raspberry Pi Home project uses XMPP PubSub service for configuration storage and as an event router forwarding state changes between devices.
+PubSub service allows modifications of PubSub nodes only by node owners. Due to that it is required that every IoT-XMPP bridge is required to use authenticated connection to XMPP server.
+
+TIP: If you want to use particular account and you want to create account if it not exists then bot framework may register account on a server using http://xmpp.org/extensions/xep-0077.html:[XEP-0077: In-Band Registration].
+To enable this feature just add `register` property to account configuration block and set it to `true`, ie. `register = true`
+
 [WARNING]
-Current version of Tigase Raspberry Pi Home project requires authenticated connection to XMPP server, which means it is not possible to use ANONYMOUS authentication.
-Additionally evert IoT-XMPP bridge needs to use same credentials for authentication to XMPP server (must use same BareJID).
+If Tigase Raspberry Pi Home project is configured to use PEP service footnote:[A virtual PubSub service which is hosted under bare jid of an account, see http://www.xmpp.org/extensions/xep-0060.html#presence[XEP-0060: Publish-Subscribe, Section 9. IM Account Integration]]
+as PubSub service then it is required that all XMPP-Bridges are using same authentication credentials.
+
+[WARNING]
+In current version of Tigase Raspberry Pi Home project it is possible to use ANONYMOUS authentication with properly configured XMPP server, but it is not recommended due to security considerations.
 
 .Example configuration with few devices - uncomment related parts before usage
 [source,dsl]

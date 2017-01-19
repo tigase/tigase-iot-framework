@@ -11,6 +11,10 @@ Web client is capable of:
 Client can connect to XMPP server using WebSocket or BOSH protocol with support for authentication
 which allows you to provide additional security for IoT devices connected to XMPP server.
 
+TIP: To authenticates using ANONYMOUS authentication leave `XMPP ID` and `Password` fields empty. This will authenticate you using anonymous authentication with domain same as a server name in `Connection URL`.
+
+TIP: To be able to view and modify devices you need to authenticate with XMPP server admin account credentials or properly <<xmpp-server-configuration,configure>> a XMPP server.
+
 image::images/client/authentication.png[Authentication page]
 
 === Displaying devices and data

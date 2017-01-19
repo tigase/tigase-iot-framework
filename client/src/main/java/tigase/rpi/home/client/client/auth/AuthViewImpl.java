@@ -194,6 +194,10 @@ public class AuthViewImpl extends Composite implements AuthView {
 			}
 		}
 		
-		factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText()), password.getText(), url));
+		if (username.getText() == null || username.getText().isEmpty()) {
+			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
+		} else {
+			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText()), password.getText(), url));
+		}
 	}
 }
