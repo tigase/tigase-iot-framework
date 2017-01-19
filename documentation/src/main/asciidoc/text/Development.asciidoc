@@ -9,10 +9,10 @@ For more detailed information about usage of Jaxmpp Bot Framework please look in
 [ivalue]
 === Values
 By default Tigase Raspberry Pi Home requires you to wrap value read from sensor in a class implementing `tigase.bot.iot.IValue`.
-This requirement was introduces to attach timestamp marking time when value was initially read and allows you to add additional
-informations as well, ie. Temperature can be passed with correct scale, etc.
+This requirement was introduces to bond together timestamp (marking time when value was initially read) with a value and allows you to add additional
+informations as well, ie. temperature can be passed with correct scale, etc.
 
-Currently we provided following implementations for storing:
+Currently we provided following implementations for storing following values:
 
 * temperature - `tigase.rpi.home.values.Temperature`
 * light - `tigase.rpi.home.values.Light`
@@ -51,7 +51,7 @@ Next you need to implement support for reading data/value from your sensor.
 When you have received new value, then wrap it in <<ivalue, instance of class implementing interface `tigase.bot.iot.IValue`>> and call `updateValue()` method from your class extending `AbstractSensor`.
 This method will then fire event with new value which will be delivered to every device which will be listening to state changes of your sensor.
 
-Constructor of an `AbstractSensor` class requires in a type of a device as a parameter - string value.
+Constructor of an `AbstractSensor` class requires in a parameter a type of a device - string value.
 This value is later on published in configuration of a device and used by UI to detect device type and use proper controls to display sensor and it's state.
 Currently there is only a support for a few <<device-types,device types>>.
 
@@ -66,10 +66,10 @@ include::../../../../../devices/src/main/java/tigase/rpi/home/sensors/pir/HC_SR5
 
 === New sensor with periodical reads
 If you want to create a support for a sensor which requires reads from actual sensor from time to time, then you should create class extending `tigase.bot.iot.AbstractPeriodSensor`.
-This class will allow you to specify how often to read from a sensor and implement actual read from a sensor inside `<T extends IValue> T readValue()` method.
+This class will allow you to specify how often to read data from a sensor and implement actual read from a sensor inside `<T extends IValue> T readValue()` method.
 Inside this method you will also need to wrap value you read in <<ivalue, instance of a class implementing `tigase.bot.iot.IValue`>>
 
-Constructor of an `AbstractSensor` class requires in a type of a device as a parameter - string value and default period in which data from sensor will be read.
+Constructor of an `AbstractSensor` class requires in a parameter a type of a device - string value, and default period in which data from sensor will be read.
 Device type is later on published in configuration of a device and used by UI to detect device type and use proper controls to display sensor and it's state.
 Currently there is only a support for a few <<device-types,device types>>.
 

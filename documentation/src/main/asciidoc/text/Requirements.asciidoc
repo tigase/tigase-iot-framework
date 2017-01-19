@@ -14,6 +14,7 @@ You can provide your support for other platforms by providing alternative implem
 It is required to use XMPP server with support for PubSub service. We recommend usage of http://www.tigase.net/content/tigase-xmpp-server[Tigase XMPP Server] 7.2.0 in conjunction with http://www.tigase.net/content/tigase-pubsub[Tigase PubSub Component]
 as during development of this project we modified Tigase PubSub Component and now it provides better support for IoT devices.
 
+[[xmpp-server-configuration]]
 ==== Configuration
 Configuration of Tigase XMPP Server is stored in `etc/init.properties` file in DSL format.
 Default configuration of Tigase XMPP Server is described in http://docs.tigase.org/[Tigase XMPP Server Administation Guide].
