@@ -10,7 +10,6 @@ import tigase.jaxmpp.core.client.XmppModule;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
-import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.modules.capabilities.CapabilitiesModule;
@@ -33,8 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static tigase.jaxmpp.core.client.xmpp.modules.capabilities.CapabilitiesModule.NODE_NAME_KEY;
 
 /**
  * Created by andrzej on 04.11.2016.
@@ -92,28 +89,7 @@ public class PubSubNodesManager
 
 		if (xmppService != null) {
 			xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {
-				jaxmpp.getSessionObject().setProperty(CapabilitiesModule.VERIFICATION_STRING_KEY, null);
-				PresenceModule presenceModule = jaxmpp.getModule(PresenceModule.class);
-				try {
-					presenceModule.sendInitialPresence();
-					if (!isPEP()) {
-						String ver = jaxmpp.getSessionObject().getProperty(CapabilitiesModule.VERIFICATION_STRING_KEY);
-						final Element c = ElementFactory.create("c", null, "http://jabber.org/protocol/caps");
-						c.setAttribute("hash", "sha-1");
-						String node = jaxmpp.getSessionObject().getProperty(NODE_NAME_KEY);
-						if (node == null) {
-							node = "http://tigase.org/jaxmpp";
-						}
-						c.setAttribute("node", node);
-						c.setAttribute("ver", ver);
-						Presence presence = Stanza.createPresence();
-						presence.setTo(getPubsubJid(jaxmpp));
-						presence.addChild(c);
-						jaxmpp.send(presence);
-					}
-				} catch (JaxmppException ex) {
-					log.log(Level.WARNING, "failed to send update presence", ex);
-				}
+				sendPresenceToPubSubIfNeeded(jaxmpp);
 			});
 		}
 	}
@@ -337,13 +313,54 @@ public class PubSubNodesManager
 	@Override
 	protected void jaxmppConnected(Jaxmpp jaxmpp) {
 		FeatureProviderModule module = jaxmpp.getModule(FeatureProviderModule.class);
-		module.setFeatures(this, features);
-		ensureNodeExists(jaxmpp);
+		//if (module != null) {
+			module.setFeatures(this, features);
+			ensureNodeExists(jaxmpp);
+		//}
+		sendPresenceToPubSubIfNeeded(jaxmpp);
 	}
 
 	@Override
 	protected void jaxmppDisconnected(Jaxmpp jaxmpp) {
 
+	}
+
+	protected void sendPresenceToPubSubIfNeeded(Jaxmpp jaxmpp) {
+		jaxmpp.getSessionObject().setProperty(CapabilitiesModule.VERIFICATION_STRING_KEY, null);
+		PresenceModule presenceModule = jaxmpp.getModule(PresenceModule.class);
+//		if (presenceModule == null)
+//			return;
+		
+		try {
+			presenceModule.sendInitialPresence();
+			if (!isPEP()) {
+				Presence presence = Stanza.createPresence();
+				presence.setTo(getPubsubJid(jaxmpp));
+				jaxmpp.getEventBus().fire(new PresenceModule.BeforePresenceSendHandler.BeforePresenceSendEvent(jaxmpp.getSessionObject(), presence, event -> {
+					try {
+						jaxmpp.send(event.getPresence());
+					} catch (JaxmppException ex) {
+						ex.printStackTrace();
+					}
+				}));
+
+//					CapabilitiesModule capabilitiesModule = jaxmpp.getModule(CapabilitiesModule.class);
+//					capabilitiesModule.generateVerificationString()
+//					String ver = jaxmpp.getSessionObject().getProperty(CapabilitiesModule.VERIFICATION_STRING_KEY);
+//					final Element c = ElementFactory.create("c", null, "http://jabber.org/protocol/caps");
+//					c.setAttribute("hash", "sha-1");
+//					String node = jaxmpp.getSessionObject().getProperty(NODE_NAME_KEY);
+//					if (node == null) {
+//						node = "http://tigase.org/jaxmpp";
+//					}
+//					c.setAttribute("node", node);
+//					c.setAttribute("ver", ver);
+//					presence.addChild(c);
+//					jaxmpp.send(presence);
+			}
+		} catch (JaxmppException ex) {
+			log.log(Level.WARNING, "failed to send update presence", ex);
+		}
 	}
 
 	public interface PubSubNodeAware {
