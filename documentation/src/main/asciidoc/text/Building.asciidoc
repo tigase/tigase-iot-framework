@@ -1,7 +1,7 @@
 
 == Building
 
-=== Building IoT-XMPP bridge
+=== Building IoT-XMPP bridge footnote:[Application which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network]
 
 ==== Gradle
 Tigase Raspberry Pi Home binaries can be built with Gradle.
