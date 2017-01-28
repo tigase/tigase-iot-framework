@@ -21,11 +21,11 @@
 
 package tigase.iot.framework.runtime.pubsub;
 
-import tigase.bot.iot.Value;
 import tigase.component.DSLBeanConfigurator;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
-import tigase.iot.framework.runtime.IConfigurationAware;
+import tigase.iot.framework.devices.Value;
+import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.runtime.formatters.ConfigurationFormatter;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;

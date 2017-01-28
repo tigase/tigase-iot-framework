@@ -4,6 +4,9 @@
 /devices/target
 /devices/build
 
+/devices-rpi/target
+/devices-rpi/build
+
 /library/target
 /library/build
 

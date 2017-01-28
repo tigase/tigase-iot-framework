@@ -21,7 +21,7 @@
 
 package tigase.iot.framework.runtime;
 
-import tigase.bot.iot.IDevice;
+import tigase.iot.framework.devices.IDevice;
 import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;

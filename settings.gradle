@@ -1,5 +1,6 @@
 rootProject.name = 'tigase-iot-framework'
 include ':devices'
+include ':devices-rpi'
 include ':runtime'
 include ':client-library'
 include ':documentation'

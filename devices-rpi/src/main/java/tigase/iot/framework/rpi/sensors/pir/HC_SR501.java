@@ -19,14 +19,14 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.pir;
+package tigase.iot.framework.rpi.sensors.pir;
 
 import com.pi4j.io.gpio.*;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
-import tigase.bot.iot.AbstractSensor;
-import tigase.iot.framework.runtime.IConfigurationAware;
-import tigase.iot.framework.runtime.values.Movement;
+import tigase.iot.framework.devices.AbstractSensor;
+import tigase.iot.framework.devices.IConfigurationAware;
+import tigase.iot.framework.values.Movement;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;

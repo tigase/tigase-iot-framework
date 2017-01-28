@@ -2,9 +2,7 @@ group 'tigase.iot'
 version '1.0.0-SNAPSHOT'
 
 apply plugin: 'java'
-apply plugin: 'application'
 
-mainClassName = "tigase.bot.runtime.Main"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -17,11 +15,12 @@ publishing {
 }
 
 repositories {
-    maven {url "https://oss.sonatype.org/content/groups/public"}
+	maven {url "https://oss.sonatype.org/content/groups/public"}
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'tigase.jaxmpp.bot', name: 'bot-runtime', version: '1.0.0-SNAPSHOT'
+    compile group: 'tigase.jaxmpp.bot', name: 'bot-library', version: '1.0.0-SNAPSHOT'
     compile project(':iot-devices')
+    compile group: 'com.pi4j', name: 'pi4j-core', version: '1.2-SNAPSHOT'
 }

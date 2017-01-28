@@ -1,5 +1,5 @@
 /*
- * IConfigurationAware.java
+ * IExecutorDevice.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,13 +19,13 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.devices;
 
 /**
- * Created by andrzej on 04.11.2016.
+ * Created by andrzej on 24.10.2016.
  */
-public interface IConfigurationAware {
+public interface IExecutorDevice<T> extends IDevice {
 
-	String getName();
+	void setValue(T value);
 
 }

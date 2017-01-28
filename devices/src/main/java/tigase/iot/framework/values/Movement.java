@@ -1,5 +1,5 @@
 /*
- * ValueFormatter.java
+ * Movement.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,28 +19,27 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.values;
 
-import tigase.iot.framework.devices.IValue;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.Element;
+import tigase.iot.framework.devices.Value;
+
+import java.time.LocalDateTime;
 
 /**
- * Created by andrzej on 30.10.2016.
+ * Created by andrzej on 07.11.2016.
  */
-public interface ValueFormatter<T extends IValue> {
+public class Movement extends Value<Boolean> {
 
-	Class<T> getSupportedClass();
-
-	default boolean isSupported(Object o) {
-		if (o == null) {
-			return false;
-		}
-		return getSupportedClass().isAssignableFrom(o.getClass());
+	public Movement(Boolean value) {
+		super(value);
 	}
 
-	Element toElement(T value) throws JaxmppException;
+	public Movement(Boolean value, LocalDateTime timestamp) {
+		super(value, timestamp);
+	}
 
-	T fromElement(Element elem) throws JaxmppException;
+	public boolean isMovementDetected() {
+		return getValue();
+	}
 
 }

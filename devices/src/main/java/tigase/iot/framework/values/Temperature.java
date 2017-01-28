@@ -19,9 +19,9 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime.values;
+package tigase.iot.framework.values;
 
-import tigase.bot.iot.Value;
+import tigase.iot.framework.devices.Value;
 
 import java.time.LocalDateTime;
 

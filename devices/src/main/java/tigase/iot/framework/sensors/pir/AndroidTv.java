@@ -21,9 +21,9 @@
 
 package tigase.iot.framework.sensors.pir;
 
-import tigase.bot.iot.AbstractPeriodSensor;
-import tigase.iot.framework.runtime.IConfigurationAware;
-import tigase.iot.framework.runtime.values.Movement;
+import tigase.iot.framework.devices.AbstractPeriodSensor;
+import tigase.iot.framework.devices.IConfigurationAware;
+import tigase.iot.framework.values.Movement;
 import tigase.kernel.beans.config.ConfigField;
 
 import java.io.BufferedReader;

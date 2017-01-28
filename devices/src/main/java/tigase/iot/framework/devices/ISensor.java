@@ -1,5 +1,5 @@
 /*
- * Movement.java
+ * ISensor.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,27 +19,14 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime.values;
-
-import tigase.bot.iot.Value;
-
-import java.time.LocalDateTime;
+package tigase.iot.framework.devices;
 
 /**
- * Created by andrzej on 07.11.2016.
+ * Created by andrzej on 22.10.2016.
  */
-public class Movement extends Value<Boolean> {
+public interface ISensor<V extends IValue>
+		extends IDevice {
 
-	public Movement(Boolean value) {
-		super(value);
-	}
-
-	public Movement(Boolean value, LocalDateTime timestamp) {
-		super(value, timestamp);
-	}
-
-	public boolean isMovementDetected() {
-		return getValue();
-	}
+	V getValue();
 
 }

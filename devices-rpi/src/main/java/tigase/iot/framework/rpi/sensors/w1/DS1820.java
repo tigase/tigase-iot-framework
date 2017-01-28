@@ -19,9 +19,9 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.w1;
+package tigase.iot.framework.rpi.sensors.w1;
 
-import tigase.iot.framework.runtime.values.Temperature;
+import tigase.iot.framework.values.Temperature;
 
 import java.io.File;
 import java.io.IOException;

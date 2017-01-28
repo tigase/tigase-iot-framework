@@ -21,17 +21,17 @@
 
 package tigase.iot.framework.runtime.pubsub;
 
-import tigase.bot.iot.IDevice;
-import tigase.bot.iot.IExecutorDevice;
-import tigase.bot.iot.IValue;
 import tigase.eventbus.HandleEvent;
+import tigase.iot.framework.devices.IDevice;
+import tigase.iot.framework.devices.IExecutorDevice;
+import tigase.iot.framework.devices.IValue;
+import tigase.iot.framework.runtime.DeviceNodesHelper;
 import tigase.iot.framework.runtime.ValueFormatter;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.kernel.beans.Inject;
-import tigase.iot.framework.runtime.DeviceNodesHelper;
 
 import java.util.List;
 import java.util.logging.Level;

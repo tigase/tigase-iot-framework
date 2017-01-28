@@ -1,5 +1,5 @@
 /*
- * ValueFormatter.java
+ * DS1820DeviceType.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,28 +19,32 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.rpi.sensors.w1;
 
-import tigase.iot.framework.devices.IValue;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.Element;
+import com.pi4j.io.w1.W1Device;
+import com.pi4j.io.w1.W1DeviceType;
+
+import java.io.File;
 
 /**
- * Created by andrzej on 30.10.2016.
+ * Created by andrzej on 24.10.2016.
  */
-public interface ValueFormatter<T extends IValue> {
+public class DS1820DeviceType implements W1DeviceType {
 
-	Class<T> getSupportedClass();
+	public static final int FAMILY_CODE = 0x28;
 
-	default boolean isSupported(Object o) {
-		if (o == null) {
-			return false;
-		}
-		return getSupportedClass().isAssignableFrom(o.getClass());
+	@Override
+	public int getDeviceFamilyCode() {
+		return FAMILY_CODE;
 	}
 
-	Element toElement(T value) throws JaxmppException;
+	@Override
+	public Class<? extends W1Device> getDeviceClass() {
+		return DS1820.W1Device.class;
+	}
 
-	T fromElement(Element elem) throws JaxmppException;
-
+	@Override
+	public W1Device create(File deviceDir) {
+		return new DS1820.W1Device(deviceDir);
+	}
 }

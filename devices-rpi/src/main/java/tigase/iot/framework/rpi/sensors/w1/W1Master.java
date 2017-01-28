@@ -19,7 +19,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.w1;
+package tigase.iot.framework.rpi.sensors.w1;
 
 import tigase.bot.Autostart;
 import tigase.kernel.beans.Initializable;

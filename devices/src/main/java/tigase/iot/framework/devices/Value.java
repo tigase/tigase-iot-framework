@@ -1,5 +1,5 @@
 /*
- * DS1820DeviceType.java
+ * Value.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,32 +19,40 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.w1;
+package tigase.iot.framework.devices;
 
-import com.pi4j.io.w1.W1Device;
-import com.pi4j.io.w1.W1DeviceType;
-
-import java.io.File;
+import java.time.LocalDateTime;
 
 /**
- * Created by andrzej on 24.10.2016.
+ * Created by andrzej on 22.10.2016.
  */
-public class DS1820DeviceType implements W1DeviceType {
+public class Value<T>
+		implements IValue<T> {
 
-	public static final int FAMILY_CODE = 0x28;
+	private final LocalDateTime timestamp;
+	private final T value;
 
-	@Override
-	public int getDeviceFamilyCode() {
-		return FAMILY_CODE;
+	public Value(T value) {
+		this(value, LocalDateTime.now());
+	}
+
+	public Value(T value, LocalDateTime timestamp) {
+		this.value = value;
+		this.timestamp = timestamp;
 	}
 
 	@Override
-	public Class<? extends W1Device> getDeviceClass() {
-		return DS1820.W1Device.class;
+	public LocalDateTime getTimestamp() {
+		return timestamp;
 	}
 
 	@Override
-	public W1Device create(File deviceDir) {
-		return new DS1820.W1Device(deviceDir);
+	public T getValue() {
+		return value;
+	}
+
+	@Override
+	public String toString() {
+		return "Value(" + value + ")";
 	}
 }

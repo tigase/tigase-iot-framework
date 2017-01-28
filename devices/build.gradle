@@ -21,7 +21,4 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile group: 'tigase.jaxmpp.bot', name: 'bot-library', version: '1.0.0-SNAPSHOT'
-    compile group: 'tigase.jaxmpp.bot', name: 'bot-iot', version: '1.0.0-SNAPSHOT'
-    compile project(':iot-runtime')
-    compile group: 'com.pi4j', name: 'pi4j-core', version: '1.2-SNAPSHOT'
 }

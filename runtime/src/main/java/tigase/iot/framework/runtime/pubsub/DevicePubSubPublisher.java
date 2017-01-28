@@ -21,18 +21,18 @@
 
 package tigase.iot.framework.runtime.pubsub;
 
-import tigase.bot.iot.AbstractSensor;
-import tigase.bot.iot.IDevice;
-import tigase.bot.iot.ISensor;
-import tigase.bot.iot.IValue;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
+import tigase.iot.framework.devices.AbstractSensor;
+import tigase.iot.framework.devices.IDevice;
+import tigase.iot.framework.devices.ISensor;
+import tigase.iot.framework.devices.IValue;
+import tigase.iot.framework.runtime.DeviceNodesHelper;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.iot.framework.runtime.DeviceNodesHelper;
 
 import java.util.*;
 import java.util.logging.Level;

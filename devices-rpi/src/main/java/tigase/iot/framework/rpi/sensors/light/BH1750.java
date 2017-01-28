@@ -1,5 +1,5 @@
 /*
- * W1AbstractPeriodDevice.java
+ * BH1750.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,36 +19,39 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.w1;
+package tigase.iot.framework.rpi.sensors.light;
 
-import tigase.bot.iot.AbstractPeriodSensor;
-import tigase.bot.iot.IValue;
-import tigase.iot.framework.runtime.IConfigurationAware;
+import com.pi4j.io.i2c.I2CDevice;
+import tigase.iot.framework.rpi.sensors.I2CAbstractPeriodDevice;
+import tigase.iot.framework.values.Light;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.UnregisterAware;
+
+import java.io.IOException;
 
 /**
  * Created by andrzej on 23.10.2016.
  */
-public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractPeriodSensor<T>
-		implements W1Device<T>, Initializable, UnregisterAware, IConfigurationAware {
+public class BH1750
+		extends I2CAbstractPeriodDevice<Light>
+		implements Initializable, UnregisterAware {
 
-	protected com.pi4j.io.w1.W1Device w1Device;
-
-	protected W1AbstractPeriodDevice(String type, long period) {
-		super(type, period);
+	public BH1750() {
+		super("light-sensor", 60 * 1000);
 	}
 
 	@Override
-	public com.pi4j.io.w1.W1Device getW1Device() {
-		return w1Device;
-	}
+	protected Light readValue(I2CDevice device) throws IOException {
+		device.write((byte) 0x10);
 
-	@Override
-	public void initialize() {
-		if (w1Device == null) {
-			w1Device = W1Master.KNOWN_DEVICES.get(getName());
+		byte[] data = new byte[2];
+
+		int r = device.read(data, 0, 2);
+		if (r != 2) {
+			throw new RuntimeException("Read error: read only " + r + " bytes");
 		}
-		super.initialize();
+
+		return new Light((data[0] << 8) | data[1], Light.Unit.lm);
 	}
+
 }

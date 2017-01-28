@@ -26,7 +26,7 @@ import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.kernel.beans.Bean;
 import tigase.kernel.core.Kernel;
-import tigase.iot.framework.runtime.values.Movement;
+import tigase.iot.framework.values.Movement;
 
 import java.time.LocalDateTime;
 

@@ -1,5 +1,5 @@
 /*
- * Light.java
+ * IConfigurationAware.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,46 +19,13 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime.values;
-
-import tigase.bot.iot.Value;
-
-import java.time.LocalDateTime;
+package tigase.iot.framework.devices;
 
 /**
- * Created by andrzej on 05.11.2016.
+ * Created by andrzej on 04.11.2016.
  */
-public class Light extends Value<Integer> {
+public interface IConfigurationAware {
 
-	private final Unit unit;
+	String getName();
 
-	public Light(int value, Unit unit) {
-		super(value);
-		this.unit = unit;
-	}
-
-	public Light(int value, Unit unit, LocalDateTime timestamp) {
-		super(value, timestamp);
-		this.unit = unit;
-	}
-
-	public Unit getUnit() {
-		return unit;
-	}
-
-	public enum Unit {
-		lm("lm"),
-		percent("%");
-
-		private final String value;
-
-		Unit(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public String toString() {
-			return value;
-		}
-	}
 }

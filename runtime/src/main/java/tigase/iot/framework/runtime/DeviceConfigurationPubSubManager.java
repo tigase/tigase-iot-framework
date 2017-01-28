@@ -21,13 +21,14 @@
 
 package tigase.iot.framework.runtime;
 
-import tigase.bot.iot.IDevice;
+import tigase.iot.framework.devices.IConfigurationAware;
+import tigase.iot.framework.devices.IDevice;
+import tigase.iot.framework.runtime.pubsub.AbstractConfigurationPubSubManager;
+import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
 import tigase.kernel.beans.Inject;
-import tigase.iot.framework.runtime.pubsub.AbstractConfigurationPubSubManager;
-import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
 
 import java.util.List;
 import java.util.logging.Logger;

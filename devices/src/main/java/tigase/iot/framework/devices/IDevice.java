@@ -1,5 +1,5 @@
 /*
- * W1Device.java
+ * IDevice.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,16 +19,13 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors.w1;
-
-import tigase.bot.iot.ISensor;
-import tigase.bot.iot.IValue;
+package tigase.iot.framework.devices;
 
 /**
- * Created by andrzej on 24.10.2016.
+ * Created by bmalkow on 08.12.2016.
  */
-public interface W1Device<V extends IValue> extends ISensor<V> {
+public interface IDevice {
 
-	com.pi4j.io.w1.W1Device getW1Device();
+	String getName();
 
 }

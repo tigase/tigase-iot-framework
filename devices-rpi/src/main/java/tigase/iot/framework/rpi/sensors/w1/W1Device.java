@@ -1,5 +1,5 @@
 /*
- * ValueFormatter.java
+ * W1Device.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,28 +19,16 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.rpi.sensors.w1;
 
+import tigase.iot.framework.devices.ISensor;
 import tigase.iot.framework.devices.IValue;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.Element;
 
 /**
- * Created by andrzej on 30.10.2016.
+ * Created by andrzej on 24.10.2016.
  */
-public interface ValueFormatter<T extends IValue> {
+public interface W1Device<V extends IValue> extends ISensor<V> {
 
-	Class<T> getSupportedClass();
-
-	default boolean isSupported(Object o) {
-		if (o == null) {
-			return false;
-		}
-		return getSupportedClass().isAssignableFrom(o.getClass());
-	}
-
-	Element toElement(T value) throws JaxmppException;
-
-	T fromElement(Element elem) throws JaxmppException;
+	com.pi4j.io.w1.W1Device getW1Device();
 
 }

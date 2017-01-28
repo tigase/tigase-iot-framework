@@ -1,5 +1,5 @@
 /*
- * LightSensorListener.java
+ * AbstractDevice.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,53 +19,41 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.devices;
 
 import tigase.eventbus.EventBus;
-import tigase.eventbus.HandleEvent;
-import tigase.iot.framework.devices.IConfigurationAware;
-import tigase.iot.framework.runtime.pubsub.ExtendedPubSubNodesManager;
-import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by andrzej on 02.11.2016.
+ * Created by bmalkow on 08.12.2016.
  */
-public class LightSensorListener implements PubSubNodesManager.NodesObserver, Initializable, UnregisterAware,
-											IConfigurationAware {
+public abstract class AbstractDevice
+		implements IDevice, Initializable, UnregisterAware {
 
-	private static final Logger log = Logger.getLogger(LightSensorListener.class.getCanonicalName());
-
-	@ConfigField(desc = "Observed device nodes")
-	private ArrayList<String> observes;
-
-	@ConfigField(desc = "Bean name")
-	private String name;
-
+	private final Logger log = Logger.getLogger(this.getClass().getCanonicalName());
 	@Inject
 	private EventBus eventBus;
+	@ConfigField(desc = "Device name")
+	private String name;
 
 	@Override
 	public void beforeUnregister() {
 		eventBus.unregisterAll(this);
 	}
 
-	@Override
-	public String getName() {
-		return name;
+	protected void fireEvent(Object event) {
+		log.log(Level.FINEST, "{0}, firing event {1}", new Object[]{getName(), event});
+		eventBus.fire(event);
 	}
 
-	@Override
-	public List<String> getObservedNodes() {
-		return observes;
+	public String getName() {
+		return name;
 	}
 
 	@Override
@@ -73,10 +61,4 @@ public class LightSensorListener implements PubSubNodesManager.NodesObserver, In
 		eventBus.registerAll(this);
 	}
 
-	@HandleEvent
-	public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
-		if (observes.contains(event.sourceId)) {
-			log.log(Level.INFO, "received new event from " + event.sourceId + " with value " + event);
-		}
-	}
 }

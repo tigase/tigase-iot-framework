@@ -42,18 +42,7 @@ pubSubNodesManager (class: 'tigase.iot.framework.runtime.pubsub.ExtendedPubSubNo
 deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPubSubManager', exportable: true) {
 }
 
-## IoT Devices
-
-### Light sensor
-#lightSensor (class: 'tigase.iot.framework.sensors.light.BH1750', exportable: true) {
-#    # decimal address of BH1750 on I2C
-#    address = 35
-#}
-
-### Movement sensor
-#pirSensor (class: 'tigase.iot.framework.sensors.pir.HC_SR501', exportable: true) {
-#
-#}
+## IoT Devices - common
 
 ### Android TV sensor
 #tvSensor (class: 'tigase.iot.framework.sensors.pir.AndroidTv', exportable: true) {
@@ -61,8 +50,21 @@ deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPub
 #    address = 'http://172.16.0.224/sony/system'
 #}
 
+## IoT Devices - Raspberry Pi
+
+### Light sensor
+#lightSensor (class: 'tigase.iot.framework.rpi.sensors.light.BH1750', exportable: true) {
+#    # decimal address of BH1750 on I2C
+#    address = 35
+#}
+
+### Movement sensor
+#pirSensor (class: 'tigase.iot.framework.rpi.sensors.pir.HC_SR501', exportable: true) {
+#
+#}
+
 ### Device represents master - loads every attached and known to application 1Wire device
-#w1Master (class: 'tigase.iot.framework.sensors.w1.W1Master', exportable: true) {
+#w1Master (class: 'tigase.iot.framework.rpi.sensors.w1.W1Master', exportable: true) {
 #    # How often to look for new 1Wire devices (in ms)
 #    period = 15000
 #}

@@ -19,14 +19,14 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.sensors;
+package tigase.iot.framework.rpi.sensors;
 
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
-import tigase.bot.iot.AbstractPeriodSensor;
-import tigase.bot.iot.IValue;
-import tigase.iot.framework.runtime.IConfigurationAware;
+import tigase.iot.framework.devices.AbstractPeriodSensor;
+import tigase.iot.framework.devices.IConfigurationAware;
+import tigase.iot.framework.devices.IValue;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;

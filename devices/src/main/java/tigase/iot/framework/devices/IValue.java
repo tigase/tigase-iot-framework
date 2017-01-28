@@ -1,5 +1,5 @@
 /*
- * ValueFormatter.java
+ * IValue.java
  *
  * Tigase IoT Framework
  * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
@@ -19,28 +19,17 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
-package tigase.iot.framework.runtime;
+package tigase.iot.framework.devices;
 
-import tigase.iot.framework.devices.IValue;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.Element;
+import java.time.LocalDateTime;
 
 /**
- * Created by andrzej on 30.10.2016.
+ * Created by andrzej on 22.10.2016.
  */
-public interface ValueFormatter<T extends IValue> {
+public interface IValue<T> {
 
-	Class<T> getSupportedClass();
+	LocalDateTime getTimestamp();
 
-	default boolean isSupported(Object o) {
-		if (o == null) {
-			return false;
-		}
-		return getSupportedClass().isAssignableFrom(o.getClass());
-	}
-
-	Element toElement(T value) throws JaxmppException;
-
-	T fromElement(Element elem) throws JaxmppException;
+	T getValue();
 
 }

@@ -21,12 +21,12 @@
 
 package tigase.iot.framework.runtime.formatters;
 
-import tigase.bot.iot.IValue;
+import tigase.iot.framework.devices.IValue;
 import tigase.iot.framework.runtime.ValueFormatter;
+import tigase.iot.framework.runtime.utils.XmppDateTimeFormatterFactory;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
-import tigase.iot.framework.runtime.utils.XmppDateTimeFormatterFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
