@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Main.gwt.xml
+  ~
+  ~ Tigase IoT Framework
+  ~ Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License,
+  ~ or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program. Look for COPYING file in the top folder.
+  ~ If not, see http://www.gnu.org/licenses/.
+  -->
+
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 1.7.0//EN" "http://google-web-toolkit.googlecode.com/svn/tags/1.7.0/distro-source/core/src/gwt-module.dtd">
+
+<module>
+	<inherits name='com.google.gwt.user.User' />
+	<inherits name="com.google.gwt.logging.Logging"/>
+	<inherits name='com.google.gwt.activity.Activity' />
+	<inherits name='com.google.gwt.place.Place' />
+
+	<inherits name="tigase.jaxmpp.gwt.JaxmppGWT" />
+	<inherits name="tigase.iot.framework.TigaseIoTFrameworkClientLibrary" />
+	<inherits name="com.googlecode.gwt.crypto.Crypto"/>
+
+    <!-- Inherit the default GWT style sheet. You can change -->
+    <!-- the theme of your GWT application by uncommenting -->
+    <!-- any one of the following lines. -->
+    <!-- <inherits name='com.google.gwt.user.theme.standard.Standard'/> -->
+    <!-- <inherits name="com.google.gwt.user.theme.chrome.Chrome"/> -->
+    <!-- <inherits name="com.google.gwt.user.theme.dark.Dark"/> -->
+
+	<add-linker name="xsiframe"/>
+
+    <entry-point class="tigase.iot.framework.client.client.MainEntryPoint"/>
+
+	<replace-with class="tigase.iot.framework.client.client.ClientFactoryImpl" >
+		<when-type-is class="tigase.iot.framework.client.client.ClientFactory" />
+	</replace-with>
+
+    <!-- Do not define servlets here, use web.xml -->
+	
+	<set-property name="gwt.logging.logLevel" value="FINEST"/>          # To change the  default logLevel
+    <set-property name="gwt.logging.enabled" value="FALSE"/>            # To disable logging
+</module>

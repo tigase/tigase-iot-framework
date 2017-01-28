@@ -14,9 +14,9 @@ informations as well, ie. temperature can be passed with correct scale, etc.
 
 Currently we provided following implementations for storing following values:
 
-* temperature - `tigase.rpi.home.values.Temperature`
-* light - `tigase.rpi.home.values.Light`
-* movement - `tigase.rpi.home.values.Movement`
+* temperature - `Temperature`
+* light - `Light`
+* movement - `Movement`
 
 For this classes we provide you with proper serializers and parsers used for transferring this values over XMPP protocol.
 

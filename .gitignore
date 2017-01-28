@@ -10,8 +10,8 @@
 /runtime/target
 /runtime/build
 
-/app/target
-/app/build
+/runtime/target
+/runtime/build
 
 /client-library/target
 /client-library/build
@@ -20,3 +20,6 @@
 
 /documentation/target
 /documentation/build
+/.nb-gradle/
+
+/out/

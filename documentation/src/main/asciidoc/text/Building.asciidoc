@@ -8,7 +8,7 @@ Tigase Raspberry Pi Home binaries can be built with Gradle.
 
 [source,bash]
 ----
-./gradlew publish distZip
+./gradlew publish publishToMavenLocal distZip
 ----
 
 In directory `./app/build/distributions/` will be created zip file with application.

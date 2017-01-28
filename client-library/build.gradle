@@ -1,5 +1,5 @@
-group 'tigase.rpi.home'
-version '1.0.0'
+group 'tigase.iot'
+version '1.0.0-SNAPSHOT'
 
 apply plugin: 'java'
 
@@ -12,10 +12,6 @@ publishing {
             from components.java
         }
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 //sourceSets.main.resources {

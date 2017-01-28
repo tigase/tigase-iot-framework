@@ -1,6 +1,6 @@
-rootProject.name = 'tigase-pi-home'
+rootProject.name = 'tigase-iot-framework'
 include ':devices'
-include ':app'
+include ':runtime'
 include ':client-library'
 include ':documentation'
 
@@ -10,5 +10,5 @@ def prefixSubprojectNames(children, prefix) {
 		prefixSubprojectNames(it.children, prefix)
 	}
 }
-prefixSubprojectNames(rootProject.children, "tigase-pi-home-")
+prefixSubprojectNames(rootProject.children, "iot-")
 
