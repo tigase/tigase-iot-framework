@@ -1,6 +1,6 @@
 
 == Development
-Tigase Raspberry Pi Home project is an extended version of https://projects.tigase.org/projects/jaxmpp-bot-framework[Jaxmpp Bot Framework]
+Tigase IoT Framework is an extended version of https://projects.tigase.org/projects/jaxmpp-bot-framework[Jaxmpp Bot Framework]
 which allows you to take all benefits and use all features provided by Jaxmpp Bot Framework, such as usage of Tigase Kernel as IoC container and so on.
 
 [NOTE]
@@ -8,20 +8,20 @@ For more detailed information about usage of Jaxmpp Bot Framework please look in
 
 [ivalue]
 === Values
-By default Tigase Raspberry Pi Home requires you to wrap value read from sensor in a class implementing `tigase.bot.iot.IValue`.
+By default Tigase IoT Framework requires you to wrap value read from sensor in a class implementing `tigase.iot.framework.devices.IValue`.
 This requirement was introduces to bond together timestamp (marking time when value was initially read) with a value and allows you to add additional
 informations as well, ie. temperature can be passed with correct scale, etc.
 
 Currently we provided following implementations for storing following values:
 
-* temperature - `Temperature`
-* light - `Light`
-* movement - `Movement`
+* temperature - `tigase.iot.framework.values.Temperature`
+* light - `tigase.iot.framework.values.Light`
+* movement - `tigase.iot.framework.values.Movement`
 
 For this classes we provide you with proper serializers and parsers used for transferring this values over XMPP protocol.
 
 [WARNING]
-If you decide to add a new class then you will need to implement and provide Tigase Raspberry Pi Home with new parser and serializer (a bean extending `AbstractValueFormatter` with a support for your newly created implementation of `IValue` interface).
+If you decide to add a new class then you will need to implement and provide Tigase IoT Framework with new parser and serializer (a bean extending `AbstractValueFormatter` with a support for your newly created implementation of `IValue` interface).
 
 [WARNING]
 Additionally you will need to provide proper support for parsing this data in client library as in other case data from your sensor will not be available in UI.
@@ -44,11 +44,11 @@ This will add support for a new device type in a client model layer. Additionall
 This separation on a client side is create for a reason. It is done in such a way to make presentation layer separate from model layer and allow reuse of a model layer in other clients with different presentation layer.
 
 === New sensor
-To add support for new a new sensor it is required to create a class which bases on `tigase.bot.iot.AbstractSensor`.
+To add support for new a new sensor it is required to create a class which bases on `tigase.iot.framework.devices.AbstractSensor`.
 This simple base class will take over of all required tasks and provide you with access to configuration and event bus.
 
 Next you need to implement support for reading data/value from your sensor.
-When you have received new value, then wrap it in <<ivalue, instance of class implementing interface `tigase.bot.iot.IValue`>> and call `updateValue()` method from your class extending `AbstractSensor`.
+When you have received new value, then wrap it in <<ivalue, instance of class implementing interface `tigase.iot.framework.devices.IValue`>> and call `updateValue()` method from your class extending `AbstractSensor`.
 This method will then fire event with new value which will be delivered to every device which will be listening to state changes of your sensor.
 
 Constructor of an `AbstractSensor` class requires in a parameter a type of a device - string value.
@@ -56,25 +56,25 @@ This value is later on published in configuration of a device and used by UI to 
 Currently there is only a support for a few <<device-types,device types>>.
 
 [NOTE]
-After you have your class implemented, you need to compile it and add to classpath of Tigase Raspberry Pi Home project and add it to configuration as a `@Bean`
+After you have your class implemented, you need to compile it and add to classpath of Tigase IoT Framework project and add it to configuration as a `@Bean`
 
 .Example (support for a PIR sensor - HC SR501)
 [source,java]
 ----
-include::../../../../../devices/src/main/java/tigase/rpi/home/sensors/pir/HC_SR501.java[]
+include::../../../../../devices-rpi/src/main/java/tigase/iot/framework/rpi/sensors/pir/HC_SR501.java[]
 ----
 
 === New sensor with periodical reads
-If you want to create a support for a sensor which requires reads from actual sensor from time to time, then you should create class extending `tigase.bot.iot.AbstractPeriodSensor`.
+If you want to create a support for a sensor which requires reads from actual sensor from time to time, then you should create class extending `tigase.iot.framework.devices.AbstractPeriodSensor`.
 This class will allow you to specify how often to read data from a sensor and implement actual read from a sensor inside `<T extends IValue> T readValue()` method.
-Inside this method you will also need to wrap value you read in <<ivalue, instance of a class implementing `tigase.bot.iot.IValue`>>
+Inside this method you will also need to wrap value you read in <<ivalue, instance of a class implementing `tigase.iot.framework.devices.IValue`>>
 
 Constructor of an `AbstractSensor` class requires in a parameter a type of a device - string value, and default period in which data from sensor will be read.
 Device type is later on published in configuration of a device and used by UI to detect device type and use proper controls to display sensor and it's state.
 Currently there is only a support for a few <<device-types,device types>>.
 
 [NOTE]
-After you have your class implemented, you need to compile it and add to classpath of Tigase Raspberry Pi Home project and add it to configuration as a `@Bean`
+After you have your class implemented, you need to compile it and add to classpath of Tigase IoT Framework project and add it to configuration as a `@Bean`
 
 [NOTE]
 You may not use `AbstractPeriodSensor` as your direct base class. We provide you with other classes like `I2CAbstractPeriodDevice` or `W1AbstractPeriodDevice`.
@@ -82,12 +82,12 @@ They all are based on `AbstractPeriodSensor` and provide same functionality but 
 
 [WARNING]
 Usage of `W1AbstractPeriodDevice` is tricky. To use it you need to use `W1Master` bean, enable it and register your implementation within `W1Master` providing it with key - implementation of `com.pi4j.io.w1.W1DeviceType`.
-Classes `tigase.rpi.home.sensors.w1.DS1820` and `tigase.rpi.home.sensors.w1.DS1820DeviceType` are good examples of how to do this.
+Classes `tigase.iot.framework.rpi.sensors.w1.DS1820` and `tigase.iot.framework.rpi.sensors.w1.DS1820DeviceType` are good examples of how to do this.
 
 .Example (support for I2C sensor - BH1750)
 [source,java]
 ----
-include::../../../../../devices/src/main/java/tigase/rpi/home/sensors/light/BH1750.java[]
+include::../../../../../devices-rpi/src/main/java/tigase/iot/framework/rpi/sensors/light/BH1750.java[]
 ----
 
 === New device
@@ -119,3 +119,118 @@ public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
 -----
 It will be called whenever new state/value will be published by any sensor or a device. You need to check `source` variable of a `ValueChangedEvent` to look for a node of a device in which state you are interested in.
 In `value` variable of a `ValueChangedEvent` you will find newly published device state which node you will find in `source` variable.
+
+=== Creating new project using Tigase IoT Framework
+
+==== Creating project
+If you would like to create new project using Tigase IoT Framework, then simplest solution will be to create new project using Gradle with following entries in @build.gradle@ file:
+
+.Example project file for Gradle
+[source,gradle]
+-----
+group 'your.project.group'
+version 'your.project-version'
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "tigase.bot.runtime.Main"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
+repositories {
+    maven {url "https://oss.sonatype.org/content/groups/public"}
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'tigase.iot', name: 'iot-runtime', version: '1.0.0-SNAPSHOT'
+    compile group: 'tigase.iot', name: 'iot-devices', version: '1.0.0-SNAPSHOT'
+    compile group: 'tigase.iot', name: 'iot-devices-rpi', version: '1.0.0-SNAPSHOT'
+}
+-----
+
+Now you can focus on implementation of support for devices as described in other parts of this section.
+
+==== Configuration of a project
+When you will have you sensors ready then in resources section of main build directory you may place `config.dsl` (usually file is located in `src/main/resources/`) file with configuration which should be used by your projects.
+Below you can find example DSL file which loads a few of sensors we provide for Raspberry Pi.
+
+.Example config.dsl file
+[source,dsl]
+-----
+##  XMPP connections
+xmppService () {
+    default () {
+        jid = "iot-123@zeus"
+        password = "iot"
+        server = '172.16.0.2'
+        ignoreCertificateErrors = true
+        register = true
+    }
+}
+
+## IoT Devices
+
+### Light sensor
+lightSensor (class: 'tigase.iot.framework.rpi.sensors.light.BH1750', exportable: true) {
+    # decimal address of BH1750 on I2C
+    address = 35
+}
+
+### Movement sensor
+pirSensor (class: 'tigase.iot.framework.rpi.sensors.pir.HC_SR501', exportable: true) {
+
+}
+
+### Android TV sensor
+tvSensor (class: 'tigase.iot.framework.sensors.pir.AndroidTv', exportable: true) {
+    # HTTP URI of Android TV system endpoint
+    address = 'http://172.16.0.224/sony/system'
+}
+
+### Device represents master - loads every attached and known to application 1Wire device
+w1Master (class: 'tigase.iot.framework.rpi.sensors.w1.W1Master', exportable: true) {
+    # How often to look for new 1Wire devices (in ms)
+    period = 15000
+}
+
+### Configuration of temperature readout from W1-DS1820 with ID = 28-0000084a4859
+w1-28-0000084a4859 {
+    period = 15000
+}
+-----
+
+==== Building project
+
+Use of following command will build you project and package it to single zip archive with all dependencies and default configuration for easy deployment.
+
+[source,bash]
+-----
+./gradlew distZip
+-----
+
+==== Running project
+
+To run this project on a device (ie. Raspberry Pi), copy distribution package to a device and unzip archive. Inside in `bin` directory there are project startup files named same as your project name, ie. `test-project`
+
+After running following command, project will start and try to connect to XMPP server as defined in project configuration file.
+
+[source,bash]
+-----
+./bin/test-project
+-----
+
+[NOTE]
+It is possible to pass additional options or configuration options during startup. For a detailed description of this options please look into <<running,section describing running>> of Tigase IoT Framework.
+
+[WARNING]
+If your project adds new type of sensors or new types of data then you will need to extend client and client-library modules to add support for them before you will be able to see this new device in a UI.

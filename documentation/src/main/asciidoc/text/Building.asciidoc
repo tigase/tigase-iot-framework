@@ -1,22 +1,21 @@
 
 == Building
 
-=== Building IoT-XMPP bridge footnote:[Application which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network]
+=== Building Framework
 
 ==== Gradle
-Tigase Raspberry Pi Home binaries can be built with Gradle.
+Tigase IoT Framework binaries can be built with Gradle.
 
 [source,bash]
 ----
 ./gradlew publish publishToMavenLocal distZip
 ----
 
-In directory `./app/build/distributions/` will be created zip file with application.
-The compressed zip file contains all needed dependencies.  Unzip this file to where you want to run the Tigase Raspbbery
-Pi Home from.
+This line will compile whole framework (including Raspberry Pi releated stuff), install it to Gradle and Maven repositories and create simplest possible bundle of a framework with only most necessary features.
+This bundle will be created in a directory `runtime/build/distributions/`.
 
 === Building Web UI
-Tigase Raspberry Pi Home web UI module which can be found in `client` subdirectory requires maven for building.
+Web UI for Tigase IoT Framework module which can be found in `client` subdirectory requires maven for building.
 
 [source,bash]
 -----
@@ -24,6 +23,3 @@ mvn package
 -----
 
 This will create WAR package in `target` subdirectory.
-
-[NOTE]
-It is required to build base part of a project with Gradle before building Web UI with Maven.

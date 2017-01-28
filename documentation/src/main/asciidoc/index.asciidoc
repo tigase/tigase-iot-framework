@@ -2,10 +2,10 @@
 :revdate: {docdate}
 :revnumber: 1.0
 :doctype: book
-:doctitle: Tigase Raspberry Pi - Intelligent Home
+:doctitle: Tigase IoT Framework
 :creator: Andrzej Wójcik
-:description: A guide to Tigase Raspberry Pi Home project
-:keywords: iot,jaxmpp,bot,xmpp,rpi,raspberry
+:description: A guide to Tigase IoT Framework
+:keywords: iot,jaxmpp,bot,xmpp,tigase
 :lang: en
 :toc: left
 :toc-placement: left

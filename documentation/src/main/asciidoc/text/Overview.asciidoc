@@ -3,15 +3,16 @@
 .Example project
 image::images/hardware.jpg[]
 
-Tigase Raspberry Pi Intelligent Home project is a composite project for more and more popular idea of intelligent homes.
+Tigase IoT Framework project is a composite project for more and more popular idea of IoT enabled devices.
 It is based on Jaxmpp library and Jaxmpp Bot Framework for providing XMPP connectivity between devices.
 
 This project is modular and consist of following modules:
 
-app:: Contains main classes and a framework. It is responsible for connectivity and general functionalities.
-devices:: Provides support for particular sensors or executors. It is responible for communication between application and actual devices connected to Raspberry Pi.
+runtime:: Contains main classes of a framework. It is responsible for connectivity and general functionalities.
+devices:: Provides API and base classes for implementations of sensors or executor devices.
+devices-rpi:: Provides support for particular sensors or executors which are supported on Raspberry Pi platform. It is responible for communication between framework and actual devices connected to Raspberry Pi.
 client:: Web based UI for interaction with devices, including device management task
-client-library:: Library for interaction with application installed on Raspberry Pi using XMPP protocol with support for GWT compilation. It provides classes used by UI.
+client-library:: Library for interaction with application using Tigase IoT Framework installed and running on a device using XMPP protocol with support for GWT compilation. It provides classes used by UI.
 
 In a photo above of an exaple project you can see a intelligent home devices which is responsible for steering lights dimmer depending on light level, movement and provides current temperature.
 It consists of:

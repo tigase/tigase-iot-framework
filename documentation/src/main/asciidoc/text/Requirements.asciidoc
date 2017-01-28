@@ -3,7 +3,7 @@
 
 There are a few requirement to use this project:
 
-=== Device running IoT-XMPP bridge footnote:[Application which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] - Raspberry Pi
+=== Device running IoT-XMPP bridge footnote:[Application which is based on Tigase IoT Framework and connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] - Raspberry Pi
 During our work we were using Raspbbery Pi 3 as a development device (due to already working and built-in WiFi), however project should work with any Raspberry Pi version.
 
 [NOTE]

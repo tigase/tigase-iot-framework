@@ -1,8 +1,8 @@
 ##  XMPP connections
 #xmppService () {
 #    default () {
-#        jid = "admin@zeus"
-#        password = "admin"
+#        jid = "iot-123@zeus"
+#        password = "iot"
 #        server = '172.16.0.2'
 #        ignoreCertificateErrors = true
 #    }
@@ -73,4 +73,3 @@ deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPub
 #w1-28-0000084a4859 {
 #    period = 15000
 #}
-

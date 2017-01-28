@@ -1,13 +1,14 @@
 
 == Running
 
-=== Running IoT-XMPP bridge footnote:[Application which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network]
+[running]
+=== Running framework
 Unpack the distribution zip file you created during the build process, then navigate to the directory where it is unpacked.
 Now we may run the bot.
 
 [source,bash]
 ----
-$ cd tigase-pi-home-app-1.0.0-SNAPSHOT/
+$ cd tigase-iot-framework-1.0.0-SNAPSHOT/
 $ $ ./bin/tigase-pi-home-app
 2016-11-14 10:55:21.716 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultBeanConfigurator
 2016-11-14 10:55:21.760 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultTypesConverter
@@ -15,7 +16,7 @@ $ $ ./bin/tigase-pi-home-app
 ...
 ----
 
-Tigase Raspbbery Pi home runtime understands some variables that can control it, they may be displayed using the --help switch.
+Tigase IoT Framework runtime understands some variables that can control it, they may be displayed using the --help switch.
 
 [source,bash]
 ----
@@ -59,30 +60,42 @@ TIP: To configure more than one account just add another section inside `xmppSer
 
 TIP: To connect to XMPP server for which DNS is not configured just add `server` property to account configuration block with value set to it's address: `server = '10.0.0.3'`
 
-Configuration of Tigase Raspberry Pi Home may be splitted into few files: for example beans definitions and password in separate file.
+Configuration of Tigase IoT Framework may be splitted into few files: for example beans definitions and password in separate file.
 
-Tigase Raspberry Pi Home project uses XMPP PubSub service for configuration storage and as an event router forwarding state changes between devices.
-By default PubSub service allows modifications of PubSub nodes only by node owners. Due to that it is required that every IoT-XMPP bridge footnote:[Application which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] authenticates connection to XMPP server using method different than ANONYMOUS.
+Tigase IoT Framework uses XMPP PubSub service for configuration storage and as an event router forwarding state changes between devices.
+By default PubSub service allows modifications of PubSub nodes only by node owners. Due to that it is required that every IoT-XMPP bridge footnote:[Application based on Tigase IoT Framework which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] authenticates connection to XMPP server using method different than ANONYMOUS.
 
-TIP: If you want to use particular account and you want to create account if it not exists then bot framework may register account on a server using http://xmpp.org/extensions/xep-0077.html:[XEP-0077: In-Band Registration].
+TIP: If you want to use particular account and you want to create account if it not exists then framework may register account on a server using http://xmpp.org/extensions/xep-0077.html:[XEP-0077: In-Band Registration].
 To enable this feature just add `register` property to account configuration block and set it to `true`, ie. `register = true`
 
-[WARNING]
-If Tigase Raspberry Pi Home project is configured to use PEP service footnote:[A virtual PubSub service which is hosted under bare jid of an account, see http://www.xmpp.org/extensions/xep-0060.html#presence[XEP-0060: Publish-Subscribe, Section 9. IM Account Integration]]
-as PubSub service then it is required that all XMPP-Bridges are using same authentication credentials.
+[NOTE]
+If Tigase IoT Framework by is configured not to use PEP service footnote:[A virtual PubSub service which is hosted under bare jid of an account, see http://www.xmpp.org/extensions/xep-0060.html#presence[XEP-0060: Publish-Subscribe, Section 9. IM Account Integration]]
+as PubSub service. To use this mode you need to enable PEP mode and then it is required that all IoT-XMPP bridges footnote:[Application based on Tigase IoT Framework which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] are using same authentication credentials.
 
 [WARNING]
-In current version of Tigase Raspberry Pi Home project it is possible to use ANONYMOUS authentication with properly <<xmpp-server-configuration,configured XMPP server>>, but it is not recommended due to security considerations.
+In current version of Tigase IoT Framework it is possible to use ANONYMOUS authentication with properly <<xmpp-server-configuration,configured XMPP server>>, but it is not recommended due to security considerations.
 
-.Example configuration with few devices - uncomment related parts before usage
+.Example configuration with few devices (including devices may require `device-rpi` module) - uncomment related parts before usage
 [source,dsl]
 ----
-include::../../../../../app/src/main/resources/default.dsl[]
+include::../../../../../runtime/src/main/resources/default.dsl[]
 ----
 
 
 === Running Web UI
 Package created during build of Web UI may be deployed to any Java based HTTP server (like ie. Tomcat) or it is possible to unzip content of this archive to any subdirectory and point web server like Apache or NGINX to this directory for serving data.
+
+It is also possible to start Web UI without any web server by running following command:
+
+[source,bash]
+-----
+mvn gwt:run
+-----
+
+This will start web UI using GWT SuperDevMode.
+
+[NOTE]
+It is required to build base part of a project with Gradle before building Web UI with Maven.
 
 [NOTE]
 It is best to have Web UI deployed on same server which hosts Tigase XMPP Server (HUB).
