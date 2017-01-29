@@ -9,7 +9,7 @@ Now we may run the bot.
 [source,bash]
 ----
 $ cd tigase-iot-framework-1.0.0-SNAPSHOT/
-$ $ ./bin/tigase-pi-home-app
+$ $ ./bin/tigase-iot-framework
 2016-11-14 10:55:21.716 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultBeanConfigurator
 2016-11-14 10:55:21.760 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultTypesConverter
 2016-11-14 10:55:21.761 [main]             Kernel.injectDependencies()        FINER:    [root] Injecting [tigase.bot.runtime.CustomTypesConverter@304a9d7b] to defaultBeanConfigurator:tigase.component.DSLBeanConfigurator#bean:defaultTypesConverter
@@ -20,8 +20,8 @@ Tigase IoT Framework runtime understands some variables that can control it, the
 
 [source,bash]
 ----
-$ ./bin/tigase-pi-home-app --help
-usage: tigase-pi-home-app [options] [config_file] [config_file]
+$ ./bin/tigase-iot-framework --help
+usage: tigase-iot-framework [options] [config_file] [config_file]
 
 Options:
 -h, --help                                   display this screen
