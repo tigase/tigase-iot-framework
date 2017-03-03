@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 /**
  * Created by andrzej on 05.11.2016.
  */
-@Bean(name = "lightFormatter", parent = Kernel.class, exportable = true)
+@Bean(name = "lightFormatter", parent = Kernel.class, active = true, exportable = true)
 public class LightFormatter extends AbstractValueFormatter<Light> {
 
 	public LightFormatter() {

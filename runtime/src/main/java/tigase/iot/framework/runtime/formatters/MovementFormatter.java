@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 /**
  * Created by andrzej on 07.11.2016.
  */
-@Bean(name = "movementFormatter", parent = Kernel.class, exportable = true)
+@Bean(name = "movementFormatter", parent = Kernel.class, active = true, exportable = true)
 public class MovementFormatter extends AbstractValueFormatter<Movement> {
 
 	public MovementFormatter() {

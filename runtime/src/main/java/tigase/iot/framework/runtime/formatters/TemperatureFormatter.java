@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 /**
  * Created by andrzej on 30.10.2016.
  */
-@Bean(name = "temperatureFormatter", parent = Kernel.class, exportable = true)
+@Bean(name = "temperatureFormatter", parent = Kernel.class, active = true, exportable = true)
 public class TemperatureFormatter
 		extends AbstractValueFormatter<Temperature> {
 

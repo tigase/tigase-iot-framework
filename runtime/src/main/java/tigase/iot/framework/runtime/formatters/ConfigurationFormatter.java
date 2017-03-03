@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
 /**
  * Created by andrzej on 05.11.2016.
  */
-@Bean(name = "configurationFormatter", parent = Kernel.class, exportable = true)
+@Bean(name = "configurationFormatter", parent = Kernel.class, active = true, exportable = true)
 public class ConfigurationFormatter
 		extends AbstractValueFormatter<AbstractConfigurationPubSubManager.ConfigValue> {
 
