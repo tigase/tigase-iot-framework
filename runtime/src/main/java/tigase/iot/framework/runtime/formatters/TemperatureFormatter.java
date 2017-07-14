@@ -31,6 +31,7 @@ import tigase.iot.framework.values.Temperature;
 import java.time.LocalDateTime;
 
 /**
+ * Formatter for {@link Temperature}
  * Created by andrzej on 30.10.2016.
  */
 @Bean(name = "temperatureFormatter", parent = Kernel.class, active = true, exportable = true)

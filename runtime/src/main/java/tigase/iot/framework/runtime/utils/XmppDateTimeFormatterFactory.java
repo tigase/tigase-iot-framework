@@ -28,6 +28,9 @@ import java.time.format.SignStyle;
 import static java.time.temporal.ChronoField.*;
 
 /**
+ * Factory provides instances of date time formatter configured to properly
+ * parse and format data and time to XMPP compatible date time format.
+ *
  * Created by andrzej on 30.10.2016.
  */
 public class XmppDateTimeFormatterFactory {

@@ -22,10 +22,17 @@
 package tigase.iot.framework.devices;
 
 /**
+ * Interface implemented by every devices used within Tigase IoT framework.
+ * 
  * Created by bmalkow on 08.12.2016.
  */
 public interface IDevice {
 
+	/**
+	 * Retrieve name of a device.
+	 *
+	 * @return name of a device
+	 */
 	String getName();
 
 }

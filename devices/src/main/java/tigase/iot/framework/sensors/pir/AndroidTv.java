@@ -36,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Sensor for Android-based TV devices.
+ *
  * Created by andrzej on 02.12.2016.
  */
 public class AndroidTv

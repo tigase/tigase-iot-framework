@@ -26,6 +26,8 @@ import tigase.iot.framework.client.Device;
 import java.util.Date;
 
 /**
+ * Class represents temperature value and its unit.
+ *
  * Created by andrzej on 26.11.2016.
  */
 public class Temperature extends Device.Value<Double> {

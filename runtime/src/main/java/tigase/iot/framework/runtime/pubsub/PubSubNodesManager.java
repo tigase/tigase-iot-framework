@@ -55,6 +55,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Class is implementation of a PubSub nodes manager.
+ * It manages PubSub nodes for classes implementing <code>PubSubNodeAware</code> interface and manages
+ * subscriptions of PubSub nodes for classes implementing <code>NodesObserver</code> interface.
+ *
  * Created by andrzej on 04.11.2016.
  */
 @RequiredXmppModules({PubSubModule.class, PresenceModule.class, DiscoveryModule.class, CapabilitiesModule.class,
@@ -103,6 +107,9 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Update subscriptions for observed PubSub nodes.
+	 */
 	public synchronized void updateObservedNodes() {
 		this.features.clear();
 		this.observedNodes = observers.stream().flatMap(o -> getObservedNodes(o)).collect(Collectors.toSet());
@@ -115,6 +122,9 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Update PubSub nodes on PubSub service for PubSubNodesAware classes.
+	 */
 	public synchronized void updateRequiredNodes() {
 		if (nodesAware == null) {
 			return;
@@ -145,6 +155,10 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Make sure that required nodes exist.
+	 * @param jaxmpp
+	 */
 	public void ensureNodeExists(Jaxmpp jaxmpp) {
 		List<Node> requiredNode = this.requiredNodes;
 		List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
@@ -157,6 +171,11 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Make sure that required subnodes exists.
+	 * @param jaxmpp
+	 * @param node
+	 */
 	public void ensureNodeExists(Jaxmpp jaxmpp, Node node) {
 		List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
 		if (!existingNodes.contains(node.getNodeName())) {
@@ -171,6 +190,11 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Create node and subnodes
+	 * @param jaxmpp
+	 * @param node
+	 */
 	public void createNodeAndSubnodes(Jaxmpp jaxmpp, Node node) {
 		try {
 			JID pubsubJid = getPubsubJid(jaxmpp);
@@ -182,6 +206,12 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Publish an item to PubSub node
+	 * @param node
+	 * @param itemId
+	 * @param payload
+	 */
 	public void publishItem(String node, String itemId, Element payload) {
 		Item item = new Item(node, itemId, payload);
 		xmppService.getAllConnections().forEach(jaxmpp -> {
@@ -200,6 +230,10 @@ public class PubSubNodesManager
 		});
 	}
 
+	/**
+	 * Publish all items which were waiting for being published to PubSub nodes.
+	 * @param jaxmpp
+	 */
 	private void publishWaitingItems(Jaxmpp jaxmpp) {
 		Queue<Item> queue = jaxmpp.getSessionObject().getUserProperty(PUBSUB_PUBLISH_QUEUE);
 		if (queue == null) {
@@ -257,6 +291,12 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Retrieve list of PubSub nodes (subnodes)
+	 * @param jaxmpp
+	 * @param node - parent node name or null
+	 * @param callback
+	 */
 	public void retrieveNodes(Jaxmpp jaxmpp, String node, Runnable callback) {
 		try {
 			DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
@@ -284,6 +324,15 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Create PubSub node with provided configuration.
+	 * @param jaxmpp
+	 * @param pubsubJid
+	 * @param node
+	 * @param config
+	 * @param callback
+	 * @throws JaxmppException
+	 */
 	public void createNode(Jaxmpp jaxmpp, JID pubsubJid, String node, JabberDataElement config, Runnable callback)
 			throws JaxmppException {
 		PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
@@ -317,6 +366,10 @@ public class PubSubNodesManager
 		});
 	}
 
+	/**
+	 * Method is called when required PubSub node is ready.
+	 * @param nodeReady
+	 */
 	@HandleEvent
 	private void nodeReady(NodeReady nodeReady) {
 		publishWaitingItems(nodeReady.jaxmpp);
@@ -327,6 +380,11 @@ public class PubSubNodesManager
 		event.jaxmpp.getModule(FeatureProviderModule.class).setFeatures(this, features);
 	}
 
+	/**
+	 * Returns stream of observed PubSub nodes.
+	 * @param o
+	 * @return
+	 */
 	protected Stream<String> getObservedNodes(NodesObserver o) {
 		return o.getObservedNodes().stream();
 	}
@@ -345,7 +403,7 @@ public class PubSubNodesManager
 	protected void jaxmppDisconnected(Jaxmpp jaxmpp) {
 
 	}
-
+	
 	protected void sendPresenceToPubSubIfNeeded(Jaxmpp jaxmpp) {
 		jaxmpp.getSessionObject().setProperty(CapabilitiesModule.VERIFICATION_STRING_KEY, null);
 		PresenceModule presenceModule = jaxmpp.getModule(PresenceModule.class);
@@ -384,18 +442,33 @@ public class PubSubNodesManager
 		}
 	}
 
+	/**
+	 * Interface which needs to be implemented by all classes which instances require PubSub nodes
+	 * to be managed by <code>PubSubNodesManager</code>
+	 */
 	public interface PubSubNodeAware {
 
+		/**
+		 * List of nodes which are required.
+		 * @return
+		 */
 		List<Node> getRequiredNodes();
 
 	}
 
+	/**
+	 * Interface which needs to be implemented by all classes which want to observer PubSub nodes.
+	 */
 	public interface NodesObserver {
 
+		/**
+		 * Returns list of nodes which should be observed.
+		 * @return
+		 */
 		List<String> getObservedNodes();
 
 	}
-
+	
 	public static class Item {
 
 		private final String node;
@@ -410,6 +483,9 @@ public class PubSubNodesManager
 
 	}
 
+	/**
+	 * Class represents a PubSub node name, configuration and structure.
+	 */
 	public static class Node {
 
 		private String nodeName;

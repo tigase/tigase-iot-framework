@@ -38,6 +38,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * An example class which creates Presence which should be set for XMPP connection.
+ *
  * Created by andrzej on 23.10.2016.
  */
 @Autostart
@@ -56,6 +58,12 @@ public class PresencePublisherDemo extends AbstractXmppBridge
 				.forEach(jaxmpp -> PresenceModule.setOwnPresenceStanzaFactory(jaxmpp.getSessionObject(), this));
 	}
 
+	/**
+	 * Creates instance of {@link tigase.jaxmpp.core.client.xmpp.stanzas.Presence}
+	 * and sets its properties as required.
+	 * @param sessionObject
+	 * @return
+	 */
 	@Override
 	public Presence create(SessionObject sessionObject) {
 		try {

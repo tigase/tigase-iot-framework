@@ -8,7 +8,7 @@ package tigase.iot.framework.client.client.devices;
 import tigase.iot.framework.client.values.Light;
 
 /**
- *
+ * Implementation of a representation of a remote light sensor.
  * @author andrzej
  */
 public class LightSensor extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightSensor> {

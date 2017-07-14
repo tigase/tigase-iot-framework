@@ -25,6 +25,8 @@ import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
 
 /**
+ * Class implements representation of remote tv sensor.
+ *
  * Created by andrzej on 05.12.2016.
  */
 public class TvSensor extends MovementSensor {

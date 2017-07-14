@@ -24,6 +24,9 @@ package tigase.iot.framework.devices;
 import java.time.LocalDateTime;
 
 /**
+ * Base class implementing {@link tigase.iot.framework.devices.IValue} which provides
+ * basic implementation common for classes implementing this interface.
+ *
  * Created by andrzej on 22.10.2016.
  */
 public class Value<T>

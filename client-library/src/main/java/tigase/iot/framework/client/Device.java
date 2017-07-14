@@ -44,6 +44,8 @@ import java.util.Date;
 import java.util.logging.Level;
 
 /**
+ * Abstract class providing base implementation for client side device representation.
+ *
  * Created by andrzej on 26.11.2016.
  */
 public abstract class Device<S extends Device.IValue> {
@@ -63,10 +65,21 @@ public abstract class Device<S extends Device.IValue> {
 		this.name = name;
 	}
 
+	/**
+	 * Retrieve name of device
+	 * @return device name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Set device name
+	 *
+	 * @param name of device
+	 * @param callback fired when name is set
+	 * @throws JaxmppException
+	 */
 	public void setName(final String name, final Callback<String> callback) throws JaxmppException {
 		if (this.name.equals(name)) {
 			callback.onSuccess(name);
@@ -118,14 +131,27 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	/**
+	 * Retrieve name of pubsub node of a device
+	 * @return
+	 */
 	public String getNode() {
 		return node;
 	}
 
+	/**
+	 * Retrieve cached device state/value
+	 * @return
+	 */
 	public S getValue() {
 		return value;
 	}
 
+	/**
+	 * Retrieve device state/value from PubSub node
+	 * @param callback - called with retrieval result
+	 * @throws JaxmppException
+	 */
 	public void getValue(final Callback<S> callback) throws JaxmppException {
 		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), node + "/state", null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
 			@Override
@@ -152,6 +178,14 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	/**
+	 * Method called to retrieve device configuration from PubSub node
+	 * @param jaxmpp
+	 * @param pubsubJid
+	 * @param deviceNode
+	 * @param callback
+	 * @throws JaxmppException
+	 */
 	public static void retrieveConfiguration(JaxmppCore jaxmpp, JID pubsubJid, String deviceNode,
 											 final Callback<Configuration> callback) throws JaxmppException {
 		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), deviceNode + "/config", null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
@@ -185,10 +219,23 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	/**
+	 * Metod retrieves device configuration from PubSub node
+	 * @param callback
+	 * @throws JaxmppException
+	 */
 	public void retrieveConfiguration(final Callback<Configuration> callback) throws JaxmppException {
 		Device.retrieveConfiguration(jaxmpp, pubsubJid, node, callback);
 	}
 
+	/**
+	 * Set configuration of the device.
+	 * It will result in configuration being published to PubSub node and delivered to the actual device.
+	 *
+	 * @param config
+	 * @param callback
+	 * @throws JaxmppException
+	 */
 	public void setConfiguration(final JabberDataElement config, final Callback<Configuration> callback) throws JaxmppException {
 		Element timestamp = ElementFactory.create("timestamp");
 		final Date date = new Date();
@@ -215,10 +262,21 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	/**
+	 * Set or replace device value observer. It will be called whenever device value changes.
+	 * @param observer
+	 */
 	public void setObserver(ValueChangedHandler<S> observer) {
 		this.observer = observer;
 	}
 
+	/**
+	 * Method user to parse element and create device configuration change event from it.
+	 * 
+	 * @param payload
+	 * @return
+	 * @throws JaxmppException
+	 */
 	protected static Configuration parseConfig(Element payload) throws JaxmppException {
 		Element valueEl = payload.getFirstChild();
 		Date timestamp = parseTimestamp(payload);
@@ -230,6 +288,12 @@ public abstract class Device<S extends Device.IValue> {
 		return new Configuration(data, timestamp);
 	}
 
+	/**
+	 * Method to parse element and retrieve timestamp from it.
+	 * @param payload
+	 * @return
+	 * @throws XMLException
+	 */
 	protected static Date parseTimestamp(Element payload) throws XMLException {
 		if (payload == null || !"timestamp".equals(payload.getName())) {
 			return null;
@@ -237,6 +301,12 @@ public abstract class Device<S extends Device.IValue> {
 		return new DateTimeFormat().parse(payload.getAttribute("value"));
 	}
 
+	/**
+	 * Method called when local device representation is informed that remote
+	 * device state/value has changed.
+	 * 
+	 * @param newValue
+	 */
 	protected void updateValue(S newValue) {
 		if (value != null && value.getTimestamp().getTime() > newValue.getTimestamp().getTime()) {
 			return;
@@ -250,6 +320,14 @@ public abstract class Device<S extends Device.IValue> {
 		jaxmpp.getEventBus().fire(new ValueChangedHandler.ValueChangedEvent<S>(newValue));
 	}
 
+	/**
+	 * Method informs remote device that its value is being changed. It should result on
+	 * value change on the remote device.
+	 * 
+	 * @param newValue
+	 * @param callback
+	 * @throws JaxmppException
+	 */
 	protected void setValue(final S newValue, final Callback<S> callback) throws JaxmppException {
 		Element payload = encodeToPayload(newValue);
 		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node + "/state", null, payload, new AsyncCallback() {
@@ -271,9 +349,24 @@ public abstract class Device<S extends Device.IValue> {
 		});
 	}
 
+	/**
+	 * Method serializes value to element representation.
+	 * @param value
+	 * @return
+	 */
 	protected abstract Element encodeToPayload(S value);
+
+	/**
+	 * Method converts element into value object.
+	 * @param item
+	 * @return
+	 */
 	protected abstract S parsePayload(Element item);
 
+	/**
+	 * Base class for objects representing value/state of remote device.
+	 * @param <D>
+	 */
 	public static class Value<D> implements IValue<D> {
 
 		private final Date timestamp;
@@ -295,6 +388,9 @@ public abstract class Device<S extends Device.IValue> {
 		}
 	}
 
+	/**
+	 * Class represents configuration of a device.
+	 */
 	public static class Configuration extends Value<JabberDataElement> {
 
 		public Configuration(JabberDataElement value, Date timestamp) {
@@ -302,27 +398,58 @@ public abstract class Device<S extends Device.IValue> {
 		}
 	}
 
-
+	/**
+	 * Interface which needs to be implemented by all classes representing device state/value.
+	 * @param <D>
+	 */
 	public interface IValue<D> {
 
+		/**
+		 * Get timestamp of value/state change
+		 * @return
+		 */
 		Date getTimestamp();
 
+		/**
+		 * Get new value/state of a device
+		 * @return
+		 */
 		D getValue();
 
 	}
 
+	/**
+	 * Interface implemented by callbacks which should be called as a result of execution of asynchronous methods.
+	 * @param <T>
+	 */
 	public interface Callback<T> {
 
+		/**
+		 * Called when call returned error.
+		 * @param error
+		 */
 		void onError(XMPPException.ErrorCondition error);
 
+		/**
+		 * Called when call returned success.
+		 * @param result
+		 */
 		void onSuccess(T result);
 
 	}
 
+	/**
+	 * Interface which needs to be implemented by any class which wants to observer device state/value changes.
+	 * @param <T>
+	 */
 	public interface ValueChangedHandler<T extends IValue> extends EventHandler {
 
 		void valueChanged(T value);
 
+		/**
+		 * Event fired when value/state of device changes.
+		 * @param <T>
+		 */
 		class ValueChangedEvent<T extends IValue> extends Event<ValueChangedHandler<T>> {
 
 			private final T value;

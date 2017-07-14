@@ -26,12 +26,23 @@ import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 
 /**
+ * Interface implemented by classes responsible for conversion of value handling classes and XML elements.
+ *
  * Created by andrzej on 30.10.2016.
  */
 public interface ValueFormatter<T extends IValue> {
 
+	/**
+	 * Returns class which is supported by this formatter.
+	 * @return
+	 */
 	Class<T> getSupportedClass();
 
+	/**
+	 * Method checks if provided instance is of class supported by this converter.
+	 * @param o
+	 * @return
+	 */
 	default boolean isSupported(Object o) {
 		if (o == null) {
 			return false;
@@ -39,8 +50,20 @@ public interface ValueFormatter<T extends IValue> {
 		return getSupportedClass().isAssignableFrom(o.getClass());
 	}
 
+	/**
+	 * Method converts value object to element.
+	 * @param value
+	 * @return
+	 * @throws JaxmppException
+	 */
 	Element toElement(T value) throws JaxmppException;
 
+	/**
+	 * Method parses data from element and creates object representation of a value.
+	 * @param elem
+	 * @return
+	 * @throws JaxmppException
+	 */
 	T fromElement(Element elem) throws JaxmppException;
 
 }

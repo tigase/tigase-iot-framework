@@ -22,10 +22,16 @@
 package tigase.iot.framework.devices;
 
 /**
+ * Interface implemented by devices which state may be changed by user action, ie. lights dimmer.
+ *
  * Created by andrzej on 24.10.2016.
  */
 public interface IExecutorDevice<T> extends IDevice {
 
+	/**
+	 * Sets devices value/state to value provided as parameter.
+	 * @param value to set
+	 */
 	void setValue(T value);
 
 }

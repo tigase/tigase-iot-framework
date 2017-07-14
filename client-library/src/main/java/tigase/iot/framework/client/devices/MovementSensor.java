@@ -31,6 +31,8 @@ import tigase.jaxmpp.core.client.xml.XMLException;
 import java.util.Date;
 
 /**
+ * Class implements representation of remote movement detector.
+ *
  * Created by andrzej on 27.11.2016.
  */
 public class MovementSensor extends Device<Movement> {

@@ -25,7 +25,7 @@ import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
 
 /**
- *
+ * Extended version of {@link DeviceRemoteAware} which adds support for configuration management of a remote device.
  * @author andrzej
  */
 public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.client.Device.IValue<S>, D extends tigase.iot.framework.client.Device<T>> extends DeviceRemoteAware<S, T>{

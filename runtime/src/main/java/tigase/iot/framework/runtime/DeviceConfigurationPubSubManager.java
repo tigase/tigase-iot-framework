@@ -35,6 +35,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Class implements configuration management and storage for devices in PubSub service nodes.
+ *
  * Created by andrzej on 04.11.2016.
  */
 public class DeviceConfigurationPubSubManager
@@ -56,6 +58,11 @@ public class DeviceConfigurationPubSubManager
 				configurationAware.stream().filter(aware -> aware instanceof IDevice).collect(Collectors.toList()));
 	}
 
+	/**
+	 * Create root PubSub node configuration for devices
+	 * @return
+	 * @throws JaxmppException
+	 */
 	protected JabberDataElement prepareRootNodeConfig() throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", "Devices");
@@ -67,6 +74,12 @@ public class DeviceConfigurationPubSubManager
 		return config;
 	}
 
+	/**
+	 * Create device node configuration
+	 * @param configurationAware
+	 * @return
+	 * @throws JaxmppException
+	 */
 	protected JabberDataElement prepareNodeConfig(IConfigurationAware configurationAware) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", configurationAware.getName());
@@ -79,6 +92,12 @@ public class DeviceConfigurationPubSubManager
 		return config;
 	}
 
+	/**
+	 * Create PubSub node configuration for device configuration storage.
+	 * @param collection
+	 * @return
+	 * @throws JaxmppException
+	 */
 	protected JabberDataElement prepareConfigNodeConfig(String collection) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
 		config.addTextSingleField("pubsub#title", "Configuration");

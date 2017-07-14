@@ -39,6 +39,10 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
+ * Extended version of {@link PubSubNodesManager} with added support for publication of values for devices
+ * with support for converting values to elements using configured formatters and added support for
+ * firing events when PubSub notification for one of observed node is received.
+ *
  * Created by andrzej on 05.11.2016.
  */
 public class ExtendedPubSubNodesManager
@@ -56,6 +60,13 @@ public class ExtendedPubSubNodesManager
 		this.rootNode = "devices";
 	}
 
+	/**
+	 * Method converts value to PubSub item payload and publishes it to provided PubSub node
+	 * with provided item id set.
+	 * @param node
+	 * @param itemId
+	 * @param value
+	 */
 	public void publish(String node, String itemId, IValue value) {
 		formatters.stream().filter(formatter -> formatter.isSupported(value)).forEach(formatter -> {
 			try {
@@ -74,6 +85,13 @@ public class ExtendedPubSubNodesManager
 		});
 	}
 
+	/**
+	 * Method called when PubSub notification for one of observed node is received.
+	 *
+	 * If notification has payload and it can be convert to implementation of {@link IValue}
+	 * interface then {@link ValueChangedEvent} is fired for this new value.
+	 * @param event
+	 */
 	@HandleEvent
 	public void receivedItem(PubSubModule.NotificationReceivedHandler.NotificationReceivedEvent event) {
 		if (log.isLoggable(Level.FINEST)) {
@@ -101,6 +119,11 @@ public class ExtendedPubSubNodesManager
 		});
 	}
 
+	/**
+	 * Returns stream of observed PubSub nodes
+	 * @param o
+	 * @return
+	 */
 	@Override
 	protected Stream<String> getObservedNodes(NodesObserver o) {
 		if (o instanceof IExecutorDevice) {
@@ -111,6 +134,10 @@ public class ExtendedPubSubNodesManager
 		}
 	}
 
+	/**
+	 * Event fired when PubSub notification about change on PubSub node is received.
+	 * @param <T>
+	 */
 	public static class ValueChangedEvent<T> {
 
 		public final String sourceId;

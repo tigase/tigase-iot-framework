@@ -37,6 +37,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Class implements a listener/observer for light sensor.
+ *
  * Created by andrzej on 02.11.2016.
  */
 public class LightSensorListener implements PubSubNodesManager.NodesObserver, Initializable, UnregisterAware,
@@ -63,6 +65,10 @@ public class LightSensorListener implements PubSubNodesManager.NodesObserver, In
 		return name;
 	}
 
+	/**
+	 * Return list of PubSub nodes which should be observed.
+	 * @return
+	 */
 	@Override
 	public List<String> getObservedNodes() {
 		return observes;
@@ -73,6 +79,10 @@ public class LightSensorListener implements PubSubNodesManager.NodesObserver, In
 		eventBus.registerAll(this);
 	}
 
+	/**
+	 * Method called when state of observed device changes
+	 * @param event
+	 */
 	@HandleEvent
 	public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
 		if (observes.contains(event.sourceId)) {

@@ -31,6 +31,7 @@ import tigase.iot.framework.values.Movement;
 import java.time.LocalDateTime;
 
 /**
+ * Fomatter for {@link Movement}
  * Created by andrzej on 07.11.2016.
  */
 @Bean(name = "movementFormatter", parent = Kernel.class, active = true, exportable = true)

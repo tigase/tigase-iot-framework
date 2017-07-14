@@ -28,6 +28,7 @@ import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
 
 /**
+ * Helper class for PubSub nodes creation for devices.
  * Created by andrzej on 04.11.2016.
  */
 public class DeviceNodesHelper {
@@ -68,18 +69,41 @@ public class DeviceNodesHelper {
 		return new PubSubNodesManager.Node(node, config);
 	}
 
+	/**
+	 * Get PubSub node name for device
+	 * @param rootNode
+	 * @param device
+	 * @return
+	 */
 	public static String getDeviceNodeName(String rootNode, IDevice device) {
 		return rootNode + "/" + device.getName();
 	}
 
+	/**
+	 * Get PubSub node name for device configuration
+	 * @param rootNode
+	 * @param device
+	 * @return
+	 */
 	public static String getDeviceConfigNodeName(String rootNode, IDevice device) {
 		return getDeviceNodeName(rootNode, device) + "/config";
 	}
 
+	/**
+	 * Get PubSub node name for device state
+	 * @param rootNode
+	 * @param device
+	 * @return
+	 */
 	public static String getDeviceStateNodeName(String rootNode, IDevice device) {
 		return getDeviceNodeName(rootNode, device) + "/state";
 	}
 
+	/**
+	 * Parse PubSub node name and retrieve device name from it
+	 * @param node
+	 * @return
+	 */
 	public static String getDeviceIdFromNode(String node) {
 		String[] parts = node.split("/");
 		if (parts.length > 1) {

@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 import tigase.iot.framework.client.values.Movement;
 
 /**
- *
+ * Representation of a remote TvSensor presenting TV state.
  * @author andrzej
  */
 public class TvIndicator extends DeviceRemoteConfigAware<Boolean, Movement, tigase.iot.framework.client.devices.TvSensor> {

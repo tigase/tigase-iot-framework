@@ -29,6 +29,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Implementation of a sensor reading temperature from DS1820 sensor.
+ *
+ * It should not be used directly as it requires W1 support. Due to that
+ * you should use {@link tigase.iot.framework.rpi.sensors.w1.W1Master}
+ * which will instantiate and register instance of this class.
+ *
  * Created by andrzej on 24.10.2016.
  */
 public class DS1820 extends W1AbstractPeriodDevice<Temperature> {

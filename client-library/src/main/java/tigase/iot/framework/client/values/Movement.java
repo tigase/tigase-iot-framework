@@ -26,6 +26,8 @@ import tigase.iot.framework.client.Device;
 import java.util.Date;
 
 /**
+ * Class represents movement value.
+ * 
  * Created by andrzej on 27.11.2016.
  */
 public class Movement extends Device.Value<Boolean> {

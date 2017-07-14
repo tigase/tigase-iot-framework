@@ -35,6 +35,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Abstract class to be used as a base class for sensors which value change
+ * is not notified and must be polled on specified interval.
+ *
  * Created by andrzej on 22.10.2016.
  */
 public abstract class AbstractPeriodSensor<T extends IValue>
@@ -77,8 +80,16 @@ public abstract class AbstractPeriodSensor<T extends IValue>
 		future = scheduledExecutorService.scheduleAtFixedRate(() -> refresh(), period / 2, period, TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * Method used to read value from the sensor device.
+	 *
+	 * @return read value or null
+	 */
 	protected abstract T readValue();
 
+	/**
+	 * Method called every X miliseconds as set in period field.
+	 */
 	protected void refresh() {
 		log.log(Level.FINEST, "{0}, refreshing..", getName());
 		T val = readValue();

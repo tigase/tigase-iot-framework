@@ -55,6 +55,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Abstract implementation of configuration manager for PubSub-based device configuration storage.
+ * 
  * Created by andrzej on 05.11.2016.
  */
 public abstract class AbstractConfigurationPubSubManager<T extends IConfigurationAware>
@@ -96,6 +98,11 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * Returns JID of PubSub service which will be used for storage.
+	 * @param jaxmpp
+	 * @return
+	 */
 	protected JID getPubSubJID(Jaxmpp jaxmpp) {
 		return JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid());
 	}
@@ -114,6 +121,10 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 		}
 	}
 
+	/**
+	 * Register configuration aware device
+	 * @param configurationAware
+	 */
 	public void addConfigurationAware(T configurationAware) {
 		try {
 			String nodeName = getNodeNameForConfigurationAware(configurationAware);
@@ -128,6 +139,10 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 		}
 	}
 
+	/**
+	 * Unregister configuration aware device
+	 * @param configurationAware
+	 */
 	public void removeConfigurationAware(T configurationAware) {
 		String deviceNodeName = getNodeNameForConfigurationAware(configurationAware);
 		List<PubSubNodesManager.Node> toRemove = rootNodeInstance.getChildren()
@@ -138,10 +153,20 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 		configNodes.remove(deviceNodeName + "/config");
 	}
 
+	/**
+	 * Get PubSub node name for configuration aware device.
+	 * @param configurationAware
+	 * @return
+	 */
 	public String getNodeNameForConfigurationAware(T configurationAware) {
 		return rootNode + "/" + configurationAware.getName();
 	}
 
+	/**
+	 * Get name of configuration aware device from PubSub node name.
+	 * @param node
+	 * @return
+	 */
 	public String getConfigurationAwareNameFromNode(String node) {
 		String[] parts = node.split("/");
 		if (parts.length > 1) {

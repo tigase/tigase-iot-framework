@@ -8,7 +8,7 @@ package tigase.iot.framework.client.client.devices;
 import tigase.iot.framework.client.values.Movement;
 
 /**
- *
+ * Implementation of a representation (UI) of remote movement detection sensor.
  * @author andrzej
  */
 public class MovementSensor extends DeviceRemoteConfigAware<Boolean, Movement, tigase.iot.framework.client.devices.MovementSensor> {

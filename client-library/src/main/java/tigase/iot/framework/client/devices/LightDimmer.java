@@ -31,6 +31,8 @@ import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
 
 /**
+ * Class implements representation of remote light dimmer device.
+ *
  * Created by andrzej on 26.11.2016.
  */
 public class LightDimmer extends LightSensor {

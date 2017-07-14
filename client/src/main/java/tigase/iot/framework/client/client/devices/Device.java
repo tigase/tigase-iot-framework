@@ -12,7 +12,7 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
 
 /**
- *
+ * Class implements a UI for a device representation.
  * @author andrzej
  */
 public class Device extends Composite {

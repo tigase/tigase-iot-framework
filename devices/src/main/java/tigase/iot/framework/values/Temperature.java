@@ -26,6 +26,8 @@ import tigase.iot.framework.devices.Value;
 import java.time.LocalDateTime;
 
 /**
+ * Class holding value and unit for temperature measurement.
+ *
  * Created by andrzej on 24.10.2016.
  */
 public class Temperature
@@ -51,6 +53,9 @@ public class Temperature
 		return this.scale.convert(super.getValue(), scale);
 	}
 
+	/**
+	 * Implementation of temperature scales and conversions.
+	 */
 	public enum Scale {
 
 		CELSIUS("Celsius", "°C", -273.15),

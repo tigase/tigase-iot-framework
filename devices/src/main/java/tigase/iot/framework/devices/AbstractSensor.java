@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Abstract implementation of {@link tigase.iot.framework.devices.ISensor} interfaces.
+ *
  * Created by andrzej on 22.10.2016.
  */
 public abstract class AbstractSensor<T extends IValue>
@@ -78,12 +80,22 @@ public abstract class AbstractSensor<T extends IValue>
 		eventBus.registerAll(this);
 	}
 
+	/**
+	 * Method which should be called when sensor value is changed.
+	 * 
+	 * @param newValue - value to set
+	 */
 	protected synchronized void updateValue(T newValue) {
 		T oldValue = value;
 		this.value = newValue;
 		fireValueChanged(oldValue, newValue);
 	}
 
+	/**
+	 * Class of an event which is fired when sensor value is updated/changed.
+	 *
+	 * @param <T> - type of value
+	 */
 	public static class ValueChangeEvent<T extends IValue> {
 
 		public final T newValue;

@@ -30,6 +30,8 @@ import tigase.kernel.beans.UnregisterAware;
 import java.io.IOException;
 
 /**
+ * Implementation of a sensor which reads data from the connection BH1750 sensor.
+ *
  * Created by andrzej on 23.10.2016.
  */
 public class BH1750

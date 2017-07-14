@@ -31,6 +31,7 @@ import tigase.jaxmpp.core.client.xml.XMLException;
 import java.util.Date;
 
 /**
+ * Class implements representation of remote light sensor.
  * Created by andrzej on 26.11.2016.
  */
 public class LightSensor extends Device<Light> {

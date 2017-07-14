@@ -22,10 +22,19 @@
 package tigase.iot.framework.devices;
 
 /**
+ * Interface implemented by all components of Tigase IoT Framework which are configuration
+ * aware and required to be registered for configuration and reconfiguration using PubSub
+ * protocol.
+ *
  * Created by andrzej on 04.11.2016.
  */
 public interface IConfigurationAware {
 
+	/**
+	 * Retrieve name of component
+	 *
+	 * @return name
+	 */
 	String getName();
 
 }

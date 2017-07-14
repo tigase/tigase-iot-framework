@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
+ * Implementation of a sensor responsible for reading data from HC-SR501 sensor.
+ *
  * Created by andrzej on 23.10.2016.
  */
 public class HC_SR501

@@ -40,6 +40,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Class implements PubSub nodes publisher for registered sensors.
+ *
  * Created by andrzej on 31.10.2016.
  */
 public class DevicePubSubPublisher
@@ -105,6 +107,10 @@ public class DevicePubSubPublisher
 		}
 	}
 
+	/**
+	 * Add device to list of managed devices for publication of items.
+	 * @param device
+	 */
 	public void addDevice(IDevice device) {
 		if (rootNode == null) {
 			return;
@@ -120,6 +126,10 @@ public class DevicePubSubPublisher
 		}
 	}
 
+	/**
+	 * Remove device from list of managed devices for publication of items.
+	 * @param device
+	 */
 	public void removeDevice(IDevice device) {
 		if (rootNode == null) {
 			return;
@@ -141,6 +151,10 @@ public class DevicePubSubPublisher
 		}
 	}
 
+	/**
+	 * Method called when event {@link tigase.iot.framework.devices.AbstractSensor.ValueChangeEvent} is fired
+	 * @param event
+	 */
 	@HandleEvent
 	public void valueChanged(AbstractSensor.ValueChangeEvent event) {
 		if (!devices.contains(event.source)) {
@@ -150,10 +164,19 @@ public class DevicePubSubPublisher
 		publishValue(event.source, event.newValue);
 	}
 
+	/**
+	 * Method called to publish current sensor value.
+	 * @param source
+	 */
 	protected void publishDeviceValue(ISensor source) {
 		publishValue(source, source.getValue());
 	}
 
+	/**
+	 * Method called to publish passed value for particular device.
+	 * @param source
+	 * @param value
+	 */
 	protected void publishValue(IDevice source, IValue value) {
 		String node = DeviceNodesHelper.getDeviceStateNodeName(devicesRootNode, source);
 		pubSubNodesManager.publish(node, null, value);

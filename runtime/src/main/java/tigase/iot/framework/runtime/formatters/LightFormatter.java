@@ -31,6 +31,7 @@ import tigase.iot.framework.values.Light;
 import java.time.LocalDateTime;
 
 /**
+ * Formatter for {@link Light}
  * Created by andrzej on 05.11.2016.
  */
 @Bean(name = "lightFormatter", parent = Kernel.class, active = true, exportable = true)

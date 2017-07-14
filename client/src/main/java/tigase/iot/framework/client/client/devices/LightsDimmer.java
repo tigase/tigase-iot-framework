@@ -27,7 +27,7 @@ import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.iot.framework.client.values.Light;
 
 /**
- *
+ * Class is an implementation of a representation (UI) for a remote light dimmer device.
  * @author andrzej
  */
 public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {

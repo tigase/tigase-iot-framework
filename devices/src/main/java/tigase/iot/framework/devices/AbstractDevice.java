@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Abstract class providing base implementation for devices.
+ *
  * Created by bmalkow on 08.12.2016.
  */
 public abstract class AbstractDevice
@@ -47,6 +49,11 @@ public abstract class AbstractDevice
 		eventBus.unregisterAll(this);
 	}
 
+	/**
+	 * Method used to fire events on the event bus.
+	 * 
+	 * @param event - to fire
+	 */
 	protected void fireEvent(Object event) {
 		log.log(Level.FINEST, "{0}, firing event {1}", new Object[]{getName(), event});
 		eventBus.fire(event);

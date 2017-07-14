@@ -26,6 +26,8 @@ import tigase.iot.framework.devices.Value;
 import java.time.LocalDateTime;
 
 /**
+ * Class holding value and unit for light measurements.
+ *
  * Created by andrzej on 05.11.2016.
  */
 public class Light extends Value<Integer> {

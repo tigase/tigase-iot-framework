@@ -31,6 +31,8 @@ import tigase.jaxmpp.core.client.xml.XMLException;
 import java.util.Date;
 
 /**
+ * Class implements representation of remote thermometer.
+ * 
  * Created by andrzej on 26.11.2016.
  */
 public class TemperatureSensor extends Device<Temperature> {

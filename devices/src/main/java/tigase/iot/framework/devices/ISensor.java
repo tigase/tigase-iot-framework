@@ -22,11 +22,20 @@
 package tigase.iot.framework.devices;
 
 /**
+ * Base interface implemented by <code>IDevice</code> classes which have a value,
+ * ie. sensors from which data can be read (such as, ie. Thermometers) or have
+ * some value (ie. light switch).
+ *
  * Created by andrzej on 22.10.2016.
  */
 public interface ISensor<V extends IValue>
 		extends IDevice {
 
+	/**
+	 * Retrieve value of device.
+	 *
+	 * @return value
+	 */
 	V getValue();
 
 }

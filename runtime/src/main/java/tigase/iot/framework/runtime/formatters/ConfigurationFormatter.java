@@ -31,6 +31,7 @@ import tigase.iot.framework.runtime.pubsub.AbstractConfigurationPubSubManager;
 import java.time.LocalDateTime;
 
 /**
+ * Formatter which formats {@link tigase.iot.framework.runtime.pubsub.AbstractConfigurationPubSubManager.ConfigValue}
  * Created by andrzej on 05.11.2016.
  */
 @Bean(name = "configurationFormatter", parent = Kernel.class, active = true, exportable = true)

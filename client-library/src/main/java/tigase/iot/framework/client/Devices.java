@@ -43,6 +43,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Class handler device discovery and management based on PubSub nodes.
+ * 
  * Created by andrzej on 26.11.2016.
  */
 public class Devices {
@@ -59,6 +61,12 @@ public class Devices {
 		this(jaxmpp, "devices", pep);
 	}
 
+	/**
+	 * Create instance of device manager for devices registered at device node passed as argument.
+	 * @param jaxmpp
+	 * @param devicesNode
+	 * @param pep
+	 */
 	public Devices(JaxmppCore jaxmpp, String devicesNode, boolean pep) {
 		this.jaxmpp = jaxmpp;
 		this.pep = pep;
@@ -108,10 +116,19 @@ public class Devices {
 		}
 	}
 
+	/**
+	 * Method returns all known/discovered remote devices.
+	 * 
+	 * @return
+	 */
 	public List<Device> getDevices() {
 		return devices;
 	}
 
+	/**
+	 * Method returns JID of PubSub service which is being used as middleware for event delivery.
+	 * @return
+	 */
 	protected JID getPubSubJid() {
 		BareJID userJid = jaxmpp.getSessionObject().getUserBareJid();
 		if (userJid == null) {
@@ -124,6 +141,10 @@ public class Devices {
 		}
 	}
 
+	/**
+	 * Mathod will clear list of all known devices and will execute discovery of devices to find all existing devices.
+	 * @throws JaxmppException
+	 */
 	protected void refreshDevices() throws JaxmppException {
 		devices.clear();
 		final JID pubsubJid = getPubSubJid();
@@ -177,6 +198,12 @@ public class Devices {
 
 	}
 
+	/**
+	 * Method creates device representation based on received information about device from its PubSub node.
+	 * @param item
+	 * @param config
+	 * @return
+	 */
 	protected Device createDevice(DiscoveryModule.Item item, Device.Configuration config) {
 		// TODO - use field from config to select device class!
 		try {
@@ -208,10 +235,16 @@ public class Devices {
 		}
 	}
 
+	/**
+	 * Interface required to be implemented by device list change observers.
+	 */
 	public interface ChangedHandler extends EventHandler {
 
 		void devicesChanged(List<Device> devices);
 
+		/**
+		 * Event fired when list of known/discovered devices changes.
+		 */
 		class ChangedEvent extends Event<ChangedHandler> {
 
 			private final List<Device> devices;
@@ -227,7 +260,7 @@ public class Devices {
 
 		}
 	}
-
+	
 	public static class FeatureProviderModule
 			implements XmppModule {
 

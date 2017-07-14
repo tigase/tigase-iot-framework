@@ -36,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Abstract class implementing support for reading data periodically from a sensor connected using I2C.
+ *
  * Created by andrzej on 23.10.2016.
  */
 public abstract class I2CAbstractPeriodDevice<T extends IValue> extends AbstractPeriodSensor<T>
@@ -55,6 +57,13 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 		super(type, period);
 	}
 
+	/**
+	 * Method responsible for actual reading data from I2C device.
+	 *
+	 * @param device
+	 * @return
+	 * @throws IOException
+	 */
 	protected abstract T readValue(I2CDevice device) throws IOException;
 
 	@Override

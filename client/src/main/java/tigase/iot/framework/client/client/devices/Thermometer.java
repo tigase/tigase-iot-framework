@@ -9,7 +9,7 @@ import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.iot.framework.client.values.Temperature;
 
 /**
- *
+ * Representation of a remote thermometer (temperature sensor).
  * @author andrzej
  */
 public class Thermometer extends DeviceRemoteConfigAware<Double, Temperature, tigase.iot.framework.client.devices.TemperatureSensor> {

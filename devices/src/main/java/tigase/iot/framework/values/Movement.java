@@ -26,6 +26,8 @@ import tigase.iot.framework.devices.Value;
 import java.time.LocalDateTime;
 
 /**
+ * Class holding value for movement.
+ *
  * Created by andrzej on 07.11.2016.
  */
 public class Movement extends Value<Boolean> {

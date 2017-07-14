@@ -41,6 +41,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Implementation of a W1 connectivity support. This class is a manager for any
+ * W1 connected device.
+ *
  * Created by andrzej on 24.10.2016.
  */
 @Autostart
@@ -80,6 +83,9 @@ public class W1Master
 		future = scheduledExecutorService.scheduleAtFixedRate(() -> updateDevices(), period, period, TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * Check state of all connected W1 devices and update its list.
+	 */
 	protected void updateDevices() {
 		w1Master.checkDeviceChanges();
 		List<com.pi4j.io.w1.W1Device> deviceList = w1Master.getDevices();

@@ -24,12 +24,24 @@ package tigase.iot.framework.devices;
 import java.time.LocalDateTime;
 
 /**
+ * Interface which should implemented by classes representing device value or state.
+ *
  * Created by andrzej on 22.10.2016.
  */
 public interface IValue<T> {
 
+	/**
+	 * Returns timestamp when this value was read/received/changed.
+	 *
+	 * @return timestamp
+	 */
 	LocalDateTime getTimestamp();
 
+	/**
+	 * Returns value which was read from device or received.
+	 *
+	 * @return value
+	 */
 	T getValue();
 
 }

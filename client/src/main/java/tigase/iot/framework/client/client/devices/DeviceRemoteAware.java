@@ -13,7 +13,7 @@ import tigase.iot.framework.client.Device.IValue;
 import tigase.iot.framework.client.values.Movement;
 
 /**
- *
+ * Extended implementation of {@link Device} with support for representation of remote device and its state.
  * @author andrzej
  */
 public abstract class DeviceRemoteAware<S, T extends IValue<S>> extends Device implements tigase.iot.framework.client.Device.ValueChangedHandler<T> {

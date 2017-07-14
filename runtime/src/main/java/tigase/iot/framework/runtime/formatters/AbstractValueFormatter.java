@@ -34,6 +34,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
+ * Abstract implementation of {@link ValueFormatter} interface providing implementation for commonly used features.
  * Created by andrzej on 05.11.2016.
  */
 public abstract class AbstractValueFormatter<T extends IValue>
