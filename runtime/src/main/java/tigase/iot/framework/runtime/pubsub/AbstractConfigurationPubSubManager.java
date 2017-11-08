@@ -80,8 +80,8 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 	@Inject(bean = "kernel")
 	private Kernel kernel;
 
-	@Inject
-	private List<T> configurationAware;
+	@Inject(nullAllowed = true)
+	private List<T> configurationAware = new ArrayList<>();
 
 	protected List<PubSubNodesManager.Node> requiredNodes = new ArrayList<>();
 	protected List<String> configNodes = new ArrayList<>();

@@ -8,6 +8,10 @@
 #    }
 #}
 
+# Manager responsible for automatic discovery of IoT hub and creating account at this hub
+configManager () {
+}
+
 ##  Modules
 
 adHocCommands(class: 'tigase.bot.runtime.AdHocCommandsBridge', exportable: true){
