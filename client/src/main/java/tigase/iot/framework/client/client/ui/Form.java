@@ -47,7 +47,7 @@ public class Form extends Composite {
                 
                 for (AbstractField field : data.getFields()) {
                         String name = field.getLabel();
-						if (name == null) name = field.getDesc();
+						if (name == null) name = field.getLabel();
                         if (name == null) name = field.getVar();
                         
                         if ("hidden".equals(field.getType())) {
@@ -180,6 +180,9 @@ public class Form extends Composite {
         }
         
         public JabberDataElement getData() throws JaxmppException {                
+			if (data == null) {
+				return null;
+			}
                 int row = 0;
 
                 String instructions = data.getInstructions();

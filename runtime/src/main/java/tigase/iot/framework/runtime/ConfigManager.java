@@ -35,19 +35,23 @@ import tigase.kernel.core.Kernel;
 import tigase.xmpp.jid.JID;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Bean handles local configuration file. It is used to apply changes to configuration, reconfigure IoT framework
+ * and save updated configuration to the local config file.
+ */
 @Autostart
-@Bean(name = "configManager", parent = Kernel.class, active = false)
+@Bean(name = "configManager", parent = Kernel.class, active = false, exportable = true)
 public class ConfigManager
 		implements RegistrarBean, Initializable, UnregisterAware {
 
 	private static final Logger log = Logger.getLogger(ConfigManager.class.getCanonicalName());
 
+	private final Map<String, Object> originalConfig = new HashMap<>();
 	private final Map<String, Object> config = new HashMap<>();
 
 	@ConfigField(desc = "Account credentials file", alias = "settings-file")
@@ -70,7 +74,15 @@ public class ConfigManager
 			}
 		}
 
-		applyConfigChanges();
+		Timer timer = new Timer(true);
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				timer.cancel();
+				originalConfig.putAll(kernel.getParent().getInstance(DSLBeanConfigurator.class).getProperties());
+				applyConfigChanges();
+			}
+		}, 500);
 	}
 
 	@Override
@@ -80,10 +92,10 @@ public class ConfigManager
 
 	public void applyConfigChanges() {
 		DSLBeanConfigurator configurator = this.kernel.getParent().getInstance(DSLBeanConfigurator.class);
-		Map<String, Object> mergedConfig = ConfigHelper.merge(configurator.getProperties(), config);
+		Map<String, Object> mergedConfig = ConfigHelper.merge(originalConfig, config);
 
 		while (!ensureAtLeastOneXmppAccount(mergedConfig)) {
-			mergedConfig = ConfigHelper.merge(configurator.getProperties(), config);
+			mergedConfig = ConfigHelper.merge(mergedConfig, config);
 		}
 
 		configurator.setProperties(mergedConfig);
@@ -100,6 +112,25 @@ public class ConfigManager
 	@Override
 	public void unregister(Kernel kernel) {
 		this.kernel = null;
+	}
+
+	public void setBeanDefinition(AbstractBeanConfigurator.BeanDefinition beanDefinition) {
+		config.put(beanDefinition.getBeanName(), beanDefinition);
+		applyConfigChanges();
+	}
+
+	public void removeBeanDefinition(String name) {
+		if (config.remove(name) != null) {
+			applyConfigChanges();
+		}
+	}
+
+	public void updateBeanDefinition(String beanName, Consumer<AbstractBeanConfigurator.BeanDefinition> consumer) {
+		AbstractBeanConfigurator.BeanDefinition definition = (AbstractBeanConfigurator.BeanDefinition) config.get(beanName);
+		if (definition != null) {
+			consumer.accept(definition);
+			applyConfigChanges();
+		}
 	}
 
 	private boolean ensureAtLeastOneXmppAccount(Map<String, Object> config) {
@@ -123,7 +154,7 @@ public class ConfigManager
 	private AbstractBeanConfigurator.BeanDefinition createAccountBean() {
 		return new AbstractBeanConfigurator.BeanDefinition.Builder().name("default")
 				.active(true)
-				.with("jid", JID.jidInstanceNS(UUID.randomUUID().toString(), "tigase-iot-hub.local"))
+				.with("jid", JID.jidInstanceNS(UUID.randomUUID().toString(), "tigase-iot-hub.local", "iot"))
 				.with("password", UUID.randomUUID().toString())
 				.with("ignoreCertificateErrors", true)
 				.with("register", true)

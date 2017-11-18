@@ -25,17 +25,26 @@ import tigase.eventbus.HandleEvent;
 import tigase.iot.framework.devices.IDevice;
 import tigase.iot.framework.devices.IExecutorDevice;
 import tigase.iot.framework.devices.IValue;
+import tigase.iot.framework.runtime.DeviceManager;
 import tigase.iot.framework.runtime.DeviceNodesHelper;
 import tigase.iot.framework.runtime.ValueFormatter;
+import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
+import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
+import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubErrorCondition;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
+import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
+import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.kernel.beans.Inject;
 
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -51,6 +60,9 @@ public class ExtendedPubSubNodesManager
 	private static final Logger log = Logger.getLogger(ExtendedPubSubNodesManager.class.getCanonicalName());
 
 	@Inject(nullAllowed = true)
+	private DeviceManager deviceManager;
+
+	@Inject(nullAllowed = true)
 	private List<IExecutorDevice<IValue>> executorDevices;
 
 	@Inject
@@ -58,6 +70,20 @@ public class ExtendedPubSubNodesManager
 
 	public ExtendedPubSubNodesManager() {
 		this.rootNode = "devices";
+	}
+
+	@Override
+	protected void jaxmppConnected(Jaxmpp jaxmpp) {
+		super.jaxmppConnected(jaxmpp);
+		Set<String> deviceIds = this.observedNodes.stream().map(DeviceNodesHelper::getDeviceIdFromNode).filter(deviceId -> deviceId != null).collect(
+				Collectors.toSet());
+		deviceIds.forEach(deviceId -> {
+			try {
+				updateNodeLabelFromNodeTitle(jaxmpp, deviceId);
+			} catch (JaxmppException e) {
+				log.log(Level.FINEST, "failed to update device label from node title", e);
+			}
+		});
 	}
 
 	/**
@@ -132,6 +158,62 @@ public class ExtendedPubSubNodesManager
 		} else {
 			return super.getObservedNodes(o);
 		}
+	}
+
+	@Override
+	protected Stream<String> getObservedNodes() {
+		if (executorDevices == null) {
+			return super.getObservedNodes();
+		}
+		return Stream.concat(super.getObservedNodes(), executorDevices.stream()
+				.map(device -> DeviceNodesHelper.getDeviceStateNodeName(rootNode, device)));
+	}
+
+	@HandleEvent
+	public void handleNodeConfigurationChangeEvent(PubSubModule.NodeConfigurationChangeNotificationReceivedHandler.NodeConfigurationChangeNotificationReceivedEvent event) {
+		try {
+			String deviceId = DeviceNodesHelper.getDeviceIdFromNode(event.getNode());
+			if (!event.getNode().endsWith("/" + deviceId)) {
+				return;
+			}
+			
+			if (event.getNodeConfig() == null) {
+				Jaxmpp jaxmpp = this.xmppService.getConnection(event.getSessionObject());
+				if (jaxmpp != null && jaxmpp.isConnected()) {
+					updateNodeLabelFromNodeTitle(jaxmpp, deviceId);
+				}
+			} else {
+				deviceManager.updateDeviceLabel(deviceId, (String) event.getNodeConfig().getField("pubsub#title").getFieldValue());
+			}
+		} catch (JaxmppException ex) {
+			log.log(Level.WARNING, "failed to handle node configuration change notification", ex);
+		}
+	}
+
+	protected void updateNodeLabelFromNodeTitle(Jaxmpp jaxmpp, String deviceId) throws JaxmppException {
+		String node = rootNode + "/" + deviceId;
+		JID pubsubJid = getPubsubJid(jaxmpp);
+		jaxmpp.getModule(PubSubModule.class).getNodeConfiguration(pubsubJid.getBareJid(), node, new PubSubModule.NodeConfigurationAsyncCallback() {
+			@Override
+			protected void onReceiveConfiguration(IQ responseStanza, String node, JabberDataElement form) {
+				try {
+					deviceManager.updateDeviceLabel(deviceId, (String) form.getField("pubsub#title").getFieldValue());
+				} catch (JaxmppException ex) {}
+			}
+
+			@Override
+			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
+				log.log(Level.FINEST, "retrieval of pubsub node {0}/{1} configuration failed - {2}, {3}",
+						new Object[]{pubsubJid, node, errorCondition, pubSubErrorCondition});
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				log.log(Level.FINEST, "retrieval of pubsub node {0}/{1} configuration failed - timeout",
+						new Object[]{pubsubJid, node});
+			}
+		});
 	}
 
 	/**

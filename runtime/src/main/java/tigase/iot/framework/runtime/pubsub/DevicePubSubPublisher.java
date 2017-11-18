@@ -78,6 +78,7 @@ public class DevicePubSubPublisher
 			rootNode = DeviceNodesHelper.createDevicesRootNode(devicesRootNode, devicesNodeName, pubSubNodesManager.isPEP());
 
 			devices.forEach(this::addDevice);
+			pubSubNodesManager.updateRequiredNodes();
 		} catch (JaxmppException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -99,11 +100,12 @@ public class DevicePubSubPublisher
 			oldDevices.stream().filter(device -> !this.devices.contains(device)).forEach(this::removeDevice);
 		}
 		this.devices.stream()
-				.filter(device -> oldDevices == null || oldDevices.contains(device))
+				.filter(device -> oldDevices == null || !oldDevices.contains(device))
 				.forEach(this::addDevice);
 
 		if (pubSubNodesManager != null) {
 			pubSubNodesManager.updateRequiredNodes();
+			pubSubNodesManager.updateObservedNodes();
 		}
 	}
 

@@ -53,8 +53,8 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 
 	private I2CBus i2cBus;
 
-	public I2CAbstractPeriodDevice(String type, long period) {
-		super(type, period);
+	public I2CAbstractPeriodDevice(String type, String name, String label, long period) {
+		super(type, name, label, period);
 	}
 
 	/**

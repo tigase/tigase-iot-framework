@@ -5,6 +5,7 @@
  */
 package tigase.iot.framework.client.client.devices;
 
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.iot.framework.client.values.Temperature;
 
@@ -14,8 +15,8 @@ import tigase.iot.framework.client.values.Temperature;
  */
 public class Thermometer extends DeviceRemoteConfigAware<Double, Temperature, tigase.iot.framework.client.devices.TemperatureSensor> {
 	
-	public Thermometer(TemperatureSensor sensor) {
-		super("thermometer", "\uD83C\uDF21", sensor);
+	public Thermometer(ClientFactory factory, TemperatureSensor sensor) {
+		super(factory, "thermometer", "\uD83C\uDF21", sensor);
 	}
 
 	@Override

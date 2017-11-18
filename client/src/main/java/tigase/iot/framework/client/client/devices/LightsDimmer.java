@@ -22,6 +22,7 @@ import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Widget;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.iot.framework.client.values.Light;
@@ -32,8 +33,8 @@ import tigase.iot.framework.client.values.Light;
  */
 public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {
 		
-	public LightsDimmer(tigase.iot.framework.client.devices.LightDimmer sensor) {
-		super("lights-dimmer", "\uD83D\uDCA1", sensor);
+	public LightsDimmer(ClientFactory factory, tigase.iot.framework.client.devices.LightDimmer sensor) {
+		super(factory, "lights-dimmer", "\uD83D\uDCA1", sensor);
 	}
 	
 	@Override

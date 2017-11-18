@@ -31,8 +31,14 @@ import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
+import tigase.jaxmpp.core.client.xmpp.forms.AbstractField;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.TextSingleField;
+import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
+import tigase.jaxmpp.core.client.xmpp.modules.adhoc.Action;
+import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
+import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
+import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubErrorCondition;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
@@ -42,6 +48,7 @@ import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract class providing base implementation for client side device representation.
@@ -50,8 +57,11 @@ import java.util.logging.Level;
  */
 public abstract class Device<S extends Device.IValue> {
 
+	private static final Logger log = Logger.getLogger(Device.class.getCanonicalName());
+
 	private final JaxmppCore jaxmpp;
 	private final JID pubsubJid;
+	private final String id;
 	private final String node;
 	private final String name;
 
@@ -61,6 +71,7 @@ public abstract class Device<S extends Device.IValue> {
 	public Device(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
 		this.jaxmpp = jaxmpp;
 		this.pubsubJid = pubsubJid;
+		this.id = node.split("/")[1];
 		this.node = node;
 		this.name = name;
 	}
@@ -137,6 +148,10 @@ public abstract class Device<S extends Device.IValue> {
 	 */
 	public String getNode() {
 		return node;
+	}
+
+	public String getId() {
+		return id;
 	}
 
 	/**
@@ -258,6 +273,60 @@ public abstract class Device<S extends Device.IValue> {
 			@Override
 			public void onPublish(String itemId) {
 				callback.onSuccess(new Configuration(config, date));
+			}
+		});
+	}
+
+	public void remove(final Callback<Object> callback) throws JaxmppException {
+		jaxmpp.getModule(DiscoveryModule.class).getInfo(pubsubJid, node, new AsyncCallback() {
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+					throws JaxmppException {
+				callback.onError(error);
+			}
+
+			@Override
+			public void onSuccess(Stanza responseStanza) throws JaxmppException {
+				Element x = responseStanza.findChild(new String[] { "iq", "query", "x"});
+				if (x != null) {
+					JabberDataElement data = new JabberDataElement(x);
+					if (data != null) {
+						AbstractField<JID> creator = data.getField("pubsub#creator");
+						if (creator != null) {
+							JabberDataElement form = new JabberDataElement(XDataType.submit);
+							form.addFixedField("device", id);
+							jaxmpp.getModule(AdHocCommansModule.class).execute(creator.getFieldValue(), "remove-device", Action.execute,
+																			   form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+										@Override
+										protected void onResponseReceived(String sessionid, String node, State status,
+																		  JabberDataElement data)
+												throws JaxmppException {
+											callback.onSuccess(null);
+										}
+
+										@Override
+										public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+												throws JaxmppException {
+											callback.onError(error);
+										}
+
+										@Override
+										public void onTimeout() throws JaxmppException {
+											callback.onError(XMPPException.ErrorCondition.remote_server_timeout);
+										}
+									});
+						} else {
+							callback.onError(XMPPException.ErrorCondition.internal_server_error);
+						}
+					}
+				} else {
+					callback.onError(XMPPException.ErrorCondition.internal_server_error);
+				}
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				callback.onError(XMPPException.ErrorCondition.remote_server_timeout);
 			}
 		});
 	}

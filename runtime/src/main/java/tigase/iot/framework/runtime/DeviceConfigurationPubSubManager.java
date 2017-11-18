@@ -82,11 +82,12 @@ public class DeviceConfigurationPubSubManager
 	 */
 	protected JabberDataElement prepareNodeConfig(IConfigurationAware configurationAware) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", configurationAware.getName());
+		config.addTextSingleField("pubsub#title", configurationAware.getLabel());
 		config.addTextSingleField("pubsub#node_type", "collection");
 		config.addTextSingleField("pubsub#access_model", pubSubNodesManager.isPEP() ? "presence" : "open");
 		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
+		config.addTextSingleField("pubsub#notify_config", "1");
 		config.addTextSingleField("pubsub#collection", rootNode);
 
 		return config;
@@ -106,6 +107,7 @@ public class DeviceConfigurationPubSubManager
 		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#collection", collection);
+		config.addTextSingleField("pubsub#send_last_published_item", "on_sub_and_presence");
 
 		return config;
 	}

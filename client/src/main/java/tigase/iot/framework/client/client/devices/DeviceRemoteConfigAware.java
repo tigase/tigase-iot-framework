@@ -25,17 +25,21 @@ import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
 
 /**
- * Extended version of {@link DeviceRemoteAware} which adds support for configuration management of a remote device.
+ * Extended version of {@link DeviceRemoteAware} which adds support for
+ * configuration management of a remote device.
+ *
  * @author andrzej
  */
-public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.client.Device.IValue<S>, D extends tigase.iot.framework.client.Device<T>> extends DeviceRemoteAware<S, T>{
+public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.client.Device.IValue<S>, D extends tigase.iot.framework.client.Device<T>> extends DeviceRemoteAware<S, T> {
 
 	protected final D device;
-	
-	public DeviceRemoteConfigAware(String deviceClass, String iconStr, D sensor) {
+	protected final ClientFactory factory;
+
+	public DeviceRemoteConfigAware(ClientFactory factory, String deviceClass, String iconStr, D sensor) {
 		super(deviceClass, iconStr, sensor);
 		this.device = sensor;
-		
+		this.factory = factory;
+
 		Widget w = asWidget();
 		w.sinkEvents(Event.ONCLICK);
 		w.addHandler(new ClickHandler() {
@@ -51,11 +55,11 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		dialog.setStylePrimaryName("dialog-window");
 
 		FlowPanel panel = prepareContextMenu(dialog);
-		
+
 		dialog.setWidget(panel);
 		dialog.center();
 	}
-	
+
 	protected FlowPanel prepareContextMenu(DialogBox dialog) {
 		FlowPanel panel = new FlowPanel();
 		panel.setStylePrimaryName("context-menu");
@@ -77,10 +81,20 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 			}
 		});
 		panel.add(configure);
-		
+
+		Label remove = new Label("Remove");
+		remove.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				dialog.hide();
+				removeDevice();
+			}
+		});
+		panel.add(remove);
+
 		return panel;
 	}
-	
+
 	protected void showRenameWindow() {
 		final DialogBox dialog = new DialogBox(true, true);
 		dialog.setStylePrimaryName("dialog-window");
@@ -92,7 +106,7 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		TextBox input = new TextBox();
 		input.setText(device.getName());
 		panel.add(input);
-		
+
 		Button button = new Button("Confirm");
 		button.addClickHandler(new ClickHandler() {
 			@Override
@@ -112,7 +126,7 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 						@Override
 						public void onSuccess(String name) {
 							setDescription(name);
-						}						
+						}
 					});
 				} catch (JaxmppException ex) {
 					Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
@@ -121,10 +135,10 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		});
 		panel.add(button);
 		dialog.setWidget(panel);
-		
+
 		dialog.center();
 	}
-	
+
 	protected void showConfigWindow() {
 		try {
 			device.retrieveConfiguration(new tigase.iot.framework.client.Device.Callback<Configuration>() {
@@ -132,30 +146,30 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 				public void onError(XMPPException.ErrorCondition error) {
 					Window.alert("Failed to retrieve device configuration: " + error);
 				}
-				
+
 				@Override
 				public void onSuccess(Configuration result) {
 					displayConfiguration(result);
 				}
-				
+
 			});
 		} catch (JaxmppException ex) {
 			Window.alert("Failed to retrieve device configuration: " + ex.getMessage());
 		}
 	}
-		
+
 	public void displayConfiguration(Configuration config) {
 		try {
 			FlowPanel panel = new FlowPanel();
 			panel.setStylePrimaryName("context-menu");
-			
-			Form form = new Form();			
+
+			Form form = new Form();
 			form.setData(config.getValue());
-			
+
 			DialogBox dialog = new DialogBox(true, true);
 			dialog.setStylePrimaryName("dialog-window");
 			dialog.setTitle("Configuration");
-			
+
 			panel.add(form);
 
 			Button button = new Button("Confirm");
@@ -165,14 +179,14 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 					try {
 						JabberDataElement config = form.getData();
 						dialog.hide();
-					
-						device.setConfiguration(config, new tigase.iot.framework.client.Device.Callback<Configuration>() {	
+
+						device.setConfiguration(config, new tigase.iot.framework.client.Device.Callback<Configuration>() {
 							public void onError(XMPPException.ErrorCondition error) {
-								
+
 							}
 
 							public void onSuccess(Configuration result) {
-								
+
 							}
 						});
 					} catch (JaxmppException ex) {
@@ -182,12 +196,54 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 			});
 			panel.add(button);
 
-			
 			dialog.setWidget(panel);
 			dialog.center();
 		} catch (JaxmppException ex) {
 			Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
 		}
+
+	}
+
+	private void removeDevice() {
+		FlowPanel panel = new FlowPanel();
+		panel.setStylePrimaryName("context-menu");
+
+		DialogBox dialog = new DialogBox(true, true);
+		dialog.setStylePrimaryName("dialog-window");
+		dialog.setTitle("Remove device");
+
+		Label warning = new Label("Do you really want to remove this device?");
+		panel.add(warning);
 		
+		Button remove = new Button("Yes");
+		remove.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				try {
+					device.remove(new tigase.iot.framework.client.Device.Callback<Object>() {
+						@Override
+						public void onError(XMPPException.ErrorCondition error) {
+							Window.alert("Failed to removed device: " + error);
+						}
+						
+						@Override
+						public void onSuccess(Object result) {
+							try {
+								factory.devices().refreshDevices();
+							} catch (JaxmppException ex) {
+								Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+							}
+						}
+					});
+					dialog.hide();
+				} catch (JaxmppException ex) {
+					Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}			
+		});
+		panel.add(remove);
+		
+		dialog.setWidget(panel);
+		dialog.center();
 	}
 }

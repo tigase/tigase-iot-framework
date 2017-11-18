@@ -41,6 +41,7 @@ import tigase.iot.framework.client.client.auth.AuthView;
 import tigase.iot.framework.client.client.auth.AuthViewImpl;
 import tigase.iot.framework.client.client.devices.DevicesListView;
 import tigase.iot.framework.client.client.devices.DevicesListViewImpl;
+import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 
 /**
  *
@@ -100,6 +101,8 @@ public class ClientFactoryImpl implements ClientFactory {
 			log.log(Level.SEVERE, "could not initialize properly Jaxmpp instance", ex);
 		}
 
+		jaxmpp().getModulesManager().register(new DiscoveryModule());
+		jaxmpp().getModulesManager().register(new AdHocCommansModule());
 		jaxmpp().getModulesManager().register(new PubSubModule());
 		jaxmpp().getModulesManager().register(new CapabilitiesModule());
 

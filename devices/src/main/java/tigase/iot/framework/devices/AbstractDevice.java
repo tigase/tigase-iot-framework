@@ -43,6 +43,8 @@ public abstract class AbstractDevice
 	private EventBus eventBus;
 	@ConfigField(desc = "Device name")
 	private String name;
+	@ConfigField(desc = "Label")
+	private String label;
 
 	@Override
 	public void beforeUnregister() {
@@ -61,6 +63,10 @@ public abstract class AbstractDevice
 
 	public String getName() {
 		return name;
+	}
+
+	public String getLabel() {
+		return label;
 	}
 
 	@Override

@@ -46,11 +46,12 @@ public class DeviceNodesHelper {
 
 	public static PubSubNodesManager.Node createDeviceNode(String rootNode, IDevice device, boolean pep) throws JaxmppException {
 		JabberDataElement config = new JabberDataElement(XDataType.submit);
-		config.addTextSingleField("pubsub#title", device.getName());
+		config.addTextSingleField("pubsub#title", device.getLabel());
 		config.addTextSingleField("pubsub#node_type", "collection");
 		config.addTextSingleField("pubsub#access_model", pep ? "presence" : "open");
 		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
+		config.addTextSingleField("pubsub#notify_config", "1");
 		config.addTextSingleField("pubsub#collection", rootNode);
 		String node = getDeviceNodeName(rootNode, device);
 		return new PubSubNodesManager.Node(node, config);
@@ -65,6 +66,7 @@ public class DeviceNodesHelper {
 		config.addTextSingleField("pubsub#presence_based_delivery", "true");
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#collection", deviceNode);
+		config.addTextSingleField("pubsub#send_last_published_item", "on_sub_and_presence");
 		String node = getDeviceStateNodeName(rootNode, device);
 		return new PubSubNodesManager.Node(node, config);
 	}

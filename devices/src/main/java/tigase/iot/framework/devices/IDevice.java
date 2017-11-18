@@ -35,4 +35,13 @@ public interface IDevice {
 	 */
 	String getName();
 
+	default String getCategory() {
+		return null;
+	}
+
+	String getType();
+
+	default String getLabel() {
+		return getName();
+	}
 }

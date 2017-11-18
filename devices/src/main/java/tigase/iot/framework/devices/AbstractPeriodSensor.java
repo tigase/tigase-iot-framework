@@ -51,8 +51,8 @@ public abstract class AbstractPeriodSensor<T extends IValue>
 	@ConfigField(desc = "Miliseconds between reads")
 	private long period;
 
-	protected AbstractPeriodSensor(String type, long period) {
-		super(type);
+	protected AbstractPeriodSensor(String type, String name, String label, long period) {
+		super(type, name, label);
 		this.period = period;
 	}
 

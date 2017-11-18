@@ -34,7 +34,6 @@ public class AuthViewImpl extends Composite implements AuthView {
 
 	private TextBox username;
 	private PasswordTextBox password;
-	private TextBox connectionUrl;
 	private AbsolutePanel errorPanel;
 	private Button authButton;
 
@@ -67,12 +66,6 @@ public class AuthViewImpl extends Composite implements AuthView {
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
 			username.setText(store.getItem("username"));
-			String url = store.getItem("url");
-			if (url != null) {
-				connectionUrl.setText(url);
-			} else {
-				connectionUrl.setText(getDefConnectionUrl());
-			}
 		}
 	}
 	
@@ -83,7 +76,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 		header.setStyleName("auth-header");
 		panel.add(header);
 
-		Label jidLabel = new Label("XMPP ID");
+		Label jidLabel = new Label("Username");
 		jidLabel.setStyleName("auth-label");
 		panel.add(jidLabel);
 
@@ -98,14 +91,6 @@ public class AuthViewImpl extends Composite implements AuthView {
 		password = new PasswordTextBox();
 		password.setStyleName("auth-text-box");
 		panel.add(password);
-
-		Label connectionUrlLabel = new Label("Connection URL");
-		connectionUrlLabel.setStyleName("auth-label");
-		panel.add(connectionUrlLabel);
-		connectionUrl = new TextBox();
-		connectionUrl.setStyleName("auth-text-box");
-		connectionUrl.setText(getDefConnectionUrl());
-		panel.add(connectionUrl);
 
 		errorPanel = new AbsolutePanel();
 		errorPanel.setStyleName("auth-errors");
@@ -161,10 +146,6 @@ public class AuthViewImpl extends Composite implements AuthView {
 		return panel;
 	}
 	
-	protected String getDefConnectionUrl() {
-		return "ws://" + Window.Location.getHostName() + ":5290/";
-	}
-
 	private void authFinished() {
 		authButton.setEnabled(true);
 		authButton.addStyleName("default");
@@ -176,28 +157,18 @@ public class AuthViewImpl extends Composite implements AuthView {
 		authButton.setEnabled(false);
 		authButton.removeStyleName("default");
 		authButton.addStyleName("disabled");
-		String url = (connectionUrl != null) ? connectionUrl.getText() : null;
-		if (url != null) {
-			url = url.trim();
-			if (url.isEmpty()) {
-				url = null;
-			}
-		}
-		
+
+		String url = "ws://tigase-iot-hub.local:5290/";
+
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
 			store.setItem("username", username.getText());
-			if (url == null || url.isEmpty()) {
-				store.removeItem("url");
-			} else if (!getDefConnectionUrl().equals(url)) {
-				store.setItem("url", url);
-			}
 		}
 		
 		if (username.getText() == null || username.getText().isEmpty()) {
 			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
 		} else {
-			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText()), password.getText(), url));
+			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), "tigase-iot-hub.local"), password.getText(), url));
 		}
 	}
 }

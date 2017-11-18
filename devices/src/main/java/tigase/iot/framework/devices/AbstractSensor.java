@@ -22,6 +22,7 @@
 package tigase.iot.framework.devices;
 
 import tigase.eventbus.EventBus;
+import tigase.iot.framework.devices.annotations.Hidden;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
@@ -41,14 +42,20 @@ public abstract class AbstractSensor<T extends IValue>
 	private static final Logger log = Logger.getLogger(AbstractSensor.class.getCanonicalName());
 	@Inject
 	private EventBus eventBus;
-	@ConfigField(desc = "Device name")
+	@Hidden
+	@ConfigField(desc = "Name")
 	private String name;
+	@ConfigField(desc = "Label")
+	private String label;
+	@Hidden
 	@ConfigField(desc = "Device type")
 	private String type;
 	private T value;
 
-	public AbstractSensor(String type) {
+	public AbstractSensor(String type, String name, String label) {
 		this.type = type;
+		this.name = name;
+		this.label = label;
 	}
 
 	@Override
@@ -67,8 +74,17 @@ public abstract class AbstractSensor<T extends IValue>
 		}
 	}
 
+	public String getLabel() {
+		return label;
+	}
+
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public String getType() {
+		return type;
 	}
 
 	public synchronized T getValue() {

@@ -25,6 +25,7 @@ import tigase.bot.RequiredXmppModules;
 import tigase.bot.runtime.AbstractPubSubPublisher;
 import tigase.bot.runtime.XmppService;
 import tigase.eventbus.HandleEvent;
+import tigase.jaxmpp.core.client.AsyncCallback;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.XmppModule;
@@ -32,6 +33,7 @@ import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
+import tigase.jaxmpp.core.client.xmpp.forms.AbstractField;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.modules.capabilities.CapabilitiesModule;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
@@ -47,8 +49,11 @@ import tigase.kernel.beans.Inject;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -111,14 +116,92 @@ public class PubSubNodesManager
 	 * Update subscriptions for observed PubSub nodes.
 	 */
 	public synchronized void updateObservedNodes() {
-		this.features.clear();
-		this.observedNodes = observers.stream().flatMap(o -> getObservedNodes(o)).collect(Collectors.toSet());
-		this.observedNodes.stream().map(node -> node + "+notify").forEach(feature -> this.features.add(feature));
+		synchronized (this) {
+			this.features.clear();
+			this.observedNodes = getObservedNodes().collect(Collectors.toSet());
+			this.observedNodes.stream().map(node -> node + "+notify").forEach(feature -> this.features.add(feature));
 
-		if (xmppService != null) {
-			xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {
-				sendPresenceToPubSubIfNeeded(jaxmpp);
-			});
+			if (xmppService != null) {
+				xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {
+					sendPresenceToPubSubIfNeeded(jaxmpp);
+				});
+			}
+		}
+	}
+
+	/**
+	 * Implementation of a task queue to deal with race conditions during discovery/creation/removal of PubSub nodes
+	 * from PubSub service. This task queue queues all tasks related to this changes so that they will be executed in
+	 * the proper order.
+	 */
+	private static class TaskQueue {
+
+		private static final String TASK_QUEUE_KEY = "TASK_QUEUE";
+
+		public static TaskQueue get(Jaxmpp jaxmpp) {
+			return jaxmpp.getSessionObject().getUserProperty(TASK_QUEUE_KEY);
+		}
+
+		public static void initializeTaskQueue(Jaxmpp jaxmpp) {
+			TaskQueue queue = get(jaxmpp);
+			if (queue != null) {
+				queue.shutdown();
+			}
+			queue = new TaskQueue();
+			jaxmpp.getSessionObject().setUserProperty(TASK_QUEUE_KEY, queue);
+		}
+
+		private final Queue<Consumer<Runnable>> queue = new LinkedBlockingQueue<>();
+		private final Lock progressLock = new Lock();
+		private volatile boolean shutdown = false;
+
+		public TaskQueue() {
+
+		}
+
+		public void offer(Consumer<Runnable> consumer) {
+			if (shutdown) {
+				return;
+			}
+			queue.offer(consumer);
+			tryProcess();
+		}
+
+		private void tryProcess() {
+			if (shutdown) {
+				return;
+			}
+			if (progressLock.tryLock()) {
+				Consumer<Runnable> task = queue.poll();
+				if (task != null) {
+					task.accept(this::taskFinished);
+				} else {
+					progressLock.unlock();
+				}
+			}
+		}
+
+		private void taskFinished() {
+			progressLock.unlock();
+			tryProcess();
+		}
+
+		private void shutdown() {
+			this.shutdown = true;
+		}
+
+		private static class Lock {
+
+			private AtomicBoolean lock = new AtomicBoolean(false);
+
+			public synchronized boolean tryLock() {
+				return lock.compareAndSet(false, true);
+			}
+
+			public synchronized void unlock() {
+				lock.set(false);
+			}
+
 		}
 	}
 
@@ -126,84 +209,328 @@ public class PubSubNodesManager
 	 * Update PubSub nodes on PubSub service for PubSubNodesAware classes.
 	 */
 	public synchronized void updateRequiredNodes() {
-		if (nodesAware == null) {
-			return;
-		}
-
-		List<Node> oldRequiredNodes = requiredNodes;
-
-		Map<String, List<Node>> groupedNodes = nodesAware.stream()
-				.flatMap(nodeAware -> nodeAware.getRequiredNodes().stream())
-				.collect(Collectors.groupingBy(Node::getNodeName));
-
-		List<Node> tmp = new ArrayList<>();
-		groupedNodes.forEach((node, nodes) -> {
-			if (nodes.size() == 1) {
-				tmp.addAll(nodes);
+		synchronized (this) {
+			if (nodesAware == null) {
 				return;
 			}
 
-			tmp.add(Node.merge(nodes));
-		});
-		requiredNodes = tmp;
+			List<Node> oldRequiredNodes = requiredNodes;
 
-		if (xmppService != null) {
-			xmppService.getAllConnections()
-					.stream()
-					.filter(jaxmpp -> jaxmpp.isConnected())
-					.forEach(this::ensureNodeExists);
-		}
-	}
+			Map<String, List<Node>> groupedNodes = nodesAware.stream()
+					.flatMap(nodeAware -> nodeAware.getRequiredNodes().stream())
+					.collect(Collectors.groupingBy(Node::getNodeName));
 
-	/**
-	 * Make sure that required nodes exist.
-	 * @param jaxmpp
-	 */
-	public void ensureNodeExists(Jaxmpp jaxmpp) {
-		List<Node> requiredNode = this.requiredNodes;
-		List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
-		if (existingNodes == null) {
-			existingNodes = new CopyOnWriteArrayList<>();
-			jaxmpp.getSessionObject().setUserProperty("EXISTING_PUBSUB_NODES", existingNodes);
-			retrieveNodes(jaxmpp, null, () -> ensureNodeExists(jaxmpp));
-		} else {
-			requiredNodes.forEach(node -> ensureNodeExists(jaxmpp, node));
-		}
-	}
+			List<Node> tmp = new ArrayList<>();
+			groupedNodes.forEach((node, nodes) -> {
+				if (nodes.size() == 1) {
+					tmp.addAll(nodes);
+					return;
+				}
 
-	/**
-	 * Make sure that required subnodes exists.
-	 * @param jaxmpp
-	 * @param node
-	 */
-	public void ensureNodeExists(Jaxmpp jaxmpp, Node node) {
-		List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
-		if (!existingNodes.contains(node.getNodeName())) {
-			createNodeAndSubnodes(jaxmpp, node);
-		} else {
-			eventBus.fire(new NodeReady(jaxmpp, getPubsubJid(jaxmpp), node.getNodeName()));
-			if (!node.getChildren().isEmpty()) {
-				retrieveNodes(jaxmpp, node.getNodeName(), () -> {
-					node.getChildren().forEach(child -> ensureNodeExists(jaxmpp, child));
-				});
+				tmp.add(Node.merge(nodes));
+			});
+			requiredNodes = tmp;
+
+			if (xmppService != null) {
+				Set<String> oldNodeNames = oldRequiredNodes == null
+										   ? Collections.emptySet()
+										   : oldRequiredNodes.stream()
+												   .flatMap(Node::flattened)
+												   .map(Node::getNodeName)
+												   .collect(Collectors.toSet());
+				xmppService.getAllConnections()
+						.stream()
+						.filter(jaxmpp -> jaxmpp.isConnected())
+						.forEach(jaxmpp -> scheduleNodeVerification(jaxmpp, node -> !oldNodeNames.contains(node.getNodeName())));
+
+				Set<String> nodeNames = requiredNodes.stream()
+						.flatMap(Node::flattened)
+						.map(Node::getNodeName)
+						.collect(Collectors.toSet());
+				if (oldRequiredNodes != null) {
+					oldRequiredNodes.stream()
+							.flatMap(Node::flattened)
+							.filter(node -> !nodeNames.contains(node.getNodeName()))
+							.sorted((n1, n2) -> n1.getNodeName().compareTo(n2.getNodeName()) * -1)
+							.forEach(node -> {
+								xmppService.getAllConnections().stream().filter(Jaxmpp::isConnected).forEach(jaxmpp -> this.scheduleNodeRemoval(jaxmpp, node));
+							});
+				}
 			}
 		}
 	}
 
+	private static final String EXISTING_PUBSUB_NODES = "EXISTING_PUBSUB_NODES";
+
 	/**
-	 * Create node and subnodes
+	 * Task discovers set of PubSub nodes created by this devices host and stores it
+	 * for future usage.
+	 */
+	private class DiscoverNodesTask implements Consumer<Runnable> {
+
+		private final Jaxmpp jaxmpp;
+		private final Set<String> localNodes = new HashSet<>();
+		private Runnable callback;
+
+		public DiscoverNodesTask(Jaxmpp jaxmpp) {
+			this.jaxmpp = jaxmpp;
+		}
+
+		public void accept(Runnable callback) {
+			this.callback = callback;
+			JID pubsubJid = getPubsubJid(jaxmpp);
+			discoverNodes(pubsubJid, null, this::taskFinished);
+		}
+
+		private void taskFinished() {
+			JID pubsubJid = getPubsubJid(jaxmpp);
+			jaxmpp.getSessionObject().setUserProperty(EXISTING_PUBSUB_NODES, localNodes);
+			localNodes.forEach(node -> eventBus.fire(new NodeReady(jaxmpp, pubsubJid, node)));
+			callback.run();
+		}
+
+		private void discoverNodes(JID pubsubJid, String node, Runnable callback) {
+			try {
+				jaxmpp.getModule(DiscoveryModule.class).getItems(pubsubJid, node, new DiscoveryModule.DiscoItemsAsyncCallback() {
+
+					private int counter = 0;
+					
+					@Override
+					public void onInfoReceived(String attribute, ArrayList<DiscoveryModule.Item> items) throws XMLException {
+						items.forEach(item -> {
+							if (item.getNode() != null) {
+								synchronized (this) {
+									counter++;
+									checkCreatorJid(pubsubJid, item.getNode(), this::taskFinished);
+									counter++;
+									discoverNodes(pubsubJid, item.getNode(), this::taskFinished);
+								}
+							}
+						});
+						if (!items.stream().anyMatch(item -> item.getNode() != null)) {
+							callback.run();
+						}
+					}
+
+					@Override
+					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+						log.log(Level.WARNING, "{0}, failed to get node {1} subitems: {2}",
+								new Object[]{PubSubNodesManager.this.name, node, error});
+						callback.run();
+					}
+
+					@Override
+					public void onTimeout() throws JaxmppException {
+						log.log(Level.WARNING, "{0}, failed to get node {1} subitems - timeout",
+								new Object[]{PubSubNodesManager.this.name, node});
+						callback.run();
+					}
+
+					private void taskFinished() {
+						synchronized (this) {
+							counter--;
+							if (counter <= 0) {
+								callback.run();
+							}
+						}
+					}
+				});
+			} catch (JaxmppException ex) {
+				throw new RuntimeException(ex);
+			}
+		}
+
+		private void checkCreatorJid(JID pubsubJid, String node, Runnable callback) {
+			try {
+				jaxmpp.getModule(DiscoveryModule.class).getInfo(pubsubJid, node, new AsyncCallback() {
+					@Override
+					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+							throws JaxmppException {
+						log.log(Level.WARNING, "{0}, failed to get node {1} info: {2}",
+								new Object[]{PubSubNodesManager.this.name, node, error});
+						callback.run();
+					}
+
+					@Override
+					public void onSuccess(Stanza responseStanza) throws JaxmppException {
+						Element x = responseStanza.findChild(new String[] { "iq", "query", "x"});
+						if (x != null) {
+							JabberDataElement data = new JabberDataElement(x);
+							if (data != null) {
+								AbstractField<JID> creator = data.getField("pubsub#creator");
+								if (creator != null && JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid()).equals(creator.getFieldValue())) {
+									localNodes.add(node);
+								}
+							}
+						}
+						callback.run();
+					}
+
+					@Override
+					public void onTimeout() throws JaxmppException {
+						log.log(Level.WARNING, "{0}, failed to get node {1} info - timeout",
+								new Object[]{PubSubNodesManager.this.name, node});
+						callback.run();
+					}
+				});
+			} catch (JaxmppException ex) {
+				ex.printStackTrace();
+				throw new RuntimeException(ex);
+			}
+		}
+
+	}
+
+	/**
+	 * Task checks if PubSub node is available at PubSub service and creates it if node is missing
+	 */
+	private class EnsureNodeExistsTask implements Consumer<Runnable> {
+		private final Jaxmpp jaxmpp;
+		private final Node node;
+		private Runnable completionHandler;
+		public EnsureNodeExistsTask(Jaxmpp jaxmpp, Node node) {
+			this.jaxmpp = jaxmpp;
+			this.node = node;
+		}
+
+		@Override
+		public void accept(Runnable runnable) {
+			this.completionHandler = runnable;
+			startProcess(jaxmpp);
+		}
+
+		private void startProcess(Jaxmpp jaxmpp) {
+			Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+			if (!existingNodes.contains(node.getNodeName())) {
+				try {
+					JID pubsubJid = getPubsubJid(jaxmpp);
+					createNode(jaxmpp, pubsubJid, node.getNodeName(), node.getConfig(), this::finished);
+				} catch (JaxmppException ex) {
+					log.log(Level.WARNING, "failed to ensure that node exists");
+					finished();
+				}
+			} else {
+				//eventBus.fire(new NodeReady(jaxmpp, getPubsubJid(jaxmpp), node.getNodeName()));
+				finished();
+			}
+		}
+
+		private void finished() {
+			completionHandler.run();
+		}
+	}
+
+	/**
+	 * Tasks checks if PubSub node exists and if so it removes it from PubSub service.
+	 */
+	private class EnsureNodeRemovedTask implements Consumer<Runnable> {
+		private final Jaxmpp jaxmpp;
+		private final String node;
+		private Runnable completionHandler;
+
+		public EnsureNodeRemovedTask(Jaxmpp jaxmpp, Node node) {
+			this(jaxmpp, node.getNodeName());
+		}
+
+		public EnsureNodeRemovedTask(Jaxmpp jaxmpp, String node) {
+			this.jaxmpp = jaxmpp;
+			this.node = node;
+		}
+
+		@Override
+		public void accept(Runnable runnable) {
+			this.completionHandler = runnable;
+			startProcess(jaxmpp);
+		}
+
+		private void startProcess(Jaxmpp jaxmpp) {
+			Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+			if (existingNodes != null && existingNodes.contains(node)) {
+				try {
+					JID pubsubJid = getPubsubJid(jaxmpp);
+					deleteNode(jaxmpp, pubsubJid, node, this::finished);
+				} catch (JaxmppException ex) {
+					log.log(Level.WARNING, "failed to ensure that node exists");
+					finished();
+				}
+			} else {
+				finished();
+			}
+		}
+
+		private void finished() {
+			completionHandler.run();
+		}
+	}
+	
+	/**
+	 * Task retrieves a list of all nodes created by this devices hosts and removes all nodes
+	 * which are not available in <code>requiredNodes</code> structure.
+	 */
+	private class NodeCleanupTask implements Consumer<Runnable> {
+
+		private final Jaxmpp jaxmpp;
+
+		public NodeCleanupTask(Jaxmpp jaxmpp) {
+			this.jaxmpp = jaxmpp;
+		}
+
+		@Override
+		public void accept(Runnable runnable) {
+			Set<String> existingNodes = jaxmpp.getSessionObject().getProperty(EXISTING_PUBSUB_NODES);
+			if (existingNodes != null) {
+				Set<String> requiredNodes;
+				synchronized (PubSubNodesManager.this) {
+					requiredNodes = PubSubNodesManager.this.requiredNodes.stream()
+							.flatMap(Node::flattened)
+							.sorted((n1, n2) -> n1.getNodeName().compareTo(n2.getNodeName()) * -1)
+							.map(Node::getNodeName)
+							.collect(Collectors.toSet());
+				}existingNodes.stream().filter(node -> !requiredNodes.contains(node)).map(node -> new EnsureNodeRemovedTask(jaxmpp, node)).forEach(task -> {
+					TaskQueue.get(jaxmpp).offer(task);
+				});
+			}
+			runnable.run();
+		}
+	}
+
+	private void scheduleNodeDiscovery(Jaxmpp jaxmpp) {
+		TaskQueue.get(jaxmpp).offer(new DiscoverNodesTask(jaxmpp));
+	}
+
+	private void scheduleNodeVerification(Jaxmpp jaxmpp) {
+	    scheduleNodeVerification(jaxmpp, (n)-> true);
+	}
+	
+	private void scheduleNodeVerification(Jaxmpp jaxmpp, Predicate<Node> predicate) {
+		TaskQueue taskQueue = TaskQueue.get(jaxmpp);
+		synchronized (this) {
+			requiredNodes.stream()
+					.flatMap(Node::flattened)
+					.filter(predicate)
+					.sorted((n1, n2) -> n1.getNodeName().compareTo(n2.getNodeName()))
+					.map(node -> new EnsureNodeExistsTask(jaxmpp, node))
+					.forEach(taskQueue::offer);
+		}
+	}
+
+	/**
+	 * Method schedules removal of PubSub node
 	 * @param jaxmpp
 	 * @param node
 	 */
-	public void createNodeAndSubnodes(Jaxmpp jaxmpp, Node node) {
-		try {
-			JID pubsubJid = getPubsubJid(jaxmpp);
-			createNode(jaxmpp, pubsubJid, node.getNodeName(), node.getConfig(), () -> {
-				node.getChildren().forEach(child -> createNodeAndSubnodes(jaxmpp, child));
-			});
-		} catch (JaxmppException ex) {
-			log.log(Level.WARNING, "failed to ensure that node exists");
-		}
+	private void scheduleNodeRemoval(Jaxmpp jaxmpp, Node node) {
+		TaskQueue taskQueue = TaskQueue.get(jaxmpp);
+		taskQueue.offer(new EnsureNodeRemovedTask(jaxmpp, node));
+	}
+
+	/**
+	 * Method schedules node cleanup of PubSub nodes for particular Jaxmpp instance
+	 * @param jaxmpp
+	 */
+	private void scheduleNodeCleanup(Jaxmpp jaxmpp) {
+		TaskQueue taskQueue = TaskQueue.get(jaxmpp);
+		taskQueue.offer(new NodeCleanupTask(jaxmpp));
 	}
 
 	/**
@@ -290,40 +617,7 @@ public class PubSubNodesManager
 			}
 		}
 	}
-
-	/**
-	 * Retrieve list of PubSub nodes (subnodes)
-	 * @param jaxmpp
-	 * @param node - parent node name or null
-	 * @param callback
-	 */
-	public void retrieveNodes(Jaxmpp jaxmpp, String node, Runnable callback) {
-		try {
-			DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
-			JID pubsubJid = getPubsubJid(jaxmpp);
-			discoveryModule.getItems(pubsubJid, node, new DiscoveryModule.DiscoItemsAsyncCallback() {
-				@Override
-				public void onInfoReceived(String node, ArrayList<DiscoveryModule.Item> items) throws XMLException {
-					List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
-					items.forEach(item -> existingNodes.add(item.getNode()));
-					callback.run();
-				}
-
-				@Override
-				public void onError(Stanza stanza, XMPPException.ErrorCondition errorCondition) throws JaxmppException {
-					callback.run();
-				}
-
-				@Override
-				public void onTimeout() throws JaxmppException {
-					log.log(Level.WARNING, "{0}, node discovery timed out", name);
-				}
-			});
-		} catch (JaxmppException ex) {
-			log.log(Level.WARNING, this.name + ", failed to retieve subnodes of " + node, ex);
-		}
-	}
-
+	
 	/**
 	 * Create PubSub node with provided configuration.
 	 * @param jaxmpp
@@ -342,6 +636,17 @@ public class PubSubNodesManager
 								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
 				log.log(Level.WARNING, "{0}, failed to create device node - {1} {2}",
 						new Object[]{PubSubNodesManager.this.name, errorCondition, pubSubErrorCondition});
+				if (errorCondition == XMPPException.ErrorCondition.conflict) {
+					Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+					if (!existingNodes.contains(node)) {
+						existingNodes.add(node);
+					}
+
+					eventBus.fire(new NodeReady(jaxmpp, pubsubJid, node));
+					if (callback != null) {
+						callback.run();
+					}
+				}
 			}
 
 			@Override
@@ -349,8 +654,10 @@ public class PubSubNodesManager
 				log.log(Level.FINEST, "{0}, node {1}/{2} created",
 						new Object[]{PubSubNodesManager.this.name, pubsubJid, node});
 
-				List<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
-				existingNodes.add(node);
+				Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+				if (!existingNodes.contains(node)) {
+					existingNodes.add(node);
+				}
 
 				eventBus.fire(new NodeReady(jaxmpp, pubsubJid, node));
 				if (callback != null) {
@@ -362,6 +669,60 @@ public class PubSubNodesManager
 			public void onTimeout() throws JaxmppException {
 				log.log(Level.WARNING, "{0}, failed to create device node - {1}",
 						new Object[]{PubSubNodesManager.this.name, "request timeout!"});
+				callback.run();
+			}
+		});
+	}
+
+	/**
+	 * Method called to schedule PubSub nodes cleanup for all connected Jaxmpp instances.
+	 * Retrieves a list of all nodes created by this devices hosts and removes all nodes
+	 * which are not available in <code>requiredNodes</code> structure.
+	 */
+	public void cleanupNodes() {
+		xmppService.getAllConnections().forEach(this::scheduleNodeCleanup);
+	}
+
+	/**
+	 * Helper method used to remove particular PubSub node
+	 * @param jaxmpp
+	 * @param pubsubJid
+	 * @param node
+	 * @param callback
+	 * @throws JaxmppException
+	 */
+	public void deleteNode(Jaxmpp jaxmpp, JID pubsubJid, String node, Runnable callback) throws JaxmppException {
+		PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
+		pubSubModule.deleteNode(pubsubJid.getBareJid(), node, new PubSubAsyncCallback() {
+			@Override
+			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
+				log.log(Level.WARNING, "{0}, failed to delete device node - {1} {2}",
+						new Object[]{PubSubNodesManager.this.name, errorCondition, pubSubErrorCondition});
+				if (callback != null) {
+					callback.run();
+				}
+			}
+
+			@Override
+			public void onSuccess(Stanza responseStanza) throws JaxmppException {
+				log.log(Level.FINEST, "{0}, node {1}/{2} deleted",
+						new Object[]{PubSubNodesManager.this.name, pubsubJid, node});
+
+				Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+				existingNodes.remove(node);
+				if (callback != null) {
+					callback.run();
+				}
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				log.log(Level.WARNING, "{0}, failed to delete device node - {1}",
+						new Object[]{PubSubNodesManager.this.name, "request timeout!"});
+				if (callback != null) {
+					callback.run();
+				}
 			}
 		});
 	}
@@ -381,7 +742,15 @@ public class PubSubNodesManager
 	}
 
 	/**
-	 * Returns stream of observed PubSub nodes.
+	 * Returns a stream of observed PubSub node names
+	 * @return
+	 */
+	protected Stream<String> getObservedNodes() {
+		return observers.stream().flatMap(o -> getObservedNodes(o));
+	}
+
+	/**
+	 * Returns stream of observed PubSub nodes from particular instance of NodesObserver
 	 * @param o
 	 * @return
 	 */
@@ -392,26 +761,29 @@ public class PubSubNodesManager
 	@Override
 	protected void jaxmppConnected(Jaxmpp jaxmpp) {
 		FeatureProviderModule module = jaxmpp.getModule(FeatureProviderModule.class);
-		//if (module != null) {
-			module.setFeatures(this, features);
-			ensureNodeExists(jaxmpp);
-		//}
+		module.setFeatures(this, features);
+		TaskQueue.initializeTaskQueue(jaxmpp);
+		scheduleNodeDiscovery(jaxmpp);
+		scheduleNodeVerification(jaxmpp);
 		sendPresenceToPubSubIfNeeded(jaxmpp);
+		scheduleNodeCleanup(jaxmpp);
 	}
 
 	@Override
 	protected void jaxmppDisconnected(Jaxmpp jaxmpp) {
 
 	}
-	
+
 	protected void sendPresenceToPubSubIfNeeded(Jaxmpp jaxmpp) {
 		jaxmpp.getSessionObject().setProperty(CapabilitiesModule.VERIFICATION_STRING_KEY, null);
 		PresenceModule presenceModule = jaxmpp.getModule(PresenceModule.class);
-//		if (presenceModule == null)
-//			return;
-		
+
 		try {
 			presenceModule.sendInitialPresence();
+
+			// If we are not using PEP then we need to send presence with CAPS to PubSub service
+			// so it would know we are connected and we want to get notifications for particular
+			// pubsub nodes (custom filtering using +notify)
 			if (!isPEP()) {
 				Presence presence = Stanza.createPresence();
 				presence.setTo(getPubsubJid(jaxmpp));
@@ -422,20 +794,6 @@ public class PubSubNodesManager
 						ex.printStackTrace();
 					}
 				}));
-
-//					CapabilitiesModule capabilitiesModule = jaxmpp.getModule(CapabilitiesModule.class);
-//					capabilitiesModule.generateVerificationString()
-//					String ver = jaxmpp.getSessionObject().getProperty(CapabilitiesModule.VERIFICATION_STRING_KEY);
-//					final Element c = ElementFactory.create("c", null, "http://jabber.org/protocol/caps");
-//					c.setAttribute("hash", "sha-1");
-//					String node = jaxmpp.getSessionObject().getProperty(NODE_NAME_KEY);
-//					if (node == null) {
-//						node = "http://tigase.org/jaxmpp";
-//					}
-//					c.setAttribute("node", node);
-//					c.setAttribute("ver", ver);
-//					presence.addChild(c);
-//					jaxmpp.send(presence);
 			}
 		} catch (JaxmppException ex) {
 			log.log(Level.WARNING, "failed to send update presence", ex);
@@ -468,7 +826,7 @@ public class PubSubNodesManager
 		List<String> getObservedNodes();
 
 	}
-	
+
 	public static class Item {
 
 		private final String node;
@@ -540,10 +898,15 @@ public class PubSubNodesManager
 				tmp.add(Node.merge(children));
 			});
 
-//			List<Node> children = nodes.stream()
-//					.flatMap(node -> node.getChildren().stream())
-//					.collect(Collectors.toList());
 			return new Node(nodeName, config, tmp);
+		}
+
+		/**
+		 * Returns stream of flattened node instance
+		 * @return
+		 */
+		public Stream<Node> flattened() {
+			return Stream.concat(Stream.of(this), getChildren().stream().flatMap(Node::flattened));
 		}
 
 	}
@@ -604,5 +967,4 @@ public class PubSubNodesManager
 			}
 		}
 	}
-
 }

@@ -21,11 +21,14 @@
 
 package tigase.iot.framework.runtime.pubsub;
 
-import tigase.component.DSLBeanConfigurator;
 import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
-import tigase.iot.framework.devices.Value;
 import tigase.iot.framework.devices.IConfigurationAware;
+import tigase.iot.framework.devices.Value;
+import tigase.iot.framework.devices.annotations.Fixed;
+import tigase.iot.framework.devices.annotations.Hidden;
+import tigase.iot.framework.runtime.ConfigManager;
+import tigase.iot.framework.runtime.DeviceNodesHelper;
 import tigase.iot.framework.runtime.formatters.ConfigurationFormatter;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
@@ -44,12 +47,13 @@ import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
-import tigase.kernel.core.BeanConfig;
 import tigase.kernel.core.Kernel;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -69,7 +73,7 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 	private String name;
 
 	@Inject
-	private DSLBeanConfigurator configurator;
+	private ConfigManager configManager;
 
 	@Inject
 	private ConfigurationFormatter formatter;
@@ -82,6 +86,9 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 
 	@Inject(nullAllowed = true)
 	private List<T> configurationAware = new ArrayList<>();
+
+	@Inject(nullAllowed = true)
+	private PubSubNodesManager pubSubNodesManager;
 
 	protected List<PubSubNodesManager.Node> requiredNodes = new ArrayList<>();
 	protected List<String> configNodes = new ArrayList<>();
@@ -116,8 +123,13 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 				oldConfigurationAware.stream().filter(device -> !configurationAware.contains(device)).forEach(this::removeConfigurationAware);
 			}
 			this.configurationAware.stream()
-					.filter(device -> oldConfigurationAware == null || oldConfigurationAware.contains(device))
+					.filter(device -> oldConfigurationAware == null || !oldConfigurationAware.contains(device))
 					.forEach(this::addConfigurationAware);
+
+			if (pubSubNodesManager != null) {
+				pubSubNodesManager.updateRequiredNodes();
+				pubSubNodesManager.updateObservedNodes();
+			}
 		}
 	}
 
@@ -261,9 +273,25 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 		try {
 			JabberDataElement data = new JabberDataElement(XDataType.form);
 			for (Field field : BeanUtils.getAllFields(device.getClass())) {
+				if ("label".equals(field.getName())) {
+					continue;
+				}
+				
 				ConfigField cf = field.getAnnotation(ConfigField.class);
 				if (cf != null) {
 					field.setAccessible(true);
+					Hidden hidden = field.getAnnotation(Hidden.class);
+					if (hidden != null) {
+						Object value = field.get(device);
+						data.addHiddenField(field.getName(), String.valueOf(value));
+						continue;
+					}
+					Fixed fixed = field.getAnnotation(Fixed.class);
+					if (fixed != null) {
+						Object value = field.get(device);
+						data.addFixedField(field.getName(), String.valueOf(value));
+						continue;
+					}
 					if (Collection.class.isAssignableFrom(field.getType())) {
 						TextMultiField f = data.addTextMultiField(field.getName());
 						f.setLabel(cf.desc());
@@ -282,7 +310,7 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 						} else {
 							f = data.addTextSingleField(field.getName(), String.valueOf(value));
 						}
-						f.setDesc(cf.desc());
+						f.setLabel(cf.desc());
 					}
 				}
 			}
@@ -324,72 +352,27 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 
 	@HandleEvent
 	public void onConfigurationChangedEvent(ExtendedPubSubNodesManager.ValueChangedEvent event) {
-		if (!event.is(JabberDataElement.class)) {
+		if (!event.is(ConfigValue.class)) {
 			return;
 		}
 
-		applyConfigurion(event.sourceId, (JabberDataElement) event.value);
+		String beanName = DeviceNodesHelper.getDeviceIdFromNode(event.sourceId);
+		applyConfigurion(beanName, ((ConfigValue) event.value).getValue());
 	}
 
 	protected void applyConfigurion(String beanName, JabberDataElement data) {
-		BeanConfig bc = getBeanConfigForName(beanName, kernel);
-		log.finest(() -> "found bean " + bc + " for reconfiguration");
-		if (bc != null) {
-			Map<String, Object> props = configurator.getProperties();
-			ArrayDeque<String> path = new ArrayDeque<>();
-			path.offer(bc.getBeanName());
-
-			Kernel kernel = bc.getKernel();
-			do {
-				if (kernel == this.kernel) {
-					break;
-				}
-
-				path.offer(kernel.getName());
-			} while (kernel.getParent() != this.kernel);
-
-			String name;
-			while ((name = path.pollLast()) != null) {
-				props = (Map<String, Object>) props.computeIfAbsent(name, (k) -> new HashMap<>());
-			}
-
-			log.finest(() -> "updating configuration for " + bc.getBeanName());
-			final Map<String, Object> config = props;
+		configManager.updateBeanDefinition(beanName, config -> {
+			log.finest(() -> "updating configuration for " + beanName);
 			data.getFields().stream().forEach(field -> {
 				try {
-					config.put(field.getName(), field.getFieldValue());
+					config.put(field.getVar(), field.getFieldValue());
 				} catch (XMLException e) {
 					log.log(Level.WARNING, "could not read value of config field from form", e);
 				}
 			});
-
-			log.finest(() -> "reconfiguring bean " + bc.getBeanName());
-			Object bean = bc.getKernel().getInstance(bc.getBeanName());
-			configurator.configure(bc, bean);
-			log.finest(() -> "reconfiguration of bean " + bc.getBeanName() + " completed");
-		}
-	}
-
-	private BeanConfig getBeanConfigForName(String name, Kernel kernel) {
-		BeanConfig bc = kernel.getDependencyManager().getBeanConfig(name);
-		if (bc != null) {
-			return bc;
-		}
-		for (String subkernelName : kernel.getNamesOf(Kernel.class)) {
-			Kernel subkernel = kernel.getInstance(subkernelName);
-			if (subkernel == kernel) {
-				continue;
-			}
-
-			if (subkernel != null) {
-				bc = getBeanConfigForName(name, subkernel);
-				if (bc != null) {
-					return bc;
-				}
-			}
-		}
-
-		return null;
+			log.finest(() -> "reconfiguring bean " + beanName);
+		});
+		log.finest(() -> "reconfiguration of bean " + beanName + " completed");
 	}
 
 	public static class ConfigValue extends Value<JabberDataElement> {

@@ -47,6 +47,12 @@
 		</dependency>
 		<dependency>
 			<groupId>tigase</groupId>
+			<artifactId>jaxmpp-adhoc</artifactId>
+			<version>${jaxmpp.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>tigase</groupId>
 			<artifactId>jaxmpp-presence</artifactId>
 			<version>${jaxmpp.version}</version>
 			<scope>compile</scope>

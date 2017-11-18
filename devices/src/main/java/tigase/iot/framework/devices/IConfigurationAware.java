@@ -31,10 +31,15 @@ package tigase.iot.framework.devices;
 public interface IConfigurationAware {
 
 	/**
-	 * Retrieve name of component
+	 * Retrieve name of a component
 	 *
 	 * @return name
 	 */
 	String getName();
 
+	/**
+	 * Retrieve label of a component
+	 * @return
+	 */
+	String getLabel();
 }

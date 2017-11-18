@@ -12,9 +12,17 @@
 configManager () {
 }
 
+discoveryPublisher (class: 'tigase.iot.framework.runtime.DiscoveryPublisher', exportable: true) {
+}
+
 ##  Modules
 
 adHocCommands(class: 'tigase.bot.runtime.AdHocCommandsBridge', exportable: true){
+    addDevice(class: 'tigase.iot.framework.runtime.adhoc.AddDeviceCommand') {}
+    removeDevice(class: 'tigase.iot.framework.runtime.adhoc.RemoveDeviceCommand') {}
+}
+
+deviceManager(class: 'tigase.iot.framework.runtime.DeviceManager', exportable: true) {
 }
 
 commandsManager(class: 'tigase.bot.runtime.messages.CommandsManager', exportable: true){

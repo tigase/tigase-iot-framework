@@ -32,5 +32,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile group: 'tigase.jaxmpp.bot', name: 'bot-runtime', version: '1.0.0-SNAPSHOT'
     compile project(':iot-devices')
-    runtime project(':iot-devices-rpi')
+//    runtime project(':iot-devices-rpi')
 }

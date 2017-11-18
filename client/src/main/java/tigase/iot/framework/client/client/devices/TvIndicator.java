@@ -6,6 +6,7 @@
 package tigase.iot.framework.client.client.devices;
 
 import java.util.logging.Logger;
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.values.Movement;
 
 /**
@@ -16,8 +17,8 @@ public class TvIndicator extends DeviceRemoteConfigAware<Boolean, Movement, tiga
 	
 	private static final Logger log = Logger.getLogger(TvIndicator.class.getCanonicalName());
 	
-	public TvIndicator(tigase.iot.framework.client.devices.TvSensor sensor) {
-		super("tv-sensor", "\uD83D\uDCFA", sensor);
+	public TvIndicator(ClientFactory factory, tigase.iot.framework.client.devices.TvSensor sensor) {
+		super(factory, "tv-sensor", "\uD83D\uDCFA", sensor);
 		
 	}
 		

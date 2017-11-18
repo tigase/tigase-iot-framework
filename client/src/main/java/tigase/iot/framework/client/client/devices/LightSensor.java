@@ -5,6 +5,7 @@
  */
 package tigase.iot.framework.client.client.devices;
 
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.values.Light;
 
 /**
@@ -13,8 +14,8 @@ import tigase.iot.framework.client.values.Light;
  */
 public class LightSensor extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightSensor> {
 	
-	public LightSensor(tigase.iot.framework.client.devices.LightSensor sensor) {
-		super("light-sensor", "\uD83C\uDF05", sensor);
+	public LightSensor(ClientFactory factory, tigase.iot.framework.client.devices.LightSensor sensor) {
+		super(factory, "light-sensor", "\uD83C\uDF05", sensor);
 	}
 
 	public void setValue(Integer value) {

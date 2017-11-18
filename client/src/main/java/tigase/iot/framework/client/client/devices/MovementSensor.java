@@ -5,6 +5,7 @@
  */
 package tigase.iot.framework.client.client.devices;
 
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.values.Movement;
 
 /**
@@ -13,8 +14,8 @@ import tigase.iot.framework.client.values.Movement;
  */
 public class MovementSensor extends DeviceRemoteConfigAware<Boolean, Movement, tigase.iot.framework.client.devices.MovementSensor> {
 	
-	public MovementSensor(tigase.iot.framework.client.devices.MovementSensor sensor) {
-		super("movement-sensor", "\uD83D\uDEB6", sensor);
+	public MovementSensor(ClientFactory factory, tigase.iot.framework.client.devices.MovementSensor sensor) {
+		super(factory, "movement-sensor", "\uD83D\uDEB6", sensor);
 	}
 		
 	@Override
