@@ -22,23 +22,25 @@
 package tigase.iot.framework.rpi.sensors.w1;
 
 import tigase.bot.Autostart;
+import tigase.iot.framework.ValuesProvider;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
-import tigase.kernel.beans.RegistrarBean;
 import tigase.kernel.beans.UnregisterAware;
 import tigase.kernel.beans.config.ConfigField;
 import tigase.kernel.core.Kernel;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a W1 connectivity support. This class is a manager for any
@@ -48,9 +50,7 @@ import java.util.logging.Logger;
  */
 @Autostart
 public class W1Master
-		implements RegistrarBean, Initializable, UnregisterAware {
-
-	public static final Map<String, com.pi4j.io.w1.W1Device> KNOWN_DEVICES = new ConcurrentHashMap<>();
+		implements Initializable, UnregisterAware, ValuesProvider {
 
 	private static final Logger log = Logger.getLogger(W1Master.class.getCanonicalName());
 
@@ -62,19 +62,19 @@ public class W1Master
 	@Inject
 	private ScheduledExecutorService scheduledExecutorService;
 
-	private Kernel parentKernel;
-	private List<String> registeredDevices = new ArrayList<>();
-	private Map<Class<? extends com.pi4j.io.w1.W1Device>, Class<? extends W1Device>> w1DeviceToBeanClass = new ConcurrentHashMap<>();
 	private ScheduledFuture future;
 
+	private Map<String, com.pi4j.io.w1.W1Device> knownDevices = new ConcurrentHashMap<>();
+
 	public W1Master() {
-		w1DeviceToBeanClass.put(DS1820.W1Device.class, DS1820.class);
+		//w1DeviceToBeanClass.put(DS1820.W1Device.class, DS1820.class);
 		w1Master = new com.pi4j.io.w1.W1Master();
 	}
 
 	@Override
 	public void beforeUnregister() {
 		future.cancel(true);
+		acquiredDevices.values().stream().flatMap(map -> map.values().stream()).forEach(consumer -> consumer.accept(null));
 	}
 
 	@Override
@@ -83,64 +83,62 @@ public class W1Master
 		future = scheduledExecutorService.scheduleAtFixedRate(() -> updateDevices(), period, period, TimeUnit.MILLISECONDS);
 	}
 
+	@Override
+	public List<ValuePair> getValuesFor(Object bean, Field field, Kernel kernel) {
+		if (bean instanceof W1Device) {
+			List<com.pi4j.io.w1.W1Device> devices = w1Master.getDevices(((W1Device) bean).getDeviceType().getDeviceFamilyCode());
+			if (devices != null) {
+				devices.stream().forEach(device -> System.out.println("Device: " + device.getId().trim() + ", " + device.getName() + ", " + device.getFamilyId()));
+				return devices.stream().map(device -> new ValuePair(device.getId().trim(), device.getName())).collect(Collectors.toList());
+			}
+		}
+		return Collections.emptyList();
+	}
+
 	/**
 	 * Check state of all connected W1 devices and update its list.
 	 */
 	protected void updateDevices() {
 		w1Master.checkDeviceChanges();
 		List<com.pi4j.io.w1.W1Device> deviceList = w1Master.getDevices();
-		List<String> found = new ArrayList<>();
+		Set<String> currentDeviceIds = deviceList.stream().map(com.pi4j.io.w1.W1Device::getId).map(String::trim).collect(Collectors.toSet());
+
+		knownDevices.keySet().stream().filter(id -> !currentDeviceIds.contains(id)).forEach(id -> {
+			knownDevices.remove(id);
+			notifyConsumersOfDevice(id, null);
+		});
+
 		deviceList.forEach(w1Device -> {
-			String id = "w1-" + w1Device.getId().trim();
-			found.add(id);
-			if (!registeredDevices.contains(id)) {
-				KNOWN_DEVICES.put(id, w1Device);
-				registerDeviceBean(w1Device);
+			if (knownDevices.putIfAbsent(w1Device.getId().trim(), w1Device) == null) {
+				notifyConsumersOfDevice(w1Device.getId().trim(), w1Device);
 			}
 		});
-
-		Iterator<String> iter = registeredDevices.iterator();
-		while (iter.hasNext()) {
-			String id = iter.next();
-			if (!found.contains(id)) {
-				KNOWN_DEVICES.remove(id);
-				parentKernel.unregister(id);
-				iter.remove();
-			}
-		}
 	}
 
-	@Override
-	public void register(Kernel kernel) {
-		parentKernel = kernel.getParent();
+	private final Map<String, Map<W1Device, Consumer<com.pi4j.io.w1.W1Device>>> acquiredDevices = new ConcurrentHashMap<>();
+
+	public void acquireDevice(String deviceId, W1Device w1Device, Consumer<com.pi4j.io.w1.W1Device> consumer) {
+		Map<W1Device, Consumer<com.pi4j.io.w1.W1Device>> entries = acquiredDevices.computeIfAbsent(deviceId, id -> new ConcurrentHashMap<>());
+		entries.put(w1Device, consumer);
+		w1Master.getDevices().stream().filter(device -> deviceId.equals(device.getId().trim())).findAny().ifPresent(consumer);
 	}
 
-	@Override
-	public void unregister(Kernel kernel) {
-		registeredDevices.forEach(beanName -> {
-			W1Device bean = parentKernel.getInstance(beanName);
-			parentKernel.unregister(beanName);
-			KNOWN_DEVICES.remove(beanName);
-			if (bean instanceof UnregisterAware) {
-				((UnregisterAware) bean).beforeUnregister();
-			}
-		});
-		parentKernel = null;
-	}
-
-	public void registerDeviceBean(com.pi4j.io.w1.W1Device device) {
-		Class<? extends W1Device> beanClass = w1DeviceToBeanClass.get(device.getClass());
-		if (beanClass == null) {
+	public void releaseDevice(String deviceId, W1Device w1Device) {
+		Map<W1Device, Consumer<com.pi4j.io.w1.W1Device>> entries = acquiredDevices.get(deviceId);
+		if (entries == null) {
 			return;
 		}
-
-		try {
-			String beanName = "w1-" + device.getId().trim();
-			parentKernel.registerBean(beanName).asClass(beanClass).exec();
-			registeredDevices.add(beanName);
-		} catch (SecurityException ex) {
-			log.log(Level.WARNING, "Could not instantiate class " + beanClass.getCanonicalName(), ex);
+		Consumer<com.pi4j.io.w1.W1Device> consumer = entries.remove(w1Device);
+		if (consumer != null) {
+			consumer.accept(null);
 		}
 	}
 
+	private void notifyConsumersOfDevice(String deviceId, com.pi4j.io.w1.W1Device w1Device) {
+		Map<W1Device, Consumer<com.pi4j.io.w1.W1Device>> entries = acquiredDevices.get(deviceId);
+		if (entries != null) {
+			entries.values().forEach(consumer -> consumer.accept(w1Device));
+		}
+	}
+	
 }

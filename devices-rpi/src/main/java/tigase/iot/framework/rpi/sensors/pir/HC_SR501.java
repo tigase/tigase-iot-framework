@@ -62,7 +62,7 @@ public class HC_SR501
 	private ScheduledFuture future;
 
 	public HC_SR501() {
-		super("movement-sensor");
+		super("movement-sensor", "HC-SR501", "HC-SR501");
 	}
 
 	@Override

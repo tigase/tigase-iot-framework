@@ -26,6 +26,7 @@ import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.eventbus.Event;
 import tigase.jaxmpp.core.client.eventbus.EventHandler;
+import tigase.jaxmpp.core.client.eventbus.JaxmppEventWithCallback;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
@@ -38,12 +39,13 @@ import tigase.jaxmpp.core.client.xmpp.modules.adhoc.Action;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
+import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Message;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,7 +74,7 @@ public class Devices {
 	 * @param devicesNode
 	 * @param pep
 	 */
-	public Devices(JaxmppCore jaxmpp, String devicesNode, boolean pep) {
+	public Devices(final JaxmppCore jaxmpp, String devicesNode, boolean pep) {
 		this.jaxmpp = jaxmpp;
 		this.pep = pep;
 		this.devicesNode = devicesNode;
@@ -180,6 +182,7 @@ public class Devices {
 					}
 				}
 				if (items.isEmpty()) {
+					updateCapsOnDevicesChange();
 					jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 				}
 			}
@@ -187,12 +190,14 @@ public class Devices {
 			@Override
 			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
 				// ignoring for now
+				updateCapsOnDevicesChange();
 				jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 			}
 
 			@Override
 			public void onTimeout() throws JaxmppException {
 				// ignoring for now
+				updateCapsOnDevicesChange();
 				jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 			}
 
@@ -200,12 +205,45 @@ public class Devices {
 				synchronized (this) {
 					counter--;
 					if (counter == 0) {
+						updateCapsOnDevicesChange();
 						jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 					}
 				}
 			}
 		});
 
+	}
+
+	protected void updateCapsOnDevicesChange() {
+		try {
+			List<String> features = new ArrayList<>();
+			for (Device device : devices) {
+				features.add(device.getNode() + "/state+notify");
+			}
+			jaxmpp.getModule(FeatureProviderModule.class).setFeatures(features);
+			jaxmpp.getSessionObject().setProperty("XEP115VerificationString", null);
+			jaxmpp.getModule(PresenceModule.class).sendInitialPresence();
+			if (!pep) {
+				Presence presence = Stanza.createPresence();
+				presence.setTo(getPubSubJid());
+				jaxmpp.getEventBus()
+						.fire(new PresenceModule.BeforePresenceSendHandler.BeforePresenceSendEvent(jaxmpp.getSessionObject(), presence,
+																								   new JaxmppEventWithCallback.RunAfter<PresenceModule.BeforePresenceSendHandler.BeforePresenceSendEvent>() {
+
+																									   @Override
+																									   public void after(
+																											   PresenceModule.BeforePresenceSendHandler.BeforePresenceSendEvent event) {
+																										   try {
+																											   jaxmpp.send(event.getPresence());
+																										   } catch (JaxmppException ex) {
+																											   ex.printStackTrace();
+																										   }
+																									   }
+																								   }));
+			}
+		} catch (JaxmppException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	/**
@@ -353,10 +391,11 @@ public class Devices {
 	public static class FeatureProviderModule
 			implements XmppModule {
 
-		private String[] features;
+		private final String rootFeature;
+		private List<String> features = new ArrayList<>();
 
 		public FeatureProviderModule(String node) {
-			features = new String[] { node + "+notify" };
+			rootFeature = node + "+notify";
 		}
 
 		@Override
@@ -366,7 +405,12 @@ public class Devices {
 
 		@Override
 		public String[] getFeatures() {
-			return features;
+			return features.toArray(new String[features.size()]);
+		}
+
+		public void setFeatures(List<String> features) {
+			features.add(rootFeature);
+			this.features = features;
 		}
 
 		@Override

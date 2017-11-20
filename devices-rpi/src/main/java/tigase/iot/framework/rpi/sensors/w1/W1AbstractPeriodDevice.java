@@ -24,8 +24,12 @@ package tigase.iot.framework.rpi.sensors.w1;
 import tigase.iot.framework.devices.AbstractPeriodSensor;
 import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.devices.IValue;
+import tigase.iot.framework.devices.annotations.Fixed;
+import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.kernel.beans.Initializable;
+import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
+import tigase.kernel.beans.config.ConfigField;
 
 /**
  * Created by andrzej on 23.10.2016.
@@ -33,7 +37,15 @@ import tigase.kernel.beans.UnregisterAware;
 public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractPeriodSensor<T>
 		implements W1Device<T>, Initializable, UnregisterAware, IConfigurationAware {
 
+	@Inject
+	private W1Master w1Master;
+	
 	protected com.pi4j.io.w1.W1Device w1Device;
+
+	@ConfigField(desc = "1-Wire device id")
+	@Fixed
+	@ValuesProvider(beanName = "w1Master")
+	private String deviceId;
 
 	protected W1AbstractPeriodDevice(String type, String name, String label, long period) {
 		super(type, name, label, period);
@@ -44,11 +56,34 @@ public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractP
 		return w1Device;
 	}
 
+	public void setDeviceId(String deviceId) {
+		if (this.deviceId == deviceId) {
+			return;
+		}
+		if (this.deviceId != null && w1Master != null) {
+			w1Master.releaseDevice(this.deviceId, this);
+		}
+		this.deviceId = deviceId;
+		if (this.deviceId != null && w1Master != null) {
+			w1Master.acquireDevice(this.deviceId, this, this::setW1Device);
+		}
+	}
+
 	@Override
 	public void initialize() {
-		if (w1Device == null) {
-			w1Device = W1Master.KNOWN_DEVICES.get(getName());
+		if (w1Device == null && deviceId != null) {
+			w1Master.acquireDevice(this.deviceId, this, this::setW1Device);
 		}
 		super.initialize();
+	}
+
+	protected void setW1Device(com.pi4j.io.w1.W1Device device) {
+		this.w1Device = device;
+	}
+
+	@Override
+	public void beforeUnregister() {
+		super.beforeUnregister();
+		w1Master.releaseDevice(deviceId, this);
 	}
 }

@@ -101,7 +101,7 @@ public class ClientFactoryImpl implements ClientFactory {
 			log.log(Level.SEVERE, "could not initialize properly Jaxmpp instance", ex);
 		}
 
-		jaxmpp().getModulesManager().register(new DiscoveryModule());
+		//jaxmpp().getModulesManager().register(new DiscoveryModule());
 		jaxmpp().getModulesManager().register(new AdHocCommansModule());
 		jaxmpp().getModulesManager().register(new PubSubModule());
 		jaxmpp().getModulesManager().register(new CapabilitiesModule());

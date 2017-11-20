@@ -21,6 +21,7 @@
 
 package tigase.iot.framework.rpi.sensors.w1;
 
+import com.pi4j.io.w1.W1DeviceType;
 import tigase.iot.framework.values.Temperature;
 
 import java.io.File;
@@ -46,6 +47,11 @@ public class DS1820 extends W1AbstractPeriodDevice<Temperature> {
 	}
 
 	@Override
+	public W1DeviceType getDeviceType() {
+		return new DS1820DeviceType();
+	}
+
+	@Override
 	protected Temperature readValue() {
 		try {
 			String input = getW1Device().getValue();
@@ -54,6 +60,7 @@ public class DS1820 extends W1AbstractPeriodDevice<Temperature> {
 			if (data.length < 2) {
 				return null;
 			}
+
 			double value = Double.parseDouble(data[1]) / 1000;
 
 			return new Temperature(Temperature.Scale.CELSIUS, value);

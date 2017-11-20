@@ -22,13 +22,16 @@ package tigase.iot.framework.runtime;
 
 import tigase.iot.framework.devices.IDevice;
 import tigase.iot.framework.devices.annotations.Hidden;
+import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.*;
 import tigase.kernel.BeanUtils;
 import tigase.kernel.beans.Inject;
+import tigase.kernel.beans.RegistrarBean;
 import tigase.kernel.beans.config.AbstractBeanConfigurator;
 import tigase.kernel.beans.config.ConfigField;
+import tigase.kernel.core.Kernel;
 import tigase.osgi.util.ClassUtilBean;
 
 import java.lang.reflect.Field;
@@ -42,12 +45,13 @@ import java.util.logging.Logger;
  * All actions related to node device creation or removal are handler here and proper changes to local configuration
  * file are made using <code>ConfigManager</code>.
  */
-public class DeviceManager {
+public class DeviceManager implements RegistrarBean {
 
 	private static final Logger log = Logger.getLogger(DeviceManager.class.getCanonicalName());
 
 	@Inject(nullAllowed = true)
-	private ConfigManager configManager;               
+	private ConfigManager configManager;
+	private Kernel kernel;
 
 	@Inject
 	private PubSubNodesManager pubSubNodesManager;
@@ -119,6 +123,16 @@ public class DeviceManager {
 				beanDefinition.put("label", label);
 			}
 		});
+	}
+
+	@Override
+	public void register(Kernel kernel) {
+		this.kernel = kernel;
+	}
+
+	@Override
+	public void unregister(Kernel kernel) {
+
 	}
 
 	protected DeviceTypeInfo findKnownDeviceType(String type) {
@@ -195,26 +209,51 @@ public class DeviceManager {
 						continue;
 					}
 
-					if (Collection.class.isAssignableFrom(field.getType())) {
-						Collection collectionOfValues = (Collection) field.get(device);
-						TextMultiField f = data.addTextMultiField(field.getName());
-						f.setLabel(cf.desc());
-						if (collectionOfValues != null) {
-							String[] values = (String[]) collectionOfValues.stream()
-									.map(value -> value.toString())
-									.toArray(String[]::new);
-							f.setFieldValue(values);
+					ValuesProvider providerAnnotation = field.getAnnotation(ValuesProvider.class);
+					if (providerAnnotation != null) {
+						tigase.iot.framework.ValuesProvider provider = kernel.getParent()
+								.getInstance(providerAnnotation.beanName());
+						List<tigase.iot.framework.ValuesProvider.ValuePair> pairs = provider.getValuesFor(device, field,
+																										  kernel);
+						if (Collection.class.isAssignableFrom(field.getType())) {
+							Collection collectionOfValues = (Collection) field.get(device);
+							ListMultiField f = data.addListMultiField(field.getName());
+							f.setLabel(cf.desc());
+							for (tigase.iot.framework.ValuesProvider.ValuePair pair : pairs) {
+								f.addOption(pair.getLabel(), pair.getValue());
+							}
+							if (collectionOfValues != null) {
+								String[] values = (String[]) collectionOfValues.stream().map(value -> value.toString()).toArray(String[]::new);
+								f.setFieldValue(values);
+							}
+						} else {
+							Object value = field.get(device);
+							ListSingleField f = data.addListSingleField(field.getName(), String.valueOf(value));
+							f.setLabel(cf.desc());
+							for (tigase.iot.framework.ValuesProvider.ValuePair pair : pairs) {
+								f.addOption(pair.getLabel(), pair.getValue());
+							}
 						}
 					} else {
-						Object value = field.get(device);
-						tigase.jaxmpp.core.client.xmpp.forms.Field f;
-						if (value instanceof Boolean) {
-							f = data.addBooleanField(field.getName(), (Boolean) value);
+						if (Collection.class.isAssignableFrom(field.getType())) {
+							Collection collectionOfValues = (Collection) field.get(device);
+							TextMultiField f = data.addTextMultiField(field.getName());
+							f.setLabel(cf.desc());
+							if (collectionOfValues != null) {
+								String[] values = (String[]) collectionOfValues.stream().map(value -> value.toString()).toArray(String[]::new);
+								f.setFieldValue(values);
+							}
 						} else {
-							f = data.addTextSingleField(field.getName(), String.valueOf(value));
-						}
-						f.setLabel(cf.desc());
+							Object value = field.get(device);
+							tigase.jaxmpp.core.client.xmpp.forms.Field f;
+							if (value instanceof Boolean) {
+								f = data.addBooleanField(field.getName(), (Boolean) value);
+							} else {
+								f = data.addTextSingleField(field.getName(), String.valueOf(value));
+							}
+							f.setLabel(cf.desc());
 //						f.setDesc(cf.desc());
+						}
 					}
 				} catch (IllegalAccessException ex) {
 					log.log(Level.WARNING, "could not retrieve data from field " + field, ex);

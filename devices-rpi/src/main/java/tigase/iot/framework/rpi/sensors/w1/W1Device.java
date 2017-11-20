@@ -21,6 +21,7 @@
 
 package tigase.iot.framework.rpi.sensors.w1;
 
+import com.pi4j.io.w1.W1DeviceType;
 import tigase.iot.framework.devices.ISensor;
 import tigase.iot.framework.devices.IValue;
 
@@ -28,6 +29,8 @@ import tigase.iot.framework.devices.IValue;
  * Created by andrzej on 24.10.2016.
  */
 public interface W1Device<V extends IValue> extends ISensor<V> {
+
+	W1DeviceType getDeviceType();
 
 	com.pi4j.io.w1.W1Device getW1Device();
 

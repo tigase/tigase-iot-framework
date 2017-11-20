@@ -76,10 +76,10 @@ deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPub
 #}
 
 ### Device represents master - loads every attached and known to application 1Wire device
-#w1Master (class: 'tigase.iot.framework.rpi.sensors.w1.W1Master', exportable: true) {
+w1Master (class: 'tigase.iot.framework.rpi.sensors.w1.W1Master', exportable: true) {
 #    # How often to look for new 1Wire devices (in ms)
-#    period = 15000
-#}
+    period = 15000
+}
 
 ### Configuration of temperature readout from W1-DS1820 with ID = 28-0000084a4859
 #w1-28-0000084a4859 {

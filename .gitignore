@@ -1,21 +1,23 @@
 .gradle/
 .idea/
 
+/devices/out
 /devices/target
 /devices/build
 
+/devices-rpi/out
 /devices-rpi/target
 /devices-rpi/build
 
+/library/out
 /library/target
 /library/build
 
+/runtime/out
 /runtime/target
 /runtime/build
 
-/runtime/target
-/runtime/build
-
+/client-library/out
 /client-library/target
 /client-library/build
 
