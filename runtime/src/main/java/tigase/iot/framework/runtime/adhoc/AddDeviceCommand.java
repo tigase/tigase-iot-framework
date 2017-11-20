@@ -22,6 +22,7 @@ package tigase.iot.framework.runtime.adhoc;
 
 import tigase.iot.framework.runtime.DeviceManager;
 import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.forms.Field;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
@@ -85,7 +86,11 @@ public class AddDeviceCommand implements AdHocCommand {
 					response.setState(State.completed);
 				}
 			} else {
-				deviceManager.createDevice(type, request.getForm());
+				try {
+					deviceManager.createDevice(type, request.getForm());
+				} catch (RuntimeException ex) {
+					throw new XMPPException(XMPPException.ErrorCondition.not_acceptable, ex.getMessage(), ex);
+				}
 			}
 		}
 	}

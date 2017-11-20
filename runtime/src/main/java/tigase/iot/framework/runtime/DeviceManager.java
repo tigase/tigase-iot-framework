@@ -82,6 +82,13 @@ public class DeviceManager implements RegistrarBean {
 		AbstractBeanConfigurator.BeanDefinition definition = builder.build();
 		definition.setExportable(true);
 		configManager.setBeanDefinition(definition);
+
+		try {
+			kernel.getInstance(definition.getBeanName());
+		} catch (Exception ex) {
+			configManager.removeBeanDefinition(definition.getBeanName());
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public void removeDevice(String deviceId) {

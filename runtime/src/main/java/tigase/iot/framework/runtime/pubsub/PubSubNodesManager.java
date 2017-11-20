@@ -486,7 +486,8 @@ public class PubSubNodesManager
 							.sorted((n1, n2) -> n1.getNodeName().compareTo(n2.getNodeName()) * -1)
 							.map(Node::getNodeName)
 							.collect(Collectors.toSet());
-				}existingNodes.stream().filter(node -> !requiredNodes.contains(node)).map(node -> new EnsureNodeRemovedTask(jaxmpp, node)).forEach(task -> {
+				}
+				existingNodes.stream().filter(node -> !requiredNodes.contains(node)).map(node -> new EnsureNodeRemovedTask(jaxmpp, node)).forEach(task -> {
 					TaskQueue.get(jaxmpp).offer(task);
 				});
 			}
