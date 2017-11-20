@@ -36,6 +36,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 	private PasswordTextBox password;
 	private AbsolutePanel errorPanel;
 	private Button authButton;
+	private Button registerButton;
 
 	public AuthViewImpl(ClientFactory factory) {
 		this.factory = factory;
@@ -127,6 +128,16 @@ public class AuthViewImpl extends Composite implements AuthView {
 		authButton.setStyleName("auth-button");
 		panel.add(authButton);
 
+		registerButton = new Button("Register");
+		registerButton.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				new RegisterDlg(factory).show();
+			}
+		});
+		registerButton.setStyleName("register-button");
+		panel.add(registerButton);
+		
 		//panel.setStylePrimaryName("auth");
 
 		KeyUpHandler handler = new KeyUpHandler() {

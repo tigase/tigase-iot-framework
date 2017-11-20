@@ -248,7 +248,86 @@ public class Devices {
 
 	/**
 	 * Discovers list of host devices connected to local IoT hub.
+	 *
+	 * Older version which was using http://jabber.org/protocol/admin#get-online-users-list
 	 * 
+	 * @param devicesInfoRetrieved
+	 * @throws JaxmppException
+	 */
+//	public void getActiveDeviceHosts(final DevicesInfoRetrieved devicesInfoRetrieved) throws JaxmppException {
+//		JabberDataElement form = new JabberDataElement(XDataType.submit);
+//		form.addTextSingleField("domainjid", jaxmpp.getSessionObject().getUserBareJid().getDomain());
+//		form.addTextSingleField("max_items", "100");
+//
+//		AdHocCommansModule adHocCommansModule = jaxmpp.getModule(AdHocCommansModule.class);
+//		adHocCommansModule.execute(JID.jidInstance("sess-man", jaxmpp.getSessionObject().getUserBareJid().getDomain()), "http://jabber.org/protocol/admin#get-online-users-list",
+//								   Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+//
+//					private Integer counter;
+//					private Map<JID, DiscoveryModule.Identity> discoveredDevices = new HashMap<>();
+//
+//					@Override
+//					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+//							throws JaxmppException {
+//						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
+//					}
+//
+//					@Override
+//					public void onTimeout() throws JaxmppException {
+//						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
+//					}
+//
+//					@Override
+//					protected void onResponseReceived(String sessionid, String node, State status,
+//													  JabberDataElement data) throws JaxmppException {
+//						TextMultiField field = (TextMultiField) data.getFields().get(0);
+//						String[] jids = field.getFieldValue();
+//						counter = jids.length;
+//						for (String jidStr : jids) {
+//							final JID jid = JID.jidInstance(jidStr.split(" ")[0] + "/iot");
+//							DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
+//							discoveryModule.getInfo(jid, new DiscoveryModule.DiscoInfoAsyncCallback(null)  {
+//								@Override
+//								protected void onInfoReceived(String node,
+//															  Collection<DiscoveryModule.Identity> identities,
+//															  Collection<String> features) throws XMLException {
+//									for (DiscoveryModule.Identity identity : identities) {
+//										if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
+//											discoveredDevices.put(jid, identity);
+//										}
+//									}
+//									checkAndNotify();
+//								}
+//
+//								@Override
+//								public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+//										throws JaxmppException {
+//									checkAndNotify();
+//								}
+//
+//								@Override
+//								public void onTimeout() throws JaxmppException {
+//									checkAndNotify();
+//								}
+//							});
+//						}
+//					}
+//
+//					private void checkAndNotify() {
+//						synchronized (this) {
+//							counter--;
+//							if (counter == 0) {
+//								devicesInfoRetrieved.onDeviceInfoRetrieved(discoveredDevices);
+//							}
+//						}
+//					}
+//
+//				});
+//	}
+
+	/**
+	 * Discovers list of host devices connected to local IoT hub.
+	 *
 	 * @param devicesInfoRetrieved
 	 * @throws JaxmppException
 	 */
@@ -258,7 +337,7 @@ public class Devices {
 		form.addTextSingleField("max_items", "100");
 
 		AdHocCommansModule adHocCommansModule = jaxmpp.getModule(AdHocCommansModule.class);
-		adHocCommansModule.execute(JID.jidInstance("sess-man", jaxmpp.getSessionObject().getUserBareJid().getDomain()), "http://jabber.org/protocol/admin#get-online-users-list",
+		adHocCommansModule.execute(JID.jidInstance("sess-man", jaxmpp.getSessionObject().getUserBareJid().getDomain()), "get-users-connections-list",
 								   Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
 
 					private Integer counter;
@@ -282,7 +361,11 @@ public class Devices {
 						String[] jids = field.getFieldValue();
 						counter = jids.length;
 						for (String jidStr : jids) {
-							final JID jid = JID.jidInstance(jidStr.split(" ")[0] + "/iot");
+							final JID jid = JID.jidInstance(jidStr);
+							if (jid.equals(ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()))) {
+								checkAndNotify();
+								continue;
+							}
 							DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
 							discoveryModule.getInfo(jid, new DiscoveryModule.DiscoInfoAsyncCallback(null)  {
 								@Override

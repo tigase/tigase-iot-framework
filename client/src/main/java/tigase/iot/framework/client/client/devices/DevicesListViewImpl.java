@@ -30,6 +30,7 @@ import tigase.iot.framework.client.Device;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.FlexGrid;
+import tigase.iot.framework.client.client.ui.MessageDialog;
 import tigase.iot.framework.client.client.ui.TopBar;
 import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.jaxmpp.core.client.JID;
@@ -152,7 +153,11 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				factory.devices().getActiveDeviceHosts(new Devices.DevicesInfoRetrieved() {
 					@Override
 					public void onDeviceInfoRetrieved(Map<JID, DiscoveryModule.Identity> devicesInfo) {
-						showContextMenu(devicesInfo);
+						if (devicesInfo.isEmpty()) {
+							new MessageDialog("Error", "Could not found any IoT hosts.\nPlease check if IoT hosts are turned on.").show();
+						} else {
+							showContextMenu(devicesInfo);
+						}
 					}
 				});
 			} catch (JaxmppException ex) {

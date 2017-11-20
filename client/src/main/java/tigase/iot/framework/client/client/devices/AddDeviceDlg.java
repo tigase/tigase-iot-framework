@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
+import tigase.iot.framework.client.client.ui.MessageDialog;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -94,10 +95,6 @@ public class AddDeviceDlg {
 
 			@Override
 			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-				DialogBox errorDlg = new DialogBox(true, true);
-				errorDlg.setStylePrimaryName("dialog-window");
-				errorDlg.setGlassEnabled(true);
-				errorDlg.setTitle("Error");
 				String errorText = error.getElementName();
 				List<Element> errorTexts = responseStanza.getFirstChild("error").getChildren("text");
 				if (!errorTexts.isEmpty()) {
@@ -106,17 +103,7 @@ public class AddDeviceDlg {
 						errorText += "\n" + errorTexts.get(i).getValue();
 					}					
 				}
-				errorDlg.setText(errorText);
-				Button button = new Button("OK");
-				button.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent event) {
-						errorDlg.hide();
-					}
-				});
-				errorDlg.setWidget(button);
-				button.getElement().getParentElement().addClassName("context-menu");
-				errorDlg.center();
+				new MessageDialog("Error", errorText).show();
 			}
 
 			@Override
