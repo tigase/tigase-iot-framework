@@ -49,7 +49,6 @@ public class HumiditySensor extends Device<Humidity> {
 			}
 
 			Double value = Double.parseDouble(numeric.getAttribute("value"));
-			String unit = numeric.getAttribute("unit");
 			Date timestamp = parseTimestamp(elem);
 
 			return new Humidity(value, timestamp);

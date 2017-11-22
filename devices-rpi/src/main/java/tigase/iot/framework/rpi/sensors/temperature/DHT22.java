@@ -58,10 +58,11 @@ public class DHT22
 					if (parts.length != 5) {
 						throw new RuntimeException("Read failed");
 					}
-					for (Temperature.Scale scale : Temperature.Scale.values()) {
-						if (scale.getUnits().equals(parts[2])) {
-							return new Temperature(scale, Double.parseDouble(parts[1]));
-						}
+					Double v = Double.parseDouble(parts[1]);
+					if ("C".equals(parts[2])) {
+						return new Temperature(Temperature.Scale.CELSIUS, v);
+					} else if ("F".equals(parts[2])) {
+						return new Temperature(Temperature.Scale.FARENHEIT, v);
 					}
 				}
 				throw new RuntimeException("Read failed");
@@ -70,4 +71,5 @@ public class DHT22
 			throw new RuntimeException(ex);
 		}
 	}
+
 }
