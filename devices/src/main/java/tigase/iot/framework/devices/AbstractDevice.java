@@ -45,6 +45,8 @@ public abstract class AbstractDevice
 	private String name;
 	@ConfigField(desc = "Label")
 	private String label;
+	@ConfigField(desc = "Device type")
+	private String type;
 
 	@Override
 	public void beforeUnregister() {
@@ -68,6 +70,8 @@ public abstract class AbstractDevice
 	public String getLabel() {
 		return label;
 	}
+
+	public String getType() { return type; }
 
 	@Override
 	public void initialize() {

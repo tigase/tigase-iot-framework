@@ -50,7 +50,7 @@ public class AndroidTv
 	protected String address;
 
 	public AndroidTv() {
-		super("tv-sensor", "Android TV Sensor", "Android TV Sensor", 60 * 1000);
+		super("tv-sensor", "TV Sensor", "Android TV Sensor", 60 * 1000);
 	}
 
 	@Override

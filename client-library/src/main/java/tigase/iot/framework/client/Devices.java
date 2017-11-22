@@ -437,6 +437,8 @@ public class Devices {
 					return new TemperatureSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "switch":
 					return new Switch(jaxmpp, item.getJid(), item.getNode(), item.getName());
+				case "humidity-sensor":
+					return new HumiditySensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
 				default:
 					return null;
 			}

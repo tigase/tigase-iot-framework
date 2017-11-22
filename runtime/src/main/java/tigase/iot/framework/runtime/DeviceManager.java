@@ -39,6 +39,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Bean responsible for management of a device "driver" instances.
@@ -59,15 +60,15 @@ public class DeviceManager implements RegistrarBean {
 	@Inject(nullAllowed = true)
 	private List<IDevice> devices;
 
-	private List<DeviceTypeInfo> knownDeviceTypes;
+	private List<DeviceDriverInfo> knownDeviceDrivers;
 
 	public DeviceManager() {
-		knownDeviceTypes = collectKnownDeviceTypesInfo();
+		knownDeviceDrivers = collectKnownDeviceTypesInfo();
 	}
 
-	public void createDevice(String type, JabberDataElement form) throws XMLException {
+	public void createDevice(String deviceClass, JabberDataElement form) throws XMLException {
 		// actually create device in config file and reload config
-		DeviceTypeInfo info = findKnownDeviceType(type);
+		DeviceDriverInfo info = findKnownDeviceDriverInfo(deviceClass);
 
 		AbstractBeanConfigurator.BeanDefinition.Builder builder = new AbstractBeanConfigurator.BeanDefinition.Builder();
 		builder.name(UUID.randomUUID().toString()).clazz(info.getImplementation()).active(true);
@@ -95,7 +96,7 @@ public class DeviceManager implements RegistrarBean {
 		configManager.removeBeanDefinition(deviceId);
 		pubSubNodesManager.cleanupNodes();
 	}
-
+	
 	public Map<String, String> getDevices() {
 		Map<String, String> devices = new HashMap<>();
 		if (this.devices != null) {
@@ -106,8 +107,8 @@ public class DeviceManager implements RegistrarBean {
 		return devices;
 	}
 
-	public JabberDataElement getDeviceForm(String type) throws XMLException {
-		DeviceTypeInfo info = findKnownDeviceType(type);
+	public JabberDataElement getDeviceForm(String deviceId) throws XMLException {
+		DeviceDriverInfo info = findKnownDeviceDriverInfo(deviceId);
 		if (info != null) {
 			try {
 				return getDeviceForm(info.getImplementation());
@@ -118,8 +119,14 @@ public class DeviceManager implements RegistrarBean {
 		return null;
 	}
 
-	public List<DeviceTypeInfo> getKnownDeviceTypes() {
-		return knownDeviceTypes;
+	public List<DeviceDriverInfo> getDeviceDriversInfo(String type) {
+		return knownDeviceDrivers.stream()
+				.filter(info -> type.equals(info.getDeviceType().getId()))
+				.collect(Collectors.toList());
+	}
+
+	public List<DeviceType> getKnownDeviceTypes() {
+		return knownDeviceDrivers.stream().map(DeviceDriverInfo::getDeviceType).distinct().collect(Collectors.toList());
 	}
 
 	public void updateDeviceLabel(String deviceId, String label) {
@@ -142,55 +149,39 @@ public class DeviceManager implements RegistrarBean {
 
 	}
 
-	protected DeviceTypeInfo findKnownDeviceType(String type) {
-		for (DeviceTypeInfo info : knownDeviceTypes) {
-			if (type.equals(info.getId())) {
-				return info;
-			}
-		}
-		return null;
+	protected DeviceDriverInfo findKnownDeviceDriverInfo(String deviceId) {
+		return knownDeviceDrivers.stream()
+				.filter(info -> deviceId.equals(info.getId()))
+				.findAny()
+				.get();
 	}
 
-	protected List<DeviceTypeInfo> collectKnownDeviceTypesInfo() {
-		List<DeviceTypeInfo> knownDeviceTypes = new ArrayList<>();
-		for (Class clazz : ClassUtilBean.getInstance().getAllClasses()) {
-			if (IDevice.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers()) && !Modifier.isInterface(clazz.getModifiers())) {
-				try {
-					DeviceTypeInfo deviceTypeInfo = collectDeviceTypeInfo(clazz);
-					if (deviceTypeInfo != null) {
-						knownDeviceTypes.add(deviceTypeInfo);
+	protected List<DeviceDriverInfo> collectKnownDeviceTypesInfo() {
+		return ClassUtilBean.getInstance()
+				.getAllClasses()
+				.stream()
+				.filter(clazz -> IDevice.class.isAssignableFrom(clazz))
+				.filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()) &&
+						!Modifier.isInterface(clazz.getModifiers()))
+				.map(clazz -> (Class<IDevice>) clazz)
+				.map(clazz -> {
+					try {
+						return collectDeviceTypeInfo(clazz);
+					} catch (Exception ex) {
+						log.log(Level.SEVERE, "could not read device type information from " + clazz.getCanonicalName(),
+								ex);
+						return null;
 					}
-				} catch (Exception ex) {
-					log.log(Level.SEVERE, "could not read device type information from " + clazz.getCanonicalName(),
-							ex);
-				}
-			}
-		}
-		return knownDeviceTypes;
+				})
+				.filter(info -> info != null)
+				.collect(Collectors.toList());
 	}
 
-	protected DeviceTypeInfo collectDeviceTypeInfo(Class<IDevice> clazz)
+	protected DeviceDriverInfo collectDeviceTypeInfo(Class<IDevice> clazz)
 			throws IllegalAccessException, InstantiationException {
 		IDevice device = clazz.newInstance();
-		String type = device.getType();
-		String typeLabel = device.getLabel();
 
-		return new DeviceTypeInfo() {
-			@Override
-			public Class<IDevice> getImplementation() {
-				return clazz;
-			}
-
-			@Override
-			public String getName() {
-				return typeLabel;
-			}
-
-			@Override
-			public String getId() {
-				return type;
-			}
-		};
+		return new DeviceDriverInfo(clazz, device.getLabel(), new DeviceType(device.getType(), device.getName()));
 	}
 
 	protected JabberDataElement getDeviceForm(Class<IDevice> clazz)
@@ -270,14 +261,66 @@ public class DeviceManager implements RegistrarBean {
 
 	}
 
-	public interface DeviceTypeInfo {
+	public class DeviceType {
 
-		Class<IDevice> getImplementation();
+		private final String name;
+		private final String id;
 
-		String getName();
+		public DeviceType(String id, String name) {
+			this.id = id;
+			this.name = name;
+		}
 
-		String getId();
+		public String getName() {
+			return name;
+		}
 
+		public String getId() {
+			return id;
+		}
+
+		@Override
+		public int hashCode() {
+			return id.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof DeviceType) {
+				return id.equals(((DeviceType) obj).id);
+			}
+			return false;
+		}
 	}
 
+	public class DeviceDriverInfo {
+
+		private final DeviceType deviceType;
+
+		private final String name;
+		private final Class<IDevice> implementation;
+
+		public DeviceDriverInfo(Class<IDevice> implementation, String name, DeviceType deviceType) {
+			this.implementation = implementation;
+			this.name = name;
+			this.deviceType = deviceType;
+		}
+
+		public Class<IDevice> getImplementation() {
+			return implementation;
+		}
+
+		public String getId() {
+			return implementation.getCanonicalName();
+		}
+
+		public String getName() {
+			return name;                                       
+		}
+
+		public DeviceType getDeviceType() {
+			return deviceType;
+		}
+	}
+	
 }

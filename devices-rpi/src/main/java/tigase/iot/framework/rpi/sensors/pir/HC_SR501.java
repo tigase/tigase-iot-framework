@@ -62,13 +62,15 @@ public class HC_SR501
 	private ScheduledFuture future;
 
 	public HC_SR501() {
-		super("movement-sensor", "HC-SR501", "HC-SR501");
+		super("movement-sensor", "Motion sensor", "HC-SR501");
 	}
 
 	@Override
 	public void beforeUnregister() {
-		input.removeListener(this);
-		input.unexport();
+		if (input != null) {
+			input.removeListener(this);
+			gpio.unprovisionPin(input);
+		}
 	}
 
 	@Override
@@ -97,10 +99,28 @@ public class HC_SR501
 		return val.getValue();
 	}
 
+	public void setPin(Integer pin) {
+		this.pin = pin;
+		if (gpio != null) {
+			if (input != null) {
+				input.removeListener(this);
+				gpio.unprovisionPin(input);
+				input = null;
+			}
+			initializeInput();
+		}
+	}
+	
 	@Override
 	public void initialize() {
 		super.initialize();
 		gpio = GpioFactory.getInstance();
+		if (input == null) {
+			initializeInput();
+		}
+	}
+
+	private void initializeInput() {
 		input = gpio.provisionDigitalInputPin(RaspiPin.getPinByAddress(pin), PinPullResistance.PULL_DOWN);
 		input.setShutdownOptions(true);
 

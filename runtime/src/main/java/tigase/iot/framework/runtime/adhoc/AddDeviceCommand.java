@@ -60,10 +60,15 @@ public class AddDeviceCommand implements AdHocCommand {
 	@Override
 	public void handle(AdHocRequest request, AdHocResponse response) throws JaxmppException {
 		String type = null;
+		String deviceClass = null;
 		if (request.getForm() != null) {
 			Field<String> typeField = ((Field<String>) request.getForm().getField("type"));
 			if (typeField != null) {
 				type = typeField.getFieldValue();
+			}
+			Field<String> deviceClassField = ((Field<String>) request.getForm().getField("deviceClass"));
+			if (deviceClassField != null) {
+				deviceClass = deviceClassField.getFieldValue();
 			}
 		}
 
@@ -71,15 +76,26 @@ public class AddDeviceCommand implements AdHocCommand {
 			response.setForm(new JabberDataElement(XDataType.form));
 			ListSingleField typeField = response.getForm().addListSingleField("type", null);
 			typeField.setLabel("Device type");
-			for (DeviceManager.DeviceTypeInfo deviceTypeInfo : deviceManager.getKnownDeviceTypes()) {
-				typeField.addOption(deviceTypeInfo.getName(), deviceTypeInfo.getId());
+			for (DeviceManager.DeviceType deviceType : deviceManager.getKnownDeviceTypes()) {
+				typeField.addOption(deviceType.getName(), deviceType.getId());
 			}
 			response.setState(State.executing);
+		} else if (deviceClass == null) {
+			JabberDataElement form = new JabberDataElement(XDataType.form);
+			form.addHiddenField("type", type);
+			ListSingleField deviceClassField = form.addListSingleField("deviceClass", null);
+			deviceClassField.setLabel("Device");
+			for (DeviceManager.DeviceDriverInfo info : deviceManager.getDeviceDriversInfo(type)) {
+				deviceClassField.addOption(info.getName(), info.getId());
+			}
+			response.setForm(form);
+			response.setState(State.executing);
 		} else {
-			if (request.getForm().getFields().size() == 1) {
-				JabberDataElement form = deviceManager.getDeviceForm(type);
+			if (request.getForm().getFields().size() == 2) {
+				JabberDataElement form = deviceManager.getDeviceForm(deviceClass);
 				if (form != null && form.getFields().size() > 0) {
 					form.addHiddenField("type", type);
+					form.addHiddenField("deviceClass", deviceClass);
 					response.setForm(form);
 					response.setState(State.executing);
 				} else {
@@ -87,7 +103,7 @@ public class AddDeviceCommand implements AdHocCommand {
 				}
 			} else {
 				try {
-					deviceManager.createDevice(type, request.getForm());
+					deviceManager.createDevice(deviceClass, request.getForm());
 				} catch (RuntimeException ex) {
 					throw new XMPPException(XMPPException.ErrorCondition.not_acceptable, ex.getMessage(), ex);
 				}
