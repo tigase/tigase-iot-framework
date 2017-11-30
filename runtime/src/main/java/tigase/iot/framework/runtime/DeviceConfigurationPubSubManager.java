@@ -30,6 +30,7 @@ import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
 import tigase.kernel.beans.Inject;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -54,6 +55,9 @@ public class DeviceConfigurationPubSubManager
 
 	@Override
 	public void setConfigurationAware(List<IConfigurationAware> configurationAware) {
+		if (configurationAware == null) {
+			configurationAware = Collections.emptyList();
+		}
 		super.setConfigurationAware(
 				configurationAware.stream().filter(aware -> aware instanceof IDevice).collect(Collectors.toList()));
 	}
