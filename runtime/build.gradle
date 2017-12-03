@@ -10,6 +10,10 @@ targetCompatibility = 1.8
 
 distZip {
     archiveName "tigase-iot-framework-${version}.zip"
+    into("tigase-iot-framework-${version}/etc/") {
+        from 'etc/'
+        include 'logger.properties'
+    }
 }
 
 startScripts {
@@ -33,4 +37,10 @@ dependencies {
     compile group: 'tigase.jaxmpp.bot', name: 'bot-runtime', version: '1.0.0-SNAPSHOT'
     compile project(':iot-devices')
     runtime project(':iot-devices-rpi')
+}
+
+run {
+    if (project.hasProperty("debug")) {
+        args("-log", "etc/logger.properties")
+    }
 }

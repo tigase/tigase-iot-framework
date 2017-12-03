@@ -67,6 +67,9 @@ public class DeviceManager implements RegistrarBean {
 	}
 
 	public void createDevice(String deviceClass, JabberDataElement form) throws XMLException {
+		if (log.isLoggable(Level.FINE)) {
+			log.log(Level.FINE, "creating device of class " + deviceClass + " with configuration " + form.getAsString());
+		}
 		// actually create device in config file and reload config
 		DeviceDriverInfo info = findKnownDeviceDriverInfo(deviceClass);
 
@@ -86,15 +89,29 @@ public class DeviceManager implements RegistrarBean {
 
 		try {
 			kernel.getInstance(definition.getBeanName());
+			if (log.isLoggable(Level.FINE)) {
+				log.log(Level.FINE, "created devices with id = " + definition.getBeanName());
+			}
 		} catch (Exception ex) {
 			configManager.removeBeanDefinition(definition.getBeanName());
+			log.log(Level.WARNING, "failed creation of device " + deviceClass + " with configuration " + form.getAsString());
 			throw new RuntimeException(ex);
 		}
 	}
 
 	public void removeDevice(String deviceId) {
-		configManager.removeBeanDefinition(deviceId);
+		if (log.isLoggable(Level.FINE)) {
+			log.log(Level.FINE, "removing device with id = " + deviceId);
+		}
+		boolean removed = configManager.removeBeanDefinition(deviceId);
 		pubSubNodesManager.cleanupNodes();
+		if (removed) {
+			if (log.isLoggable(Level.FINE)) {
+				log.log(Level.FINE, "removed device with id = " + deviceId);
+			}
+		} else {
+			log.log(Level.WARNING, "failed to remove device with id = " + deviceId + ", device does not exist");
+		}
 	}
 	
 	public Map<String, String> getDevices() {

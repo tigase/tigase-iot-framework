@@ -53,6 +53,11 @@ public class Temperature
 		return this.scale.convert(super.getValue(), scale);
 	}
 
+	@Override
+	protected void toString(StringBuilder sb) {
+		sb.append("scale: ").append(scale.getName()).append(", value: ").append(getValue());
+	}
+
 	/**
 	 * Implementation of temperature scales and conversions.
 	 */

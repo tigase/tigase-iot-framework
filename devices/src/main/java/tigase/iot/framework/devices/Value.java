@@ -56,6 +56,14 @@ public class Value<T>
 
 	@Override
 	public String toString() {
-		return "Value(" + value + ")";
+		StringBuilder sb = new StringBuilder();
+		sb.append(getClass().getSimpleName()).append("(at: ").append(timestamp);
+		toString(sb);
+		sb.append(")");
+		return sb.toString();
+	}
+
+	protected void toString(StringBuilder sb) {
+		sb.append(", value: " + value);
 	}
 }

@@ -362,7 +362,20 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 
 	protected void applyConfigurion(String beanName, JabberDataElement data) {
 		configManager.updateBeanDefinition(beanName, config -> {
-			log.finest(() -> "updating configuration for " + beanName);
+			log.fine(() -> "reconfiguring bean " + beanName + " with " +
+					data.getFields().stream().collect(Collectors.toMap(field -> {
+						try {
+							return field.getVar();
+						} catch (XMLException ex) {
+							return null;
+						}
+					}, field -> {
+						try {
+							return field.getFieldValue();
+						} catch (XMLException ex) {
+							return null;
+						}
+					})));
 			data.getFields().stream().forEach(field -> {
 				try {
 					config.put(field.getVar(), field.getFieldValue());
@@ -370,7 +383,6 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 					log.log(Level.WARNING, "could not read value of config field from form", e);
 				}
 			});
-			log.finest(() -> "reconfiguring bean " + beanName);
 		});
 		log.finest(() -> "reconfiguration of bean " + beanName + " completed");
 	}
@@ -383,6 +395,20 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 
 		public ConfigValue(JabberDataElement value, LocalDateTime timestamp) {
 			super(value, timestamp);
+		}
+
+		@Override
+		protected void toString(StringBuilder sb) {
+			sb.append("config: ");
+			if (getValue() == null) {
+				sb.append("null");
+			} else {
+				try {
+					sb.append(getValue().getAsString());
+				} catch (XMLException ex) {
+					sb.append("Exception: ").append(ex.getMessage());
+				}
+			}
 		}
 	}
 

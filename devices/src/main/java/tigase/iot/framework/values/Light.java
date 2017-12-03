@@ -48,6 +48,12 @@ public class Light extends Value<Integer> {
 		return unit;
 	}
 
+	@Override
+	protected void toString(StringBuilder sb) {
+		sb.append("unit: ").append(unit);
+		super.toString(sb);
+	}
+
 	public enum Unit {
 		lm("lm"),
 		percent("%");

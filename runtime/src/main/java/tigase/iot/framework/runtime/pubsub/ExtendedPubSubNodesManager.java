@@ -94,6 +94,9 @@ public class ExtendedPubSubNodesManager
 	 * @param value
 	 */
 	public void publish(String node, String itemId, IValue value) {
+		if (log.isLoggable(Level.FINE)) {
+			log.log(Level.FINE, "at " + node + " publishing item with id " + itemId + " and value = " + value);
+		}
 		formatters.stream().filter(formatter -> formatter.isSupported(value)).forEach(formatter -> {
 			try {
 				Element result = formatter.toElement(value);
@@ -120,9 +123,9 @@ public class ExtendedPubSubNodesManager
 	 */
 	@HandleEvent
 	public void receivedItem(PubSubModule.NotificationReceivedHandler.NotificationReceivedEvent event) {
-		if (log.isLoggable(Level.FINEST)) {
+		if (log.isLoggable(Level.FINE)) {
 			try {
-				log.log(Level.FINEST, "received PubSub event from {0} with payload {1}",
+				log.log(Level.FINE, "received PubSub event from {0} with payload {1}",
 						new Object[]{event.getNodeName(), event.getPayload().getAsString()});
 			} catch (XMLException ex) {}
 		}
@@ -135,6 +138,10 @@ public class ExtendedPubSubNodesManager
 			}
 			return null;
 		}).filter(value -> value != null).forEach(value -> {
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("received notification about value change from " + event.getPubSubJID() + " node " +
+								 event.getNodeName() + ", value = " + value);
+			}
 			eventBus.fire(new ValueChangedEvent(event.getNodeName(), value));
 			if (executorDevices != null) {
 				executorDevices.stream()

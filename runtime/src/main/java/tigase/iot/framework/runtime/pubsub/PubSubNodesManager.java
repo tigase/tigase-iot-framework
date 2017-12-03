@@ -279,24 +279,39 @@ public class PubSubNodesManager
 		public void accept(Runnable callback) {
 			this.callback = callback;
 			JID pubsubJid = getPubsubJid(jaxmpp);
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("staring discovery of PubSub nodes owned by us at " + pubsubJid);
+			}
 			discoverNodes(pubsubJid, null, this::taskFinished);
 		}
 
 		private void taskFinished() {
 			JID pubsubJid = getPubsubJid(jaxmpp);
 			jaxmpp.getSessionObject().setUserProperty(EXISTING_PUBSUB_NODES, localNodes);
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("finished PubSub nodes discovery at " + pubsubJid + " and found " + localNodes.size() +
+								 " owned nodes: " + localNodes);
+			}
 			localNodes.forEach(node -> eventBus.fire(new NodeReady(jaxmpp, pubsubJid, node)));
 			callback.run();
 		}
 
 		private void discoverNodes(JID pubsubJid, String node, Runnable callback) {
 			try {
+				if (log.isLoggable(Level.FINEST)) {
+					log.finest("discovering at " + pubsubJid + " subnodes of node "  + node);
+				}
 				jaxmpp.getModule(DiscoveryModule.class).getItems(pubsubJid, node, new DiscoveryModule.DiscoItemsAsyncCallback() {
 
 					private int counter = 0;
 					
 					@Override
 					public void onInfoReceived(String attribute, ArrayList<DiscoveryModule.Item> items) throws XMLException {
+						if (log.isLoggable(Level.FINER)) {
+							log.finer("at " + pubsubJid + " for node " + node + " found subnodes = " + items.stream()
+									.filter(item -> item.getNode() != null)
+									.collect(Collectors.toList()));
+						}
 						items.forEach(item -> {
 							if (item.getNode() != null) {
 								synchronized (this) {
@@ -314,15 +329,15 @@ public class PubSubNodesManager
 
 					@Override
 					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-						log.log(Level.WARNING, "{0}, failed to get node {1} subitems: {2}",
-								new Object[]{PubSubNodesManager.this.name, node, error});
+						log.log(Level.WARNING, "at {0} failed to get node {1} subnodes: {2}",
+								new Object[]{pubsubJid, node, error});
 						callback.run();
 					}
 
 					@Override
 					public void onTimeout() throws JaxmppException {
-						log.log(Level.WARNING, "{0}, failed to get node {1} subitems - timeout",
-								new Object[]{PubSubNodesManager.this.name, node});
+						log.log(Level.WARNING, "at {0} failed to get node {1} subnodes - timeout",
+								new Object[]{pubsubJid, node});
 						callback.run();
 					}
 
@@ -330,6 +345,9 @@ public class PubSubNodesManager
 						synchronized (this) {
 							counter--;
 							if (counter <= 0) {
+								if (log.isLoggable(Level.FINEST)) {
+									log.finest("finished discovery at " + pubsubJid + " subnodes of node " + node);
+								}
 								callback.run();
 							}
 						}
@@ -588,12 +606,18 @@ public class PubSubNodesManager
 				}
 
 				try {
+					if (log.isLoggable(Level.FINE)) {
+						log.fine("at " + pubsubJid.getBareJid() + " node " + item.node + " publishing item with id = " +
+										 item.itemId + " and payload = " + item.payload.getAsString());
+					}
 					pubSubModule.publishItem(pubsubJid.getBareJid(), item.node, item.itemId, item.payload,
 											 new PubSubModule.PublishAsyncCallback() {
 
 												 @Override
 												 public void onTimeout() throws JaxmppException {
-
+													 log.log(Level.WARNING,
+															 "at {0} node {1} failed to publish item {2} with timeout",
+															 new Object[]{pubsubJid, item.node, item.itemId});
 												 }
 
 												 @Override
@@ -601,13 +625,16 @@ public class PubSubNodesManager
 																	   XMPPException.ErrorCondition errorCondition,
 																	   PubSubErrorCondition pubSubErrorCondition)
 														 throws JaxmppException {
-
+													 log.log(Level.WARNING,
+															 "at {0} node {1} failed to publish item {2} with errors {3} / {4}",
+															 new Object[]{pubsubJid, item.node, item.itemId,
+																		  errorCondition, pubSubErrorCondition});
 												 }
 
 												 @Override
 												 public void onPublish(String itemId) {
-													 log.log(Level.FINEST, "{0}, item published at {1}/{2} as {3}",
-															 new Object[]{PubSubNodesManager.this.name, pubsubJid,
+													 log.log(Level.FINE, "at {0} node {1} published item as {2}",
+															 new Object[]{pubsubJid,
 																		  item.node, itemId});
 												 }
 											 });
@@ -630,13 +657,16 @@ public class PubSubNodesManager
 	 */
 	public void createNode(Jaxmpp jaxmpp, JID pubsubJid, String node, JabberDataElement config, Runnable callback)
 			throws JaxmppException {
+		if (log.isLoggable(Level.FINE)) {
+			log.finest("at " + pubsubJid + " creating node " + node);
+		}
 		PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
 		pubSubModule.createNode(pubsubJid.getBareJid(), node, config, new PubSubAsyncCallback() {
 			@Override
 			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
 								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				log.log(Level.WARNING, "{0}, failed to create device node - {1} {2}",
-						new Object[]{PubSubNodesManager.this.name, errorCondition, pubSubErrorCondition});
+				log.log(Level.WARNING, "at {0} failed to create device node - {1} {2}",
+						new Object[]{pubsubJid, errorCondition, pubSubErrorCondition});
 				if (errorCondition == XMPPException.ErrorCondition.conflict) {
 					Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
 					if (!existingNodes.contains(node)) {
@@ -652,8 +682,8 @@ public class PubSubNodesManager
 
 			@Override
 			public void onSuccess(Stanza stanza) throws JaxmppException {
-				log.log(Level.FINEST, "{0}, node {1}/{2} created",
-						new Object[]{PubSubNodesManager.this.name, pubsubJid, node});
+				log.log(Level.FINE, "at {0} node {1} created successfully",
+						new Object[]{pubsubJid, node});
 
 				Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
 				if (!existingNodes.contains(node)) {
@@ -668,8 +698,8 @@ public class PubSubNodesManager
 
 			@Override
 			public void onTimeout() throws JaxmppException {
-				log.log(Level.WARNING, "{0}, failed to create device node - {1}",
-						new Object[]{PubSubNodesManager.this.name, "request timeout!"});
+				log.log(Level.WARNING, "at {0} failed to create device node {1} - {2}",
+						new Object[]{pubsubJid, node, "request timeout!"});
 				callback.run();
 			}
 		});
@@ -698,8 +728,8 @@ public class PubSubNodesManager
 			@Override
 			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
 								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				log.log(Level.WARNING, "{0}, failed to delete device node - {1} {2}",
-						new Object[]{PubSubNodesManager.this.name, errorCondition, pubSubErrorCondition});
+				log.log(Level.WARNING, "at {0} failed to delete device node - {1} {2}",
+						new Object[]{pubsubJid, errorCondition, pubSubErrorCondition});
 				if (callback != null) {
 					callback.run();
 				}
@@ -707,8 +737,8 @@ public class PubSubNodesManager
 
 			@Override
 			public void onSuccess(Stanza responseStanza) throws JaxmppException {
-				log.log(Level.FINEST, "{0}, node {1}/{2} deleted",
-						new Object[]{PubSubNodesManager.this.name, pubsubJid, node});
+				log.log(Level.FINE, "from {0} node {1} was successfully deleted",
+						new Object[]{pubsubJid, node});
 
 				Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
 				existingNodes.remove(node);
@@ -719,8 +749,8 @@ public class PubSubNodesManager
 
 			@Override
 			public void onTimeout() throws JaxmppException {
-				log.log(Level.WARNING, "{0}, failed to delete device node - {1}",
-						new Object[]{PubSubNodesManager.this.name, "request timeout!"});
+				log.log(Level.WARNING, "at {0} failed to delete device node {1} - {2}",
+						new Object[]{pubsubJid, node, "request timeout!"});
 				if (callback != null) {
 					callback.run();
 				}

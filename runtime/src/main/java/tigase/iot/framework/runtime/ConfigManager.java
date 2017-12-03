@@ -119,10 +119,12 @@ public class ConfigManager
 		applyConfigChanges();
 	}
 
-	public void removeBeanDefinition(String name) {
+	public boolean removeBeanDefinition(String name) {
 		if (config.remove(name) != null) {
 			applyConfigChanges();
+			return true;
 		}
+		return false;
 	}
 
 	public void updateBeanDefinition(String beanName, Consumer<AbstractBeanConfigurator.BeanDefinition> consumer) {
