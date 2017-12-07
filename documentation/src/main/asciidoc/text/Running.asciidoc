@@ -1,6 +1,11 @@
 
 == Running
 
+=== Requirements
+Tigase IoT Framework requires Tigase IoT Hub to be installed and running in the same network as Tigase IoT Framework.
+IoT Framework may be started before IoT Hub but it will not be operational as for configuration and management IoT Hub is required.
+For details about Tigase IoT Hub installation and configuration please check Tigase IoT Hub documentation.
+
 [running]
 === Running framework
 Unpack the distribution zip file you created during the build process, then navigate to the directory where it is unpacked.
@@ -8,20 +13,22 @@ Now we may run the bot.
 
 [source,bash]
 ----
-$ cd tigase-iot-framework-1.0.0-SNAPSHOT/
+$ cd tigase-iot-framework-2.0.0-SNAPSHOT/
 $ $ ./bin/tigase-iot-framework
 2016-11-14 10:55:21.716 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultBeanConfigurator
 2016-11-14 10:55:21.760 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultTypesConverter
 2016-11-14 10:55:21.761 [main]             Kernel.injectDependencies()        FINER:    [root] Injecting [tigase.bot.runtime.CustomTypesConverter@304a9d7b] to defaultBeanConfigurator:tigase.component.DSLBeanConfigurator#bean:defaultTypesConverter
 ...
-----
+----                                  \
+
+INFO: At this point you need to have a running Tigase IoT Hub connected to the same network.
 
 Tigase IoT Framework runtime understands some variables that can control it, they may be displayed using the --help switch.
 
 [source,bash]
 ----
 $ ./bin/tigase-iot-framework --help
-usage: tigase-iot-framework [options] [config_file] [config_file]
+usage: tigase-iot-framework [options]
 
 Options:
 -h, --help                                   display this screen
@@ -31,56 +38,8 @@ Options:
 
 ----
 
-Configuration must be store in config file, what is DSL file. In example below we configure one account with internal name `default` and passing credentials for account:
-
-.Sample config.dsl
-[source,dsl]
-----
-xmppService {
-    default () {
-        jid = "home@tigase.org"
-        password = "secret"
-        ignoreCertificateErrors = true
-    }
-}
-----
-
-It is also possible to configure XMPP client to use ANONUMOUS authentication:
-
-.Sample config.dsl for ANONYMOUS authentication
-----
-xmppService {
-  default () {
-    domain = 'example.com'
-  }
-}
-----
-
-TIP: To configure more than one account just add another section inside `xmppService` block with different name.
-
-TIP: To connect to XMPP server for which DNS is not configured just add `server` property to account configuration block with value set to it's address: `server = '10.0.0.3'`
-
-Configuration of Tigase IoT Framework may be splitted into few files: for example beans definitions and password in separate file.
-
-Tigase IoT Framework uses XMPP PubSub service for configuration storage and as an event router forwarding state changes between devices.
-By default PubSub service allows modifications of PubSub nodes only by node owners. Due to that it is required that every IoT-XMPP bridge footnote:[Application based on Tigase IoT Framework which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] authenticates connection to XMPP server using method different than ANONYMOUS.
-
-TIP: If you want to use particular account and you want to create account if it not exists then framework may register account on a server using http://xmpp.org/extensions/xep-0077.html:[XEP-0077: In-Band Registration].
-To enable this feature just add `register` property to account configuration block and set it to `true`, ie. `register = true`
-
-[NOTE]
-If Tigase IoT Framework by is configured not to use PEP service footnote:[A virtual PubSub service which is hosted under bare jid of an account, see http://www.xmpp.org/extensions/xep-0060.html#presence[XEP-0060: Publish-Subscribe, Section 9. IM Account Integration]]
-as PubSub service. To use this mode you need to enable PEP mode and then it is required that all IoT-XMPP bridges footnote:[Application based on Tigase IoT Framework which connects (creates bridge) IoT unaware sensors and allows them to access XMPP network] are using same authentication credentials.
-
-[WARNING]
-In current version of Tigase IoT Framework it is possible to use ANONYMOUS authentication with properly <<xmpp-server-configuration,configured XMPP server>>, but it is not recommended due to security considerations.
-
-.Example configuration with few devices (including devices may require `device-rpi` module) - uncomment related parts before usage
-[source,dsl]
-----
-include::../../../../../runtime/src/main/resources/default.dsl[]
-----
-
+Configuration of the bot framework will be store in config file, what is DSL file, at `etc/config.tdsl`.
+There is no need to manually edit this file or prepare configuration, as IoT Framework will find local Tigase IoT Hub and automatically register in it and generate configuration for later usage.
 
 === Running Web UI
 Package created during build of Web UI may be deployed to any Java based HTTP server (like ie. Tomcat) or it is possible to unzip content of this archive to any subdirectory and point web server like Apache or NGINX to this directory for serving data.

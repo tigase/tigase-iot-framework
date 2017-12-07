@@ -10,63 +10,15 @@ During our work we were using Raspbbery Pi 3 as a development device (due to alr
 It is possible to use this project with other devices than Raspberry Pi as only `devices` module requires Raspbbery Pi to communicate with executor devices and sensors.
 You can provide your support for other platforms by providing alternative implementations of drivers.
 
-=== XMPP server (HUB)
-It is required to use XMPP server with support for PubSub service. We recommend usage of http://www.tigase.net/content/tigase-xmpp-server[Tigase XMPP Server] 7.2.0 in conjunction with http://www.tigase.net/content/tigase-pubsub[Tigase PubSub Component]
-as during development of this project we modified Tigase PubSub Component and now it provides better support for IoT devices.
+=== Tigase IoT Hub
+It is required to use http://tigase.tech/projects/iot-xmpp-hub/[Tigase IoT Hub].  We recommend usage of the newest available version.
+Tigase IoT Hub is a modified version of Tigase XMPP Server with PubSub component which has ready to use configuration and many improvements making usage of IoT Hub and this framework a lot easier.
 
 [[xmpp-server-configuration]]
 ==== Configuration
-Configuration of Tigase XMPP Server is stored in `etc/init.properties` file in DSL format.
-Default configuration of Tigase XMPP Server is described in http://docs.tigase.org/[Tigase XMPP Server Administation Guide].
-Here we will focus on required configuration of Tigase XMPP Server and PubSub component for this project.
+Configuration of Tigase IoT Hub is stored in `etc/config.tdsl` file in DSL format and ready to use. You should not need to make any changes there.
 
-Tigase PubSub component needs to be activated with support for PEP.
-
-.Enabling PEP processor
-[source,dsl]
-----
-sess-man {
-    pep () {}
-}
-----
-
-.Enabling PubSub component with PEP support
-[source,dsl]
-----
-pubsub () {
-    persistent-pep = true
-    auto-subscribe-node-creator = false
-    send-last-published-item-on-presence = true
-}
-----
-
-With this configured we have basic configuration of PubSub for use with IoT ready.
-
-===== PubSub
-If you wishes to use PubSub service (not PEP footnote:[A virtual PubSub service which is hosted under bare jid of an account, see http://www.xmpp.org/extensions/xep-0060.html#presence[XEP-0060: Publish-Subscribe, Section 9. IM Account Integration]])
-then it is required to enable support for subscribing to PubSub node using presence filtered notifications by adding following line inside `pubsub` block:
-[source,dsl]
-----
-    subscribe-by-presence-filtered-notifications = true
-----
-
-Additionally you need to add your JID to list of system administrators.
-
-.Setting `admin@domain` and `user1@domain` as an administrators
-[source,dsl]
-----
-admins = [ 'admin@domain', 'user1@domain' ]
-----
-
-NOTE: If you decide to use ANONYMOUS authentication (even though it is not recommended) for your projects, then it is required to force PubSub component to trust anyone connected to XMPP server by adding following line inside `pubsub` block:
-[source,dsl]
-----
-    trust-every-entity = true
-----
-
-
-===== PEP
-If you are using PEP as a PubSub then all is ready. You only need to properly configure it on the client/bot side.
+However it is possible and configuration of Tigase XMPP Server is described in http://docs.tigase.org/[Tigase XMPP Server Administation Guide].
 
 === Network
-A properly set up network on a Raspbbery Pi device with working connectivity to XMPP server is required.
+A properly set up network on a Raspbbery Pi device with working connectivity to Tigase IoT Hub is required. Tigase IoT Hub and Tigase IoT Framework need to be connected to the same network.

@@ -6,14 +6,10 @@ handling devices provided by us.
 
 Web client is capable of:
 
-=== Authentication
+=== Authentication and registration
 
-Client can connect to XMPP server using WebSocket or BOSH protocol with support for authentication
-which allows you to provide additional security for IoT devices connected to XMPP server.
-
-TIP: To authenticates using ANONYMOUS authentication leave `XMPP ID` and `Password` fields empty. This will authenticate you using anonymous authentication with domain same as a server name in `Connection URL`.
-
-TIP: To be able to view and modify devices you need to authenticate with XMPP server admin account credentials or properly <<xmpp-server-configuration,configure>> a XMPP server.
+Client can connect to Tigase IoT Hub using WebSocket or BOSH protocol with support for authentication.
+It will automatically detect runnning Tigase IoT Hub in the local network and will connect to it.
 
 image::images/client/authentication.png[Authentication page]
 
@@ -37,6 +33,11 @@ By default devices are reported with identifiers or names provided by manufactur
 device context menu in UI you can change device names to more meaningful.
 
 image::images/client/device_rename.png[Device - Renaming]
+
+=== Adding devices
+
+You may add new devices by clicking on `Add device` button, selecting instance of IoT framework from the list of connected
+framework hosts and then filling forms provided by Web UI.
 
 === Device reconfiguration
 

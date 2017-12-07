@@ -13,5 +13,3 @@ devices:: Provides API and base classes for implementations of sensors or execut
 devices-rpi:: Provides support for particular sensors or executors which are supported on Raspberry Pi platform. It is responible for communication between framework and actual devices connected to Raspberry Pi.
 client:: Web based UI for interaction with devices, including device management task
 client-library:: Library for interaction with application using Tigase IoT Framework installed and running on a device using XMPP protocol with support for GWT compilation. It provides classes used by UI.
-
-An example of how this framework may be used to create real and fully functional device is https://projects.tigase.org/projects/tigase-pi-home[Tigase Pi Home] project.

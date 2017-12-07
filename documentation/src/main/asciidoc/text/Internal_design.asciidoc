@@ -1,7 +1,7 @@
 == Internal design
 
-In our design IoT devices are connecting to XMPP server acting as a central hub for all IoT devices.
-For communication IoT devices use PubSub component deployed on XMPP which acts as a message broker.
+In our design IoT devices are connecting to Tigase IoT Hub acting as a central hub for all IoT devices.
+For communication IoT devices uses PubSub component deployed on XMPP server which acts as a message broker.
 
 === Initialization
 
