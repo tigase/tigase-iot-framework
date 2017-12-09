@@ -65,6 +65,9 @@ public abstract class AbstractValueFormatter<T extends IValue>
 			return null;
 		}
 
-		return formatter.parse(elem.getAttribute("value")).query(ZonedDateTime::from).toLocalDateTime();
+		return formatter.parse(elem.getAttribute("value"))
+				.query(ZonedDateTime::from)
+				.withZoneSameInstant(ZoneId.systemDefault())
+				.toLocalDateTime();
 	}
 }
