@@ -7,7 +7,7 @@
     <body>
 		<script type="text/javascript">
 			var config = {
-				pep :  "false"
+				allowRemoteLogin: "true"
 			};
 		</script>
         <script type="text/javascript"  src="tigase.iot.framework.client.Main/tigase.iot.framework.client.Main.nocache.js"></script>
@@ -54,6 +54,15 @@ div.auth {
     padding: 3px;
 }
 
+.auth .auth-checkbox {
+	display: block;
+	margin: 10px;
+}
+
+.auth .auth-checkbox > input {
+	margin-right: 10px;
+}
+
 .auth .auth-button {
 	color: white;
     border: 1px solid #2f5bb7;
@@ -65,7 +74,7 @@ div.auth {
 	border-radius: 0.2em;
 }
 
-.auth .auth-button .disabled {
+.auth .auth-button:disabled {
     border: 1px solid grey;
     background-color: lightgrey;
 }
@@ -82,7 +91,7 @@ div.auth {
 	border-radius: 0.2em;
 }
 
-.auth .register-button .disabled {
+.auth .register-button:disabled {
     border: 1px solid grey;
     color: lightgray;
 }

@@ -22,6 +22,7 @@
 package tigase.iot.framework.client.devices;
 
 import tigase.iot.framework.client.Device;
+import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.values.Temperature;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
@@ -37,8 +38,8 @@ import java.util.Date;
  */
 public class TemperatureSensor extends Device<Temperature> {
 
-	public TemperatureSensor(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
-		super(jaxmpp, pubsubJid, node, name);
+	public TemperatureSensor(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		super(devices, jaxmpp, pubsubJid, node, name);
 	}
 
 	@Override

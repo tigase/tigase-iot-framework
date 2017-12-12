@@ -54,6 +54,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -769,7 +770,11 @@ public class PubSubNodesManager
 
 	@HandleEvent
 	public void onJaxmppAdded(XmppService.JaxmppAddedEvent event) {
-		event.jaxmpp.getModule(FeatureProviderModule.class).setFeatures(this, features);
+		event.jaxmpp.getModule(FeatureProviderModule.class).setFeatures(this, () -> {
+			synchronized (this) {
+				return new HashSet<>(features).stream();
+			}
+		});
 	}
 
 	/**
@@ -791,8 +796,8 @@ public class PubSubNodesManager
 
 	@Override
 	protected void jaxmppConnected(Jaxmpp jaxmpp) {
-		FeatureProviderModule module = jaxmpp.getModule(FeatureProviderModule.class);
-		module.setFeatures(this, features);
+//		FeatureProviderModule module = jaxmpp.getModule(FeatureProviderModule.class);
+//		module.setFeatures(this, features);
 		TaskQueue.initializeTaskQueue(jaxmpp);
 		scheduleNodeDiscovery(jaxmpp);
 		scheduleNodeVerification(jaxmpp);
@@ -965,7 +970,7 @@ public class PubSubNodesManager
 	public static class FeatureProviderModule
 			implements XmppModule {
 
-		private Map<Object, Set<String>> featuresByObject = new ConcurrentHashMap<>();
+		private Map<Object, Supplier<Stream<String>>> featuresByObject = new ConcurrentHashMap<>();
 
 		public FeatureProviderModule() {
 
@@ -980,7 +985,7 @@ public class PubSubNodesManager
 		public String[] getFeatures() {
 			return featuresByObject.values()
 					.stream()
-					.flatMap(features -> features.stream())
+					.flatMap(features -> features.get())
 					.distinct()
 					.toArray(String[]::new);
 		}
@@ -990,7 +995,7 @@ public class PubSubNodesManager
 
 		}
 
-		public void setFeatures(Object object, Set<String> features) {
+		public void setFeatures(Object object, Supplier<Stream<String>> features) {
 			if (features == null) {
 				featuresByObject.remove(object);
 			} else {

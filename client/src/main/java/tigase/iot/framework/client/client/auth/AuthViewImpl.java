@@ -10,10 +10,14 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.i18n.client.Dictionary;
 import com.google.gwt.storage.client.Storage;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.AbsolutePanel;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
@@ -23,6 +27,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
 import tigase.iot.framework.client.client.ClientFactory;
+import tigase.iot.framework.client.client.ui.MessageDialog;
 
 /**
  *
@@ -37,6 +42,8 @@ public class AuthViewImpl extends Composite implements AuthView {
 	private AbsolutePanel errorPanel;
 	private Button authButton;
 	private Button registerButton;
+	private CheckBox remoteConnection;
+
 
 	public AuthViewImpl(ClientFactory factory) {
 		this.factory = factory;
@@ -93,6 +100,18 @@ public class AuthViewImpl extends Composite implements AuthView {
 		password.setStyleName("auth-text-box");
 		panel.add(password);
 
+		if ("true".equals(Dictionary.getDictionary("config").get("allowRemoteLogin"))) {
+			remoteConnection = new CheckBox("Connect to remote hub");
+			remoteConnection.setStyleName("auth-checkbox");
+			remoteConnection.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+				@Override
+				public void onValueChange(ValueChangeEvent<Boolean> event) {
+					registerButton.setEnabled(!event.getValue());
+				}
+			});
+			panel.add(remoteConnection);
+		}
+		
 		errorPanel = new AbsolutePanel();
 		errorPanel.setStyleName("auth-errors");
 		errorPanel.setVisible(false);
@@ -159,17 +178,19 @@ public class AuthViewImpl extends Composite implements AuthView {
 	
 	private void authFinished() {
 		authButton.setEnabled(true);
-		authButton.addStyleName("default");
-		authButton.removeStyleName("disabled");
 	}
 
+	private boolean isRemote() {
+		return remoteConnection != null && remoteConnection.getValue();
+	}
+	
 	private void handle() {
 		errorPanel.setVisible(false);
 		authButton.setEnabled(false);
-		authButton.removeStyleName("default");
-		authButton.addStyleName("disabled");
 
-		String url = "ws://tigase-iot-hub.local:5290/";
+		factory.devices().setRemoteMode(isRemote());
+		
+		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://tigase-iot-remote-hub.local:5290/";
 
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
@@ -179,7 +200,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 		if (username.getText() == null || username.getText().isEmpty()) {
 			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
 		} else {
-			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), "tigase-iot-hub.local"), password.getText(), url));
+			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "tigase-iot-remote-hub.local"), password.getText(), url));
 		}
 	}
 }

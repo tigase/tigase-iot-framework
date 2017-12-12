@@ -21,6 +21,7 @@
 
 package tigase.iot.framework.client.devices;
 
+import tigase.iot.framework.client.Devices;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
 
@@ -31,7 +32,7 @@ import tigase.jaxmpp.core.client.JaxmppCore;
  */
 public class TvSensor extends MovementSensor {
 
-	public TvSensor(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
-		super(jaxmpp, pubsubJid, node, name);
+	public TvSensor(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		super(devices, jaxmpp, pubsubJid, node, name);
 	}
 }

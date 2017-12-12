@@ -60,7 +60,7 @@ public class Devices {
 
 	private final String devicesNode;
 	private final JaxmppCore jaxmpp;
-	private final boolean pep;
+	private boolean pep;
 
 	private List<Device> devices = new ArrayList<Device>();
 
@@ -100,6 +100,14 @@ public class Devices {
 				}
 			}
 		});
+	}
+
+	public void setRemoteMode(boolean remote) {
+		this.pep = remote;
+	}
+
+	public boolean isRemoteMode() {
+		return pep;
 	}
 
 	private Device getDeviceByNode(String nodeName) {
@@ -246,21 +254,116 @@ public class Devices {
 		}
 	}
 
+	public String nodeForwardEncoder(JID jid, String node) {
+		if (isRemoteMode()) {
+			if (node == null) {
+				node = "";
+			}
+			String resource = jid.getResource();
+			if (resource == null) {
+				resource = "";
+			}
+			return "forward:" + jid.getBareJid() + "/" + resource + "/" + node;
+		}
+		return node;
+	}
+
+	public JID getRemoteHubJid() {
+		if (!isRemoteMode()) {
+			throw new RuntimeException("Invalid mode! You cannot get remote hub JID in local mode!");
+		}
+		return JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid(), "iot-hub");
+	}
+
 	/**
 	 * Discovers list of host devices connected to local IoT hub.
 	 *
-	 * Older version which was using http://jabber.org/protocol/admin#get-online-users-list
-	 * 
 	 * @param devicesInfoRetrieved
 	 * @throws JaxmppException
 	 */
-//	public void getActiveDeviceHosts(final DevicesInfoRetrieved devicesInfoRetrieved) throws JaxmppException {
-//		JabberDataElement form = new JabberDataElement(XDataType.submit);
-//		form.addTextSingleField("domainjid", jaxmpp.getSessionObject().getUserBareJid().getDomain());
-//		form.addTextSingleField("max_items", "100");
-//
+	public void getActiveDeviceHosts(final DevicesInfoRetrieved devicesInfoRetrieved) throws JaxmppException {
+		JabberDataElement form = new JabberDataElement(XDataType.submit);
+		form.addTextSingleField("domainjid", "tigase-iot-hub.local");
+		form.addTextSingleField("max_items", "100");
+
+		final JID hubJid = isRemoteMode()
+						   ? getRemoteHubJid()
+						   : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
+
+		executeDeviceHostAdHocCommand(
+				JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain()),
+				"get-users-connections-list", Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+
+			private Integer counter;
+			private Map<JID, DiscoveryModule.Identity> discoveredDevices = new HashMap<>();
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+					throws JaxmppException {
+				devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
+			}
+
+			@Override
+			protected void onResponseReceived(String sessionid, String node, State status,
+											  JabberDataElement data) throws JaxmppException {
+				TextMultiField field = (TextMultiField) data.getFields().get(0);
+				String[] jids = field.getFieldValue();
+				counter = jids.length;
+				for (String jidStr : jids) {
+					final JID jid = JID.jidInstance(jidStr);
+					if (jid.equals(ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()))) {
+						checkAndNotify();
+						continue;
+					}
+
+					DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
+					String queryNode = nodeForwardEncoder(jid, null);
+					discoveryModule.getInfo(isRemoteMode() ? hubJid : jid, queryNode, new DiscoveryModule.DiscoInfoAsyncCallback(queryNode)  {
+						@Override
+						protected void onInfoReceived(String node,
+													  Collection<DiscoveryModule.Identity> identities,
+													  Collection<String> features) throws XMLException {
+							for (DiscoveryModule.Identity identity : identities) {
+								if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
+									discoveredDevices.put(jid, identity);
+								}
+							}
+							checkAndNotify();
+						}
+
+						@Override
+						public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+								throws JaxmppException {
+							checkAndNotify();
+						}
+
+						@Override
+						public void onTimeout() throws JaxmppException {
+							checkAndNotify();
+						}
+					});
+				}
+			}
+
+			private void checkAndNotify() {
+				synchronized (this) {
+					counter--;
+					if (counter == 0) {
+						devicesInfoRetrieved.onDeviceInfoRetrieved(discoveredDevices);
+					}
+				}
+			}
+
+		});
+
+
 //		AdHocCommansModule adHocCommansModule = jaxmpp.getModule(AdHocCommansModule.class);
-//		adHocCommansModule.execute(JID.jidInstance("sess-man", jaxmpp.getSessionObject().getUserBareJid().getDomain()), "http://jabber.org/protocol/admin#get-online-users-list",
+//		adHocCommansModule.execute(hubJid, "get-users-connections-list",
 //								   Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
 //
 //					private Integer counter;
@@ -284,9 +387,15 @@ public class Devices {
 //						String[] jids = field.getFieldValue();
 //						counter = jids.length;
 //						for (String jidStr : jids) {
-//							final JID jid = JID.jidInstance(jidStr.split(" ")[0] + "/iot");
+//							final JID jid = JID.jidInstance(jidStr);
+//							if (jid.equals(ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()))) {
+//								checkAndNotify();
+//								continue;
+//							}
+//
 //							DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
-//							discoveryModule.getInfo(jid, new DiscoveryModule.DiscoInfoAsyncCallback(null)  {
+//							String queryNode = isRemoteMode() ? jid.getLocalpart() : null;
+//							discoveryModule.getInfo(isRemoteMode() ? hubJid : jid, queryNode, new DiscoveryModule.DiscoInfoAsyncCallback(queryNode)  {
 //								@Override
 //								protected void onInfoReceived(String node,
 //															  Collection<DiscoveryModule.Identity> identities,
@@ -323,87 +432,17 @@ public class Devices {
 //					}
 //
 //				});
-//	}
+	}
 
-	/**
-	 * Discovers list of host devices connected to local IoT hub.
-	 *
-	 * @param devicesInfoRetrieved
-	 * @throws JaxmppException
-	 */
-	public void getActiveDeviceHosts(final DevicesInfoRetrieved devicesInfoRetrieved) throws JaxmppException {
-		JabberDataElement form = new JabberDataElement(XDataType.submit);
-		form.addTextSingleField("domainjid", jaxmpp.getSessionObject().getUserBareJid().getDomain());
-		form.addTextSingleField("max_items", "100");
+	public void executeDeviceHostAdHocCommand(JID deviceHostJid, String node, Action action,
+											  JabberDataElement form, AsyncCallback callback) throws JaxmppException {
+		JID hubJid = isRemoteMode()
+					 ? getRemoteHubJid()
+					 : deviceHostJid;
 
-		AdHocCommansModule adHocCommansModule = jaxmpp.getModule(AdHocCommansModule.class);
-		adHocCommansModule.execute(JID.jidInstance("sess-man", jaxmpp.getSessionObject().getUserBareJid().getDomain()), "get-users-connections-list",
-								   Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
-
-					private Integer counter;
-					private Map<JID, DiscoveryModule.Identity> discoveredDevices = new HashMap<>();
-
-					@Override
-					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-							throws JaxmppException {
-						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
-					}
-
-					@Override
-					public void onTimeout() throws JaxmppException {
-						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
-					}
-
-					@Override
-					protected void onResponseReceived(String sessionid, String node, State status,
-													  JabberDataElement data) throws JaxmppException {
-						TextMultiField field = (TextMultiField) data.getFields().get(0);
-						String[] jids = field.getFieldValue();
-						counter = jids.length;
-						for (String jidStr : jids) {
-							final JID jid = JID.jidInstance(jidStr);
-							if (jid.equals(ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()))) {
-								checkAndNotify();
-								continue;
-							}
-							DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
-							discoveryModule.getInfo(jid, new DiscoveryModule.DiscoInfoAsyncCallback(null)  {
-								@Override
-								protected void onInfoReceived(String node,
-															  Collection<DiscoveryModule.Identity> identities,
-															  Collection<String> features) throws XMLException {
-									for (DiscoveryModule.Identity identity : identities) {
-										if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
-											discoveredDevices.put(jid, identity);
-										}
-									}
-									checkAndNotify();
-								}
-
-								@Override
-								public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-										throws JaxmppException {
-									checkAndNotify();
-								}
-
-								@Override
-								public void onTimeout() throws JaxmppException {
-									checkAndNotify();
-								}
-							});
-						}
-					}
-
-					private void checkAndNotify() {
-						synchronized (this) {
-							counter--;
-							if (counter == 0) {
-								devicesInfoRetrieved.onDeviceInfoRetrieved(discoveredDevices);
-							}
-						}
-					}
-
-				});
+		jaxmpp.getModule(AdHocCommansModule.class)
+				.execute(hubJid, nodeForwardEncoder(deviceHostJid, node), action, form,
+						 callback);
 	}
 
 	/**
@@ -426,19 +465,19 @@ public class Devices {
 
 			switch (type) {
 				case "movement-sensor":
-					return new MovementSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new MovementSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "tv-sensor":
-					return new TvSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new TvSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "light-dimmer":
-					return new LightDimmer(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new LightDimmer(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "light-sensor":
-					return new LightSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new LightSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "temperature-sensor":
-					return new TemperatureSensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new TemperatureSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "switch":
-					return new Switch(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new Switch(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "humidity-sensor":
-					return new HumiditySensor(jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new HumiditySensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				default:
 					return null;
 			}

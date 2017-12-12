@@ -21,6 +21,7 @@
 
 package tigase.iot.framework.client.devices;
 
+import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.values.Light;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
@@ -37,8 +38,8 @@ import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
  */
 public class LightDimmer extends LightSensor {
 
-	public LightDimmer(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
-		super(jaxmpp, pubsubJid, node, name);
+	public LightDimmer(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		super(devices, jaxmpp, pubsubJid, node, name);
 	}
 
 	@Override

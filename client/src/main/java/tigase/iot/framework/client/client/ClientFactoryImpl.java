@@ -106,9 +106,7 @@ public class ClientFactoryImpl implements ClientFactory {
 		jaxmpp().getModulesManager().register(new PubSubModule());
 		jaxmpp().getModulesManager().register(new CapabilitiesModule());
 
-		Dictionary config = Dictionary.getDictionary("config");
-		boolean pep = "true".equals(config.get("pep"));
-		devices = new Devices(jaxmpp, pep);
+		devices = new Devices(jaxmpp, false);
 		
 		authView = new AuthViewImpl(this);
 		devicesListView = new DevicesListViewImpl(this);
@@ -177,54 +175,5 @@ public class ClientFactoryImpl implements ClientFactory {
 	public DevicesListView devicesListView() {
 		return devicesListView;
 	}
-
-//	private class ResourceBindHandler implements ResourceBinderModule.ResourceBindErrorHandler,
-//			ResourceBinderModule.ResourceBindSuccessHandler {
-//
-//		@Override
-//		public void onResourceBindError(SessionObject sessionObject, ErrorCondition errorCondition) {
-//			MessageDialog dlg = new MessageDialog(ClientFactoryImpl.this, baseI18n().error(), errorCondition.name());
-//			dlg.show();
-//			dlg.center();
-//			eventBus().fireEvent(new AuthEvent(null));
-//		}
-//
-//		@Override
-//		public void onResourceBindSuccess(SessionObject sessionObject, JID bindedJid) throws JaxmppException {
-//			try {
-//				eventBus().fireEvent(new ServerFeaturesChangedEvent(new ArrayList<Identity>(), new ArrayList<String>()));
-//				jaxmpp().getModulesManager().getModule(DiscoveryModule.class).getInfo(
-//						JID.jidInstance(bindedJid.getDomain()), new DiscoInfoAsyncCallback(null) {
-//
-//					@Override
-//					protected void onInfoReceived(String node, Collection<Identity> identities, Collection<String> features) throws XMLException {
-//						eventBus().fireEvent(new ServerFeaturesChangedEvent(identities, features));
-//					}
-//
-//					public void onError(Stanza responseStanza, ErrorCondition error) throws JaxmppException {
-//						throw new UnsupportedOperationException("Not supported yet.");
-//					}
-//
-//					public void onTimeout() throws JaxmppException {
-//						throw new UnsupportedOperationException("Not supported yet.");
-//					}
-//
-//				});
-//
-////                                        if (be.getError() != null) {
-////                                                Cookies.setCookie("username", 
-////                                                        jaxmpp().getProperties().getUserProperty(SessionObject.USER_BARE_JID).toString(),
-////                                                        new Date(new Date().getTime() + 24*60*60*1000*7));
-////                                                Cookies.setCookie("password", 
-////                                                        jaxmpp().getProperties().getUserProperty(SessionObject.PASSWORD).toString(),
-////                                                        new Date(new Date().getTime() + 24*60*60*1000*7));
-////                                        }
-//				eventBus().fireEvent(new AuthEvent(bindedJid));
-//			} catch (Exception ex) {
-//				log.log(Level.WARNING, "exception firing auth event", ex);
-//			}
-//		}
-//
-//	}
 
 }

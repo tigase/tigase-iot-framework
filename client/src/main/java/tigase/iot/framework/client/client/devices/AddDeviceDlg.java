@@ -72,7 +72,7 @@ public class AddDeviceDlg {
 	private void sendRetrieveForm() {
 		try {
 			JabberDataElement data = form.getData();
-			factory.jaxmpp().getModule(AdHocCommansModule.class).execute(deviceHostJid, "add-device", Action.execute, data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+			factory.devices().executeDeviceHostAdHocCommand(deviceHostJid, "add-device", Action.execute, data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
 			@Override
 			protected void onResponseReceived(String sessionid, String node, State status, JabberDataElement data) throws JaxmppException {
 				if (status == State.completed) {

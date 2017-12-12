@@ -59,6 +59,7 @@ public abstract class Device<S extends Device.IValue> {
 
 	private static final Logger log = Logger.getLogger(Device.class.getCanonicalName());
 
+	private final Devices devices;
 	private final JaxmppCore jaxmpp;
 	private final JID pubsubJid;
 	private final String id;
@@ -68,7 +69,8 @@ public abstract class Device<S extends Device.IValue> {
 	private S value;
 	private ValueChangedHandler<S> observer;
 
-	public Device(JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+	public Device(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		this.devices = devices;
 		this.jaxmpp = jaxmpp;
 		this.pubsubJid = pubsubJid;
 		this.id = node.split("/")[1];
@@ -278,7 +280,8 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	public void remove(final Callback<Object> callback) throws JaxmppException {
-		jaxmpp.getModule(DiscoveryModule.class).getInfo(pubsubJid, node, new AsyncCallback() {
+		String node = devices.nodeForwardEncoder(JID.jidInstance("pubsub.tigase-iot-hub.local"), this.node);
+		jaxmpp.getModule(DiscoveryModule.class).getInfo(devices.isRemoteMode() ? devices.getRemoteHubJid() : pubsubJid, node, new AsyncCallback() {
 			@Override
 			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
 					throws JaxmppException {
@@ -295,7 +298,12 @@ public abstract class Device<S extends Device.IValue> {
 						if (creator != null) {
 							JabberDataElement form = new JabberDataElement(XDataType.submit);
 							form.addFixedField("device", id);
-							jaxmpp.getModule(AdHocCommansModule.class).execute(creator.getFieldValue(), "remove-device", Action.execute,
+
+							JID creatorJid = creator.getFieldValue();
+							if (creatorJid.getResource() == null) {
+								creatorJid = JID.jidInstance(creatorJid.getBareJid(), "iot");
+							}
+							devices.executeDeviceHostAdHocCommand(creatorJid, "remove-device", Action.execute,
 																			   form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
 										@Override
 										protected void onResponseReceived(String sessionid, String node, State status,
