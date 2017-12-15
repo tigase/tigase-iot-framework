@@ -285,11 +285,7 @@ public class Devices {
 		JabberDataElement form = new JabberDataElement(XDataType.submit);
 		form.addTextSingleField("domainjid", "tigase-iot-hub.local");
 		form.addTextSingleField("max_items", "100");
-
-		final JID hubJid = isRemoteMode()
-						   ? getRemoteHubJid()
-						   : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
-
+		
 		executeDeviceHostAdHocCommand(
 				JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain()),
 				"get-users-connections-list", Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
@@ -321,29 +317,14 @@ public class Devices {
 						continue;
 					}
 
-					DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
-					String queryNode = nodeForwardEncoder(jid, null);
-					discoveryModule.getInfo(isRemoteMode() ? hubJid : jid, queryNode, new DiscoveryModule.DiscoInfoAsyncCallback(queryNode)  {
+					checkIfJidIsHost(jid, new BiConsumer<JID, DiscoveryModule.Identity>() {
 						@Override
-						protected void onInfoReceived(String node,
-													  Collection<DiscoveryModule.Identity> identities,
-													  Collection<String> features) throws XMLException {
-							for (DiscoveryModule.Identity identity : identities) {
-								if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
-									discoveredDevices.put(jid, identity);
-								}
-							}
-							checkAndNotify();
+						public void accept(JID jid, DiscoveryModule.Identity identity) {
+							discoveredDevices.put(jid, identity);
 						}
-
+					}, new Runnable() {
 						@Override
-						public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-								throws JaxmppException {
-							checkAndNotify();
-						}
-
-						@Override
-						public void onTimeout() throws JaxmppException {
+						public void run() {
 							checkAndNotify();
 						}
 					});
@@ -360,78 +341,40 @@ public class Devices {
 			}
 
 		});
+	}
 
+	public void checkIfJidIsHost(final JID jid, final BiConsumer<JID,DiscoveryModule.Identity> foundHost, final Runnable finished)
+			throws JaxmppException {
+		final JID hubJid = isRemoteMode()
+						   ? getRemoteHubJid()
+						   : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
 
-//		AdHocCommansModule adHocCommansModule = jaxmpp.getModule(AdHocCommansModule.class);
-//		adHocCommansModule.execute(hubJid, "get-users-connections-list",
-//								   Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
-//
-//					private Integer counter;
-//					private Map<JID, DiscoveryModule.Identity> discoveredDevices = new HashMap<>();
-//
-//					@Override
-//					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-//							throws JaxmppException {
-//						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
-//					}
-//
-//					@Override
-//					public void onTimeout() throws JaxmppException {
-//						devicesInfoRetrieved.onDeviceInfoRetrieved(new HashMap<JID, DiscoveryModule.Identity>());
-//					}
-//
-//					@Override
-//					protected void onResponseReceived(String sessionid, String node, State status,
-//													  JabberDataElement data) throws JaxmppException {
-//						TextMultiField field = (TextMultiField) data.getFields().get(0);
-//						String[] jids = field.getFieldValue();
-//						counter = jids.length;
-//						for (String jidStr : jids) {
-//							final JID jid = JID.jidInstance(jidStr);
-//							if (jid.equals(ResourceBinderModule.getBindedJID(jaxmpp.getSessionObject()))) {
-//								checkAndNotify();
-//								continue;
-//							}
-//
-//							DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
-//							String queryNode = isRemoteMode() ? jid.getLocalpart() : null;
-//							discoveryModule.getInfo(isRemoteMode() ? hubJid : jid, queryNode, new DiscoveryModule.DiscoInfoAsyncCallback(queryNode)  {
-//								@Override
-//								protected void onInfoReceived(String node,
-//															  Collection<DiscoveryModule.Identity> identities,
-//															  Collection<String> features) throws XMLException {
-//									for (DiscoveryModule.Identity identity : identities) {
-//										if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
-//											discoveredDevices.put(jid, identity);
-//										}
-//									}
-//									checkAndNotify();
-//								}
-//
-//								@Override
-//								public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-//										throws JaxmppException {
-//									checkAndNotify();
-//								}
-//
-//								@Override
-//								public void onTimeout() throws JaxmppException {
-//									checkAndNotify();
-//								}
-//							});
-//						}
-//					}
-//
-//					private void checkAndNotify() {
-//						synchronized (this) {
-//							counter--;
-//							if (counter == 0) {
-//								devicesInfoRetrieved.onDeviceInfoRetrieved(discoveredDevices);
-//							}
-//						}
-//					}
-//
-//				});
+		DiscoveryModule discoveryModule = jaxmpp.getModule(DiscoveryModule.class);
+		String queryNode = nodeForwardEncoder(jid, null);
+		discoveryModule.getInfo(isRemoteMode() ? hubJid : jid, queryNode, new DiscoveryModule.DiscoInfoAsyncCallback(queryNode)  {
+			@Override
+			protected void onInfoReceived(String node,
+										  Collection<DiscoveryModule.Identity> identities,
+										  Collection<String> features) throws XMLException {
+				for (DiscoveryModule.Identity identity : identities) {
+					if ("device".equals(identity.getCategory()) && "iot".equals(identity.getType())) {
+						foundHost.accept(jid, identity);
+					}
+				}
+				finished.run();
+			}
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+					throws JaxmppException {
+				finished.run();
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				finished.run();
+			}
+		});
 	}
 
 	public void executeDeviceHostAdHocCommand(JID deviceHostJid, String node, Action action,
@@ -546,6 +489,12 @@ public class Devices {
 	public interface DevicesInfoRetrieved {
 
 		void onDeviceInfoRetrieved(Map<JID, DiscoveryModule.Identity> devicesInfo);
+
+	}
+
+	public interface BiConsumer<A,B> {
+
+		void accept(A a, B b);
 
 	}
 }

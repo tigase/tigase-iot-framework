@@ -14,6 +14,7 @@ import com.google.web.bindery.event.shared.SimpleEventBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import tigase.jaxmpp.core.client.JID;
@@ -36,6 +37,8 @@ import tigase.jaxmpp.gwt.client.Jaxmpp;
 import tigase.jaxmpp.gwt.client.Presence;
 import tigase.jaxmpp.gwt.client.Roster;
 import tigase.iot.framework.client.Devices;
+import tigase.iot.framework.client.Hosts;
+import tigase.iot.framework.client.Hub;
 import tigase.iot.framework.client.client.auth.AuthEvent;
 import tigase.iot.framework.client.client.auth.AuthView;
 import tigase.iot.framework.client.client.auth.AuthViewImpl;
@@ -58,7 +61,9 @@ public class ClientFactoryImpl implements ClientFactory {
 	private final AuthViewImpl authView;
 	private final DevicesListViewImpl devicesListView;
 	private final PlaceController placeController;
-
+	private final Hosts hosts;
+	private final Hub hub;
+	
 //	private final ResourceBindHandler jaxmppBindListener = new ResourceBindHandler();
 
 	public ClientFactoryImpl() {
@@ -107,6 +112,13 @@ public class ClientFactoryImpl implements ClientFactory {
 		jaxmpp().getModulesManager().register(new CapabilitiesModule());
 
 		devices = new Devices(jaxmpp, false);
+		hosts = new Hosts(jaxmpp, devices, new Devices.DevicesInfoRetrieved() {
+			@Override
+			public void onDeviceInfoRetrieved(Map<JID, Identity> devicesInfo) {
+				eventBus.fireEvent(new ActiveHostsChangedEvent(devicesInfo));
+			}
+		});
+		hub = new Hub(jaxmpp, devices);
 		
 		authView = new AuthViewImpl(this);
 		devicesListView = new DevicesListViewImpl(this);
@@ -176,4 +188,13 @@ public class ClientFactoryImpl implements ClientFactory {
 		return devicesListView;
 	}
 
+	@Override
+	public Hosts hosts() {
+		return hosts;
+	}
+	
+	@Override
+	public Hub hub() {
+		return hub;
+	}
 }

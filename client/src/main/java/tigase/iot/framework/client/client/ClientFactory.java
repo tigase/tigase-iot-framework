@@ -9,6 +9,8 @@ import com.google.gwt.place.shared.PlaceController;
 import com.google.web.bindery.event.shared.EventBus;
 import tigase.jaxmpp.gwt.client.Jaxmpp;
 import tigase.iot.framework.client.Devices;
+import tigase.iot.framework.client.Hosts;
+import tigase.iot.framework.client.Hub;
 import tigase.iot.framework.client.client.auth.AuthView;
 import tigase.iot.framework.client.client.devices.DevicesListView;
 
@@ -29,4 +31,8 @@ public interface ClientFactory {
 	DevicesListView devicesListView();
 	
 	PlaceController placeController();
+	
+	Hosts hosts();
+	
+	Hub hub();
 }

@@ -8,9 +8,11 @@ package tigase.iot.framework.client.client.devices;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.AbsolutePanel;
+import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.DockLayoutPanel;
@@ -27,13 +29,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.Device;
+import tigase.iot.framework.client.Hub;
+import tigase.iot.framework.client.Hub.RemoteConnectionStatusCallback;
+import tigase.iot.framework.client.client.ActiveHostsChangedEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.FlexGrid;
+import tigase.iot.framework.client.client.ui.Form;
 import tigase.iot.framework.client.client.ui.MessageDialog;
 import tigase.iot.framework.client.client.ui.TopBar;
 import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
 
 /**
@@ -46,6 +53,8 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 	private final FlexGrid flexGrid;
 
+	private final Label hostsLabel;
+	
 	public DevicesListViewImpl(ClientFactory factory) {
 		this.factory = factory;
 
@@ -59,7 +68,9 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 		//AbsolutePanel panel = new AbsolutePanel();
 		DockLayoutPanel panel = new DockLayoutPanel(Style.Unit.EM);
 
-		TopBar topBar = new TopBar("Devices", new ClickHandler() {
+		TopBar topBar = new TopBar("Devices");
+		
+		topBar.addAction("\u2716", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				try {
@@ -67,6 +78,149 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				} catch (JaxmppException ex) {
 					Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
 				}
+			}
+		});
+		
+		topBar.addAction("\uD83D\uDCF6", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				FlowPanel panel = new FlowPanel();
+				panel.setStylePrimaryName("context-menu");
+
+				DialogBox dialog = new DialogBox(true, true);
+				dialog.setStylePrimaryName("dialog-window");
+				dialog.setTitle("Add device");
+
+				Label connectionStatus = new Label("Connection status");
+				connectionStatus.addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent event) {
+						try {
+							factory.hub().checkRemoteConnectionStatus(new Hub.RemoteConnectionStatusCallback() {
+								@Override
+								public void onResult(RemoteConnectionStatusCallback.State state, Integer retry, XMPPException.ErrorCondition errorCondition) {
+									if (errorCondition != null) {
+										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+										return;
+									}
+									String name = "Unknown";
+									switch (state) {
+										case awaitReconnection:
+											name = "Awaiting for reconnection (try: " + retry + ")";
+											break;
+										case reconnecting:
+											name = "Reconnecting (try: " + retry + ")";
+											break;
+										case connected:
+											name = "Connected";
+											break;
+									}
+									
+									new MessageDialog("Status", SafeHtmlUtils.fromSafeConstant("Connection: " + name)).show();
+								}
+							});
+						} catch (JaxmppException ex) {
+							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+						}
+						dialog.hide();
+					}					
+				});
+				panel.add(connectionStatus);
+				
+				Label forceReconnection = new Label("Force reconnection");
+				forceReconnection.addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent event) {
+						try {
+							factory.hub().forceRemoteConnectionReconnection(new Hub.RemoteConnectionReconnectionCallback() {
+								@Override
+								public void onResult(XMPPException.ErrorCondition errorCondition) {
+									if (errorCondition != null) {
+										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+										return;
+									}
+									new MessageDialog("Success", "Reconnection initiated").show();
+								}
+							});
+						} catch (JaxmppException ex) {
+							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+						}
+						dialog.hide();
+					}
+				});
+				panel.add(forceReconnection);
+				
+				Label remoteConnectionCredentials = new Label("Connection credentials");
+				remoteConnectionCredentials.addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent event) {
+						try {
+						factory.hub().getRemoteConnectionCredentials(new Hub.RemoteConnectionCredentialsCallback() {
+								@Override
+								public void onResult(String username, String password, XMPPException.ErrorCondition errorCondition) {
+									if (errorCondition != null) {
+										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+										return;
+									}
+
+									new MessageDialog("Credentials", SafeHtmlUtils.fromSafeConstant("Username: " + username + "<br/>Password: " + password)).show();
+								}
+							});
+						} catch (JaxmppException ex) {
+							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+						}
+						dialog.hide();
+					}
+				});
+				panel.add(remoteConnectionCredentials);
+
+				dialog.setWidget(panel);
+				dialog.center();
+
+			}
+		});
+		
+		topBar.addAction("\uD83D\uDD04", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				try {
+					factory.devices().refreshDevices();
+				} catch (JaxmppException ex) {
+					Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}			
+		});
+		
+		hostsLabel = topBar.addAction("Hosts: 0", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				factory.hosts().getActiveDeviceHosts(new Devices.DevicesInfoRetrieved() {
+					@Override
+					public void onDeviceInfoRetrieved(Map<JID, DiscoveryModule.Identity> activeHosts) {
+						List<Map.Entry<JID, DiscoveryModule.Identity>> items = new ArrayList<>(activeHosts.entrySet());
+						items.sort(new Comparator<Map.Entry<JID, DiscoveryModule.Identity>>() {
+							@Override
+							public int compare(Map.Entry<JID, DiscoveryModule.Identity> o1, Map.Entry<JID, DiscoveryModule.Identity> o2) {
+								return o1.getValue().getName().compareTo(o2.getValue().getName());
+							}
+						});
+			
+						StringBuilder sb = new StringBuilder();
+						for (Map.Entry<JID, DiscoveryModule.Identity> e : items) {
+							if (sb.length() > 0) {
+								sb.append("<br/>");
+							}
+							sb.append(e.getValue().getName());
+						}
+						new MessageDialog("Connected hosts: " + activeHosts.size(), SafeHtmlUtils.fromSafeConstant(sb.toString())).show();
+					}
+				});
+			}			
+		});
+		factory.eventBus().addHandler(ActiveHostsChangedEvent.TYPE, new ActiveHostsChangedEvent.Handler() {
+			@Override
+			public void onActiveHostsChange(Map<JID, DiscoveryModule.Identity> activeHosts) {
+				hostsLabel.setText("Hosts: " + activeHosts.size());
 			}
 		});
 

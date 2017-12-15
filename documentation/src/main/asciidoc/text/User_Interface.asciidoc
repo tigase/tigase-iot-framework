@@ -13,6 +13,9 @@ It will automatically detect runnning Tigase IoT Hub in the local network and wi
 
 image::images/client/authentication.png[Authentication page]
 
+NOTE: If web-based client is configured to allow connection to remote IoT hub, it will be possible to connect to remote
+hub using credentials for remote hub and checking `Connect to remote hub`.
+
 === Displaying devices and data
 
 In user interface you can easily show list of attached devices, it's names and current device state

@@ -19,24 +19,27 @@ public class TopBar extends Composite {
 	private final FlowPanel panel;
 	private final Label title;
 	
-	public TopBar(String name, ClickHandler closeAction) {
+	public TopBar(String name) {
 		panel = new FlowPanel();
 		panel.setStylePrimaryName("top-bar");
 		title = new Label(name);
 		panel.add(title);
-		
-		if (closeAction != null) {
-			Label close = new Label("\u2716");
-			close.setStylePrimaryName("close-action");
-			panel.add(close);
-			close.addClickHandler(closeAction);
-		}
 		
 		initWidget(panel);
 	}
 	
 	public void setTitle(String title) {
 		this.title.setText(title);
+	}
+	
+	public Label addAction(String name, ClickHandler action) {
+		Label close = new Label(name);
+		close.setStylePrimaryName("top-bar-action");
+		panel.add(close);
+		if (action != null) {
+			close.addClickHandler(action);
+		}
+		return close;
 	}
 	
 }

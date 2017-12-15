@@ -7,6 +7,8 @@ package tigase.iot.framework.client.client.ui;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.safehtml.shared.SafeHtml;
+import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import java.util.List;
@@ -24,12 +26,36 @@ public class MessageDialog {
 		this(title, message, null);
 	}
 	
+	public MessageDialog(String title, SafeHtml message) {
+		this(title, message, null);
+	}
+
 	public MessageDialog(String title, String message, Runnable onOK) {
 		errorDlg = new DialogBox(true, true);
 		errorDlg.setStylePrimaryName("dialog-window");
 		errorDlg.setGlassEnabled(true);
 		errorDlg.setTitle(title);
 		errorDlg.setText(message);
+		Button button = new Button("OK");
+		button.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				errorDlg.hide();
+				if (onOK != null) {
+					onOK.run();
+				}
+			}
+		});
+		errorDlg.setWidget(button);
+		button.getElement().getParentElement().addClassName("context-menu");
+	}
+
+	public MessageDialog(String title, SafeHtml message, Runnable onOK) {
+		errorDlg = new DialogBox(true, true);
+		errorDlg.setStylePrimaryName("dialog-window");
+		errorDlg.setGlassEnabled(true);
+		errorDlg.setTitle(title);
+		errorDlg.setHTML(SafeHtmlUtils.fromSafeConstant("<h2>" + SafeHtmlUtils.fromString(title).asString() + "</h2><br/>" + message.asString()));
 		Button button = new Button("OK");
 		button.addClickHandler(new ClickHandler() {
 			@Override
