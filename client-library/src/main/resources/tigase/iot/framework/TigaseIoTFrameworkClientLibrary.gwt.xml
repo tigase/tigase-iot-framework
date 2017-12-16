@@ -23,5 +23,10 @@
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 1.6.4//EN" "http://google-web-toolkit.googlecode.com/svn/tags/1.6.4/distro-source/core/src/gwt-module.dtd">
 <module>
     <inherits name='com.google.gwt.user.User' />
+    <inherits name="tigase.jaxmpp.core.JaxmppRoster" />
+    <inherits name="tigase.jaxmpp.core.JaxmppPresence" />
+    <inherits name="tigase.jaxmpp.core.JaxmppChat" />
+    <inherits name="tigase.jaxmpp.core.JaxmppPubSub" />
+    <inherits name="tigase.jaxmpp.core.JaxmppAdHoc" />
     <source path='client'/>
 </module>
