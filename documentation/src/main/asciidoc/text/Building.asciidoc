@@ -8,23 +8,16 @@ For details about compilation of JaXMPP Bot Framework, please check the document
 
 === Building Framework
 
-==== Gradle
 Tigase IoT Framework binaries can be built with Gradle.
 
 [source,bash]
 ----
-./gradlew package publishToMavenLocal distZip
+./gradlew build publishToMavenLocal distZip
 ----
 
-This line will compile whole framework (including Raspberry Pi releated stuff), install it to Gradle and Maven repositories and create simplest possible bundle of a framework with only most necessary features.
+This line will compile whole framework (including Raspberry Pi releated stuff), install it to Gradle and Maven local repositories and create simplest possible bundle of a framework with only most necessary features.
 This bundle will be created in a directory `runtime/build/distributions/`.
 
-=== Building Web UI
-Web UI for Tigase IoT Framework module which can be found in `client` subdirectory requires maven for building.
+Additionally it will create a WAR archive with Tigase IoT Web Client in a directory `client/build/libs/`. File will be named `iot-client-2.0.0-SNAPSHOT.war`.
 
-[source,bash]
------
-mvn package
------
-
-This will create WAR package in `target` subdirectory.
+TIP: If you want want to start Tigase IoT Web Client locally without deploying it to a web server you may start it with `./gradlew gwtDev` which will start it using GWT development mode.
