@@ -1,0 +1,61 @@
+group 'tigase.iot'
+version '2.0.0-SNAPSHOT'
+
+buildscript {
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath 'de.richsource.gradle.plugins:gwt-gradle-plugin:0.6'
+	}
+}
+
+apply plugin: 'gwt'
+apply plugin: 'war'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.web
+		}
+	}
+}
+
+def jaxmppVersion = '3.2.0-SNAPSHOT'
+def gwtVersion = '2.8.2'
+
+dependencies {
+	providedCompile group: 'com.google.gwt', name: 'gwt-servlet', version: gwtVersion
+	providedCompile group: 'com.google.gwt', name: 'gwt-user', version: gwtVersion
+	providedCompile group: 'com.google.gwt', name: 'gwt-dev', version: gwtVersion
+	providedCompile group: 'com.google.gwt', name: 'gwt-codeserver', version: gwtVersion
+
+	providedCompile group: 'tigase', name: 'jaxmpp-gwt', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-pubsub', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-adhoc', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-presence', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-roster', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-registration', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-chat', version: jaxmppVersion
+	providedCompile group: 'tigase', name: 'jaxmpp-muc', version: jaxmppVersion
+	providedCompile project(':iot-client-library')
+
+	providedCompile group: 'com.googlecode.gwt-crypto', name: 'gwt-crypto', version: '2.3.0'
+
+	testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+gwt {
+//	gwtVersion = '2.8.2'
+
+	modules 'tigase.iot.framework.client.Main'
+
+	maxHeapSize "1024M"
+
+	superDev {
+		noPrecompile = true
+	}
+}

@@ -3,6 +3,7 @@ include ':devices'
 include ':devices-rpi'
 include ':runtime'
 include ':client-library'
+include ':client'
 include ':documentation'
 
 def prefixSubprojectNames(children, prefix) {

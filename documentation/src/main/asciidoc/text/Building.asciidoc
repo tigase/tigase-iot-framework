@@ -13,7 +13,7 @@ Tigase IoT Framework binaries can be built with Gradle.
 
 [source,bash]
 ----
-./gradlew publish publishToMavenLocal distZip
+./gradlew package publishToMavenLocal distZip
 ----
 
 This line will compile whole framework (including Raspberry Pi releated stuff), install it to Gradle and Maven repositories and create simplest possible bundle of a framework with only most necessary features.

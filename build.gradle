@@ -7,6 +7,17 @@ subprojects {
     publishing {
         repositories {
             mavenLocal()
+            maven {
+                credentials {
+                    username "$mavenRepoUsername"
+                    password "$mavenRepoPassword"
+                }
+                if (project.version.endsWith("-SNAPSHOT")) {
+                    url "http://maven-repo.tigase.org/repository/snapshot"
+                } else {
+                    url "http://maven-repo.tigase.org/repository/release"
+                }
+            }
         }
     }
 }

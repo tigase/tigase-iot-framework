@@ -22,6 +22,9 @@
 /client-library/build
 
 /client/target
+/client/out
+/client/build
+/client/war
 
 /documentation/target
 /documentation/build
