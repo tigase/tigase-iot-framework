@@ -2,9 +2,7 @@
 == Building
 
 === Requirements
-Tigase IoT Framework is based on the newest (not yet released) version of JaXMPP Bot Framework.
-Due to that it is required to download sources of JaXMPP Bot Framework from the project available at https://tigase.tech/projects/jaxmpp-bot-framework and compile it.
-For details about compilation of JaXMPP Bot Framework, please check the documentation of JaXMPP Bot Framework project.
+Tigase IoT Framework is based on the newest (not yet released) version of JaXMPP Bot Framework. It will automatically download required dependecies from Maven repository.
 
 === Building Framework
 

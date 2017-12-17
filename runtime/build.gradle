@@ -8,11 +8,25 @@ mainClassName = "tigase.bot.runtime.Main"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+task prepareDocumentation(dependsOn: ":iot-documentation:asciidoctor") {
+    outputs.dir project(":iot-documentation").docsDir
+}
+
 distZip {
     archiveName "tigase-iot-framework-${version}.zip"
     into("tigase-iot-framework-${version}/etc/") {
         from 'etc/'
         include 'logger.properties'
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from(prepareDocumentation) {
+                into "docs"
+            }
+        }
     }
 }
 

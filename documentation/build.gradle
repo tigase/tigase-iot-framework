@@ -1,4 +1,5 @@
-apply plugin: 'org.asciidoctor.gradle.asciidoctor'
+apply plugin: 'org.asciidoctor.convert'
+apply plugin: 'java'
 
 buildscript {
     repositories {
@@ -7,6 +8,7 @@ buildscript {
 
     dependencies {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.3'
+        classpath 'org.asciidoctor:asciidoctorj-pdf:1.5.0-alpha.15'
     }
 }
 
@@ -17,4 +19,11 @@ asciidoctorj {
 asciidoctor {
     sourceDir = new File("$projectDir/src/main/asciidoc")
     outputDir = new File("$buildDir/docs")
+
+    backends 'html5', 'pdf'
+
+    attributes \
+        'build-gradle': file('build.gradle'),
+        'sourcedir': project.sourceSets.main.java.srcDirs[0],
+        'imagesdir': ''
 }
