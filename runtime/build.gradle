@@ -30,9 +30,9 @@ distributions {
     }
 }
 
-artifacts {
-    archives distZip
-}
+//artifacts {
+//    archives distZip
+//}
 
 startScripts {
     applicationName = "tigase-iot-framework"
@@ -42,7 +42,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-            artifact distZip
+//            artifact distZip
         }
     }
 }
