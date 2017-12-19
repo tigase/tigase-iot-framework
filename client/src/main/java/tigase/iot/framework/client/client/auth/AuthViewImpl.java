@@ -5,29 +5,15 @@
  */
 package tigase.iot.framework.client.client.auth;
 
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.dom.client.*;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.i18n.client.Dictionary;
 import com.google.gwt.storage.client.Storage;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.AbsolutePanel;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.Panel;
-import com.google.gwt.user.client.ui.PasswordTextBox;
-import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.*;
+import tigase.iot.framework.client.client.ClientFactory;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
-import tigase.iot.framework.client.client.ClientFactory;
-import tigase.iot.framework.client.client.ui.MessageDialog;
 
 /**
  *
@@ -190,7 +176,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 
 		factory.devices().setRemoteMode(isRemote());
 		
-		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://tigase-iot-remote-hub.local:5290/";
+		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://iot-1.cloud:5290/";
 
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
@@ -200,7 +186,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 		if (username.getText() == null || username.getText().isEmpty()) {
 			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
 		} else {
-			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "tigase-iot-remote-hub.local"), password.getText(), url));
+			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "iot-1.cloud"), password.getText(), url));
 		}
 	}
 }

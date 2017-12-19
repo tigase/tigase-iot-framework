@@ -285,9 +285,10 @@ public class Devices {
 		JabberDataElement form = new JabberDataElement(XDataType.submit);
 		form.addTextSingleField("domainjid", "tigase-iot-hub.local");
 		form.addTextSingleField("max_items", "100");
-		
+
+
 		executeDeviceHostAdHocCommand(
-				JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain()),
+				JID.jidInstance("tigase-iot-hub.local"),
 				"get-users-connections-list", Action.execute, form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
 
 			private Integer counter;
