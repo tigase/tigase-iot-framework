@@ -176,7 +176,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 
 		factory.devices().setRemoteMode(isRemote());
 		
-		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://iot-1.cloud:5290/";
+		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://web.iot1.cloud:5290/";
 
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
@@ -186,7 +186,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 		if (username.getText() == null || username.getText().isEmpty()) {
 			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
 		} else {
-			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "iot-1.cloud"), password.getText(), url));
+			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "iot1.cloud"), password.getText(), url));
 		}
 	}
 }
