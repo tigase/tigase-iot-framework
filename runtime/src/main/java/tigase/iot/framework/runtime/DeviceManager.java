@@ -85,17 +85,20 @@ public class DeviceManager implements RegistrarBean {
 		}
 		AbstractBeanConfigurator.BeanDefinition definition = builder.build();
 		definition.setExportable(true);
-		configManager.setBeanDefinition(definition);
 
-		try {
-			kernel.getInstance(definition.getBeanName());
-			if (log.isLoggable(Level.FINE)) {
-				log.log(Level.FINE, "created devices with id = " + definition.getBeanName());
+		synchronized (configManager) {
+			configManager.setBeanDefinition(definition);
+
+			try {
+				kernel.getInstance(definition.getBeanName());
+				if (log.isLoggable(Level.FINE)) {
+					log.log(Level.FINE, "created devices with id = " + definition.getBeanName());
+				}
+			} catch (Throwable ex) {
+				configManager.removeBeanDefinition(definition.getBeanName());
+				log.log(Level.WARNING, "failed creation of device " + deviceClass + " with configuration " + form.getAsString());
+				throw new RuntimeException(ex);
 			}
-		} catch (Exception ex) {
-			configManager.removeBeanDefinition(definition.getBeanName());
-			log.log(Level.WARNING, "failed creation of device " + deviceClass + " with configuration " + form.getAsString());
-			throw new RuntimeException(ex);
 		}
 	}
 
@@ -103,7 +106,10 @@ public class DeviceManager implements RegistrarBean {
 		if (log.isLoggable(Level.FINE)) {
 			log.log(Level.FINE, "removing device with id = " + deviceId);
 		}
-		boolean removed = configManager.removeBeanDefinition(deviceId);
+		boolean removed = false;
+		synchronized (configManager) {
+			removed = configManager.removeBeanDefinition(deviceId);
+		}
 		pubSubNodesManager.cleanupNodes();
 		if (removed) {
 			if (log.isLoggable(Level.FINE)) {

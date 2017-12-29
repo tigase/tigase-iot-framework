@@ -54,7 +54,11 @@ public class PinSwitch
 
 	@Override
 	public void initialize() {
-		gpio = GpioFactory.getInstance();
+		try {
+			gpio = GpioFactory.getInstance();
+		} catch (Throwable ex) {
+			throw new RuntimeException("Failed to retrieve instance of GpioFactory!", ex);
+		}
 		initializeOutput();
 	}
 

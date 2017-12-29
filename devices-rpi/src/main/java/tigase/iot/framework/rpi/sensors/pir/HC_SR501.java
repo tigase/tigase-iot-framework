@@ -114,7 +114,11 @@ public class HC_SR501
 	@Override
 	public void initialize() {
 		super.initialize();
-		gpio = GpioFactory.getInstance();
+		try {
+			gpio = GpioFactory.getInstance();
+		} catch (Throwable ex) {
+			throw new RuntimeException("Failed to retrieve instance of GpioFactory!", ex);
+		}
 		if (input == null) {
 			initializeInput();
 		}
