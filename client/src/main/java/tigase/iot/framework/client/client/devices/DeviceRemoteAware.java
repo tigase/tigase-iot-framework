@@ -5,12 +5,13 @@
  */
 package tigase.iot.framework.client.client.devices;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.gwt.resources.client.ImageResource;
+import tigase.iot.framework.client.Device.IValue;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.iot.framework.client.Device.IValue;
-import tigase.iot.framework.client.values.Movement;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Extended implementation of {@link Device} with support for representation of remote device and its state.
@@ -20,8 +21,8 @@ public abstract class DeviceRemoteAware<S, T extends IValue<S>> extends Device i
 	
 	private static final Logger log = Logger.getLogger(DeviceRemoteAware.class.getCanonicalName());
 	
-	public DeviceRemoteAware(String deviceClass, String iconStr, tigase.iot.framework.client.Device<T> sensor) {
-		super(deviceClass, iconStr);
+	public DeviceRemoteAware(String deviceClass, ImageResource icon, tigase.iot.framework.client.Device<T> sensor) {
+		super(deviceClass, icon);
 		
 		setDescription(sensor.getName());
 		

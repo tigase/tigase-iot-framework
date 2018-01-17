@@ -16,7 +16,7 @@ import tigase.iot.framework.client.values.Temperature;
 public class Thermometer extends DeviceRemoteConfigAware<Double, Temperature, tigase.iot.framework.client.devices.TemperatureSensor> {
 	
 	public Thermometer(ClientFactory factory, TemperatureSensor sensor) {
-		super(factory, "thermometer", "\uD83C\uDF21", sensor);
+		super(factory, "thermometer", Icons.INSTANCE.thermometer(), sensor);
 	}
 
 	@Override

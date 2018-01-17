@@ -6,9 +6,7 @@
 package tigase.iot.framework.client.client.devices;
 
 import tigase.iot.framework.client.client.ClientFactory;
-import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.iot.framework.client.values.Humidity;
-import tigase.iot.framework.client.values.Temperature;
 
 /**
  *
@@ -17,7 +15,7 @@ import tigase.iot.framework.client.values.Temperature;
 public class HumiditySensor extends DeviceRemoteConfigAware<Double, Humidity, tigase.iot.framework.client.devices.HumiditySensor> {
 	
 	public HumiditySensor(ClientFactory factory, tigase.iot.framework.client.devices.HumiditySensor sensor) {
-		super(factory, "humidity-sensor", "\uD83D\uDCA6", sensor);
+		super(factory, "humidity-sensor", Icons.INSTANCE.humidity(), sensor);
 	}
 
 	@Override

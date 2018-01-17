@@ -11,12 +11,13 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.values.OnOffState;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -27,7 +28,7 @@ public class Switch extends DeviceRemoteConfigAware<Boolean, OnOffState, tigase.
 	private boolean state;
 	
 	public Switch(ClientFactory factory, tigase.iot.framework.client.devices.Switch sensor) {
-		super(factory, "switch", "\uD83D\uDD0C", sensor);
+		super(factory, "switch", Icons.INSTANCE.shutdown(), sensor);
 		setValue(false);
 	}
 		

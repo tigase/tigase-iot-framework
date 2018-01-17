@@ -5,10 +5,10 @@
  */
 package tigase.iot.framework.client.client.devices;
 
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.resources.client.ImageResource;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 
 /**
@@ -17,19 +17,19 @@ import com.google.gwt.user.client.ui.Label;
  */
 public class Device extends Composite {
 
-	private final Label icon;
+	private final Image icon;
 	private final Label header;
 	private final Label label;
 
-	public Device(String deviceClass, String iconStr) {
+	public Device(String deviceClass, ImageResource icon) {
 		FlowPanel item = new FlowPanel();
 		item.setStylePrimaryName("flex-device-item");
 		item.addStyleName(deviceClass);
 
-		icon = new Label(iconStr);
-		icon.setStylePrimaryName("icon");
+		this.icon = new Image(icon);
+		this.icon.setStylePrimaryName("icon");
 
-		item.add(icon);
+		item.add(this.icon);
 
 		header = new Label();
 		header.setStylePrimaryName("header");

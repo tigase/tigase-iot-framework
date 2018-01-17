@@ -15,7 +15,7 @@ import tigase.iot.framework.client.values.Movement;
 public class MovementSensor extends DeviceRemoteConfigAware<Boolean, Movement, tigase.iot.framework.client.devices.MovementSensor> {
 	
 	public MovementSensor(ClientFactory factory, tigase.iot.framework.client.devices.MovementSensor sensor) {
-		super(factory, "movement-sensor", "\uD83D\uDEB6", sensor);
+		super(factory, "movement-sensor", Icons.INSTANCE.proximitySensor(), sensor);
 	}
 		
 	@Override

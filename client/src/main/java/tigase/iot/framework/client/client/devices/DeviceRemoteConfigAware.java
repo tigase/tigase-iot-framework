@@ -7,22 +7,19 @@ package tigase.iot.framework.client.client.devices;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.resources.client.ImageResource;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.Widget;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import tigase.jaxmpp.core.client.XMPPException;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
+import com.google.gwt.user.client.ui.*;
 import tigase.iot.framework.client.Device.Configuration;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
+import tigase.jaxmpp.core.client.XMPPException;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Extended version of {@link DeviceRemoteAware} which adds support for
@@ -35,8 +32,8 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 	protected final D device;
 	protected final ClientFactory factory;
 
-	public DeviceRemoteConfigAware(ClientFactory factory, String deviceClass, String iconStr, D sensor) {
-		super(deviceClass, iconStr, sensor);
+	public DeviceRemoteConfigAware(ClientFactory factory, String deviceClass, ImageResource icon, D sensor) {
+		super(deviceClass, icon, sensor);
 		this.device = sensor;
 		this.factory = factory;
 

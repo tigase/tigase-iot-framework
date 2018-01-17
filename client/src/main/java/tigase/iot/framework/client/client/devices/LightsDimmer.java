@@ -5,27 +5,20 @@
  */
 package tigase.iot.framework.client.client.devices;
 
-import com.google.gwt.dom.client.Document;
-import com.google.gwt.dom.client.OptionElement;
-import com.google.gwt.dom.client.SelectElement;
 import com.google.gwt.dom.client.Style;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.Widget;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import tigase.iot.framework.client.client.ClientFactory;
+import tigase.iot.framework.client.values.Light;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.iot.framework.client.values.Light;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class is an implementation of a representation (UI) for a remote light dimmer device.
@@ -34,7 +27,7 @@ import tigase.iot.framework.client.values.Light;
 public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {
 		
 	public LightsDimmer(ClientFactory factory, tigase.iot.framework.client.devices.LightDimmer sensor) {
-		super(factory, "lights-dimmer", "\uD83D\uDCA1", sensor);
+		super(factory, "lights-dimmer", Icons.INSTANCE.lightBulb(), sensor);
 	}
 	
 	@Override
