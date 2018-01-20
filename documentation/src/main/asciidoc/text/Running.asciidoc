@@ -18,8 +18,8 @@ $ $ ./bin/tigase-iot-framework
 2016-11-14 10:55:21.716 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultBeanConfigurator
 2016-11-14 10:55:21.760 [main]             Kernel.createNewInstance()         FINER:    [root] Creating instance of bean defaultTypesConverter
 2016-11-14 10:55:21.761 [main]             Kernel.injectDependencies()        FINER:    [root] Injecting [tigase.bot.runtime.CustomTypesConverter@304a9d7b] to defaultBeanConfigurator:tigase.component.DSLBeanConfigurator#bean:defaultTypesConverter
-...
-----                                  \
+
+----                                  
 
 INFO: At this point you need to have a running Tigase IoT Hub connected to the same network.
 
@@ -35,7 +35,6 @@ Options:
 -v, --version                                display version
 -log, --logger-config <file>                 logger configuration file
 -D<key=value>,[key=value]                    set system property
-
 ----
 
 Configuration of the bot framework will be store in config file, what is DSL file, at `etc/config.tdsl`.
@@ -48,7 +47,7 @@ It is also possible to start Web UI without any web server by running following 
 
 [source,bash]
 -----
-mvn gwt:run
+./ gradlew gwtRun
 -----
 
 This will start web UI using GWT SuperDevMode.
