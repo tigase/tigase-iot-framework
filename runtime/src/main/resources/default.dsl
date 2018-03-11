@@ -54,6 +54,9 @@ pubSubNodesManager (class: 'tigase.iot.framework.runtime.pubsub.ExtendedPubSubNo
 deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPubSubManager', exportable: true) {
 }
 
+accountStatusMonitor (class: 'tigase.iot.framework.runtime.AccountStatusMonitor', exportable: true) {
+}
+
 ## IoT Devices - common
 
 ### Android TV sensor
