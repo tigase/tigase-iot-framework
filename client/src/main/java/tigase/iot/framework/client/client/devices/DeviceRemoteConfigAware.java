@@ -198,7 +198,6 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		} catch (JaxmppException ex) {
 			Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
 		}
-
 	}
 
 	private void removeDevice() {

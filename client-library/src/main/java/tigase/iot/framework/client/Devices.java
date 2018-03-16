@@ -167,31 +167,15 @@ public class Devices {
 
 			private Integer counter;
 
-			@Override
-			public void onInfoReceived(String node, ArrayList<DiscoveryModule.Item> items) throws XMLException {
-				counter = items.size();
-				for (final DiscoveryModule.Item item : items) {
-					try {
-						Device.retrieveConfiguration(jaxmpp, pubsubJid, item.getNode(), new Device.Callback<Device.Configuration>() {
+			private final Object mutex = new Object();
 
-							@Override
-							public void onError(XMPPException.ErrorCondition error) {
-								checkAndNotify();
-							}
-
-							@Override
-							public void onSuccess(Device.Configuration config) {
-								devices.add(createDevice(item, config));
-								checkAndNotify();
-							}
-						});
-					} catch (JaxmppException ex) {
-						log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
+			private void checkAndNotify() {
+				synchronized (mutex) {
+					counter--;
+					if (counter <= 0) {
+						updateCapsOnDevicesChange();
+						jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 					}
-				}
-				if (items.isEmpty()) {
-					updateCapsOnDevicesChange();
-					jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 				}
 			}
 
@@ -203,20 +187,46 @@ public class Devices {
 			}
 
 			@Override
+			public void onInfoReceived(String node, ArrayList<DiscoveryModule.Item> items) throws XMLException {
+				counter = items.size();
+				for (final DiscoveryModule.Item item : items) {
+					try {
+						Device.retrieveConfiguration(jaxmpp, pubsubJid, item.getNode(),
+													 new Device.Callback<Device.Configuration>() {
+
+														 @Override
+														 public void onError(XMPPException.ErrorCondition error) {
+															 checkAndNotify();
+														 }
+
+														 @Override
+														 public void onSuccess(Device.Configuration config) {
+															 Device d = createDevice(item, config);
+															 synchronized (mutex) {
+																 counter--;
+																 if (d != null) {
+																	 devices.add(d);
+																 } else {
+																 }
+															 }
+															 checkAndNotify();
+														 }
+													 });
+					} catch (JaxmppException ex) {
+						log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
+					}
+				}
+				if (items.isEmpty()) {
+					updateCapsOnDevicesChange();
+					jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
+				}
+			}
+
+			@Override
 			public void onTimeout() throws JaxmppException {
 				// ignoring for now
 				updateCapsOnDevicesChange();
 				jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
-			}
-
-			private void checkAndNotify() {
-				synchronized (this) {
-					counter--;
-					if (counter == 0) {
-						updateCapsOnDevicesChange();
-						jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
-					}
-				}
 			}
 		});
 
@@ -422,6 +432,8 @@ public class Devices {
 					return new Switch(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "humidity-sensor":
 					return new HumiditySensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
+				case "led-matrix":
+					return new LedMatrixDevice(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				default:
 					return null;
 			}
