@@ -20,8 +20,10 @@
  */
 package tigase.iot.framework.client;
 
+import tigase.iot.framework.client.modules.SubscriptionModule;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
+import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.forms.Field;
@@ -31,14 +33,18 @@ import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 
-public class Hub {
+public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.SubscriptionChangedHandler {
 
 	private final JaxmppCore jaxmpp;
+	private SubscriptionModule.Subscription subscription;
 
 	public Hub(JaxmppCore jaxmpp, Devices devices) {
 		this.jaxmpp = jaxmpp;
+		this.jaxmpp.getModulesManager().register(new SubscriptionModule());
+		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, this);
+		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionChangedHandler.SubscriptionChangedEvent.class, this);
 	}
-
+	
 	public void getRemoteConnectionCredentials(final RemoteConnectionCredentialsCallback callback)
 			throws JaxmppException {
 		JID jid = JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());
@@ -119,6 +125,24 @@ public class Hub {
 								 callback.onResult(XMPPException.ErrorCondition.remote_server_timeout);
 							 }
 						 });
+	}
+
+	public SubscriptionModule.Subscription getSubscription() {
+		 return subscription;
+	}
+
+	@Override
+	public void onLoggedIn(SessionObject sessionObject) {
+		try {
+			this.jaxmpp.getModulesManager().getModule(SubscriptionModule.class).retrieveSubscription(null);
+		} catch (JaxmppException ex) {
+			// ignoring...
+		}
+	}
+
+	@Override
+	public void subscriptionChanged(SessionObject sessionObject, SubscriptionModule.Subscription subscription) {
+		this.subscription = subscription;
 	}
 
 	public interface RemoteConnectionCredentialsCallback {

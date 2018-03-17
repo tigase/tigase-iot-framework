@@ -10,38 +10,29 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.Event;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.AbsolutePanel;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.DockLayoutPanel;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.ScrollPanel;
-import com.google.gwt.user.client.ui.Widget;
-import java.time.Clock;
+import com.google.gwt.user.client.ui.*;
+import tigase.iot.framework.client.Device;
+import tigase.iot.framework.client.Devices;
+import tigase.iot.framework.client.Hub;
+import tigase.iot.framework.client.Hub.RemoteConnectionStatusCallback;
+import tigase.iot.framework.client.client.ActiveHostsChangedEvent;
+import tigase.iot.framework.client.client.ClientFactory;
+import tigase.iot.framework.client.client.FlexGrid;
+import tigase.iot.framework.client.client.ui.MessageDialog;
+import tigase.iot.framework.client.client.ui.TopBar;
+import tigase.iot.framework.client.devices.TemperatureSensor;
+import tigase.iot.framework.client.modules.SubscriptionModule;
+import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.XMPPException;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import tigase.iot.framework.client.Devices;
-import tigase.iot.framework.client.Device;
-import tigase.iot.framework.client.Hub;
-import tigase.iot.framework.client.Hub.RemoteConnectionStatusCallback;
-import tigase.iot.framework.client.client.ActiveHostsChangedEvent;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.iot.framework.client.client.ClientFactory;
-import tigase.iot.framework.client.client.FlexGrid;
-import tigase.iot.framework.client.client.ui.Form;
-import tigase.iot.framework.client.client.ui.MessageDialog;
-import tigase.iot.framework.client.client.ui.TopBar;
-import tigase.iot.framework.client.devices.TemperatureSensor;
-import tigase.jaxmpp.core.client.JID;
-import tigase.jaxmpp.core.client.XMPPException;
-import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
 
 /**
  *
@@ -174,9 +165,39 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				});
 				panel.add(remoteConnectionCredentials);
 
+				Label subscriptionStatus = new Label("Subscription");
+				subscriptionStatus.addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent clickEvent) {
+						dialog.hide();
+
+						SubscriptionModule.Subscription sub = factory.hub().getSubscription();
+						String txt = "";
+						if (sub == null) {
+							txt = "Subscription informations not available.<br/>Please try again later.";
+						} else {
+							txt = "Subscription allows for:<br/><ul>";
+							txt += "<li>";
+							if (sub.devices < 0) {
+								txt += "Usage of any number of devices";
+							} else {
+								txt += "Usage of " + sub.devices + " devices";
+							}
+							txt += "</li><li>";
+							if (sub.changesPerSecond < 0) {
+								txt += "Unlimited changes per second";
+							} else {
+								txt += "" + String.valueOf(sub.changesPerSecond) + " changes per second";
+							}
+							txt += "</li></ul>";
+						}
+						new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
+					}
+				});
+				panel.add(subscriptionStatus);
+
 				dialog.setWidget(panel);
 				dialog.center();
-
 			}
 		});
 		
