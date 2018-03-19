@@ -26,6 +26,9 @@ import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
+import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Presence;
+import tigase.jaxmpp.core.client.xmpp.stanzas.StanzaType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -69,6 +72,13 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				} catch (JaxmppException ex) {
 					Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
 				}
+			}
+		});
+
+		topBar.addAction("\uD83D\uDD11", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent clickEvent) {
+				showAllDevicesList();
 			}
 		});
 		
@@ -290,6 +300,118 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 		}
 
 		flexGrid.add(new AddDeviceItem());
+	}
+
+	private void showAllDevicesList() {
+		try {
+			factory.hub().retrieveAccounts(new Hub.RetrieveAccountsCallback() {
+				@Override
+				public void onResult(List<Result> results, XMPPException.ErrorCondition error) {
+					factory.hosts().getActiveDeviceHosts(new Devices.DevicesInfoRetrieved() {
+						@Override
+						public void onDeviceInfoRetrieved(Map<JID, DiscoveryModule.Identity> devicesInfo) {
+							Grid grid = new Grid(results.size() + 1, 3);
+							grid.setHTML(0, 0, "<b>Status</b>");
+							grid.setHTML(0, 1, "<b>Device ID</b>");
+							grid.setHTML(0, 2, "<b>Action</b>");
+
+							grid.getElement().getStyle().setWidth(100, Style.Unit.PCT);
+
+							DialogBox dialog = new DialogBox(true, true);
+							dialog.setStylePrimaryName("dialog-window");
+							dialog.setTitle("Manage devices");
+							dialog.getCaption().setHTML(SafeHtmlUtils.fromSafeConstant("<h3 style='margin-top: 0px;'>Manage devices</h3>"));
+
+							int row = 0;
+							grid.getCellFormatter().setWidth(row, 0, "60px");
+							grid.getCellFormatter().setWidth(row, 2, "60px");
+							row++;
+							for (Result result : results) {
+								Label label = new Label(result.jid.getLocalpart());
+								grid.setWidget(row, 1, label);
+
+								//DiscoveryModule.Identity identity = devicesInfo.get(result.jid);
+								try {
+									Presence p = PresenceModule.getPresenceStore(factory.jaxmpp().getSessionObject()).getBestPresence(result.jid.getBareJid());
+									if (p == null || p.getType() == StanzaType.unavailable) {
+										grid.setText(row, 0, "\u2601");
+									} else {
+										grid.setText(row, 0, "\u2600");
+									}
+								} catch (Exception ex) {}
+
+								Label action = null;
+								Result.ActionCallback handler = newActionHandler();
+								switch (result.status) {
+									case active:
+										action = new Label("\u274E");
+										action.addClickHandler(new ClickHandler() {
+											@Override
+											public void onClick(ClickEvent clickEvent) {
+												dialog.hide(false);
+												result.disable(handler);
+											}
+										});
+										grid.setText(row, 2, "\u274E");
+										break;
+									case disabled:
+										action = new Label("\u2705");
+										action.addClickHandler(new ClickHandler() {
+											@Override
+											public void onClick(ClickEvent clickEvent) {
+												dialog.hide(false);
+												result.enable(handler);
+											}
+										});
+
+										grid.setText(row, 2, "\u2705");
+										break;
+									case pending:
+										action = new Label("\u2705");
+										action.addClickHandler(new ClickHandler() {
+											@Override
+											public void onClick(ClickEvent clickEvent) {
+												dialog.hide(false);
+												result.enable(handler);
+											}
+										});
+										grid.setText(row, 0, "\uD83C\uDF1F");
+										break;
+								}
+								grid.setWidget(row, 2, action);
+								row++;
+							}
+
+
+							dialog.setWidget(grid);
+							dialog.getElement().getFirstChildElement().getFirstChildElement().getStyle().setWidth(100, Style.Unit.PCT);
+							dialog.center();
+						}
+					});
+				}
+			});
+		} catch (JaxmppException ex) {
+			Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+		}
+	}
+
+	private Hub.RetrieveAccountsCallback.Result.ActionCallback newActionHandler() {
+		return new Hub.RetrieveAccountsCallback.Result.ActionCallback() {
+			@Override
+			public void onError(XMPPException.ErrorCondition errorCondition, String errorMessage) {
+				new MessageDialog("Error", SafeHtmlUtils.fromSafeConstant(errorMessage), new Runnable() {
+					@Override
+					public void run() {
+						showAllDevicesList();
+					}
+				}).show();
+			}
+
+			@Override
+			public void onSuccess() {
+				showAllDevicesList();
+			}
+		};
 	}
 
 	public class AddDeviceItem extends Composite {

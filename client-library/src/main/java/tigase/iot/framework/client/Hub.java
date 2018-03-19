@@ -21,25 +21,29 @@
 package tigase.iot.framework.client;
 
 import tigase.iot.framework.client.modules.SubscriptionModule;
-import tigase.jaxmpp.core.client.JID;
-import tigase.jaxmpp.core.client.JaxmppCore;
-import tigase.jaxmpp.core.client.SessionObject;
-import tigase.jaxmpp.core.client.XMPPException;
+import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xmpp.forms.Field;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
+import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.Action;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.SubscriptionChangedHandler {
 
 	private final JaxmppCore jaxmpp;
+	private final Devices devices;
 	private SubscriptionModule.Subscription subscription;
 
 	public Hub(JaxmppCore jaxmpp, Devices devices) {
 		this.jaxmpp = jaxmpp;
+		this.devices = devices;
 		this.jaxmpp.getModulesManager().register(new SubscriptionModule());
 		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, this);
 		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionChangedHandler.SubscriptionChangedEvent.class, this);
@@ -131,6 +135,58 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 		 return subscription;
 	}
 
+	private void executeManageAccountsAction(JabberDataElement data, AsyncCallback callback) throws JaxmppException {
+		//JID jid = devices.isRemoteMode() ? : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
+		devices.executeDeviceHostAdHocCommand(JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain()),
+											  "manage-accounts", Action.execute, data, callback);
+	}
+
+	public void retrieveAccounts(final RetrieveAccountsCallback callback) throws JaxmppException {
+		JabberDataElement data = new JabberDataElement(XDataType.submit);
+		data.addListSingleField("action", "list");
+		executeManageAccountsAction(data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+				callback.onResult(null, error);
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				callback.onResult(null, XMPPException.ErrorCondition.remote_server_timeout);
+			}
+
+			@Override
+			protected void onResponseReceived(String sessionid, String node, State cmdStatus, JabberDataElement data)
+					throws JaxmppException {
+				List<RetrieveAccountsCallback.Result> accounts = new ArrayList<>();
+				for (Element item : data.getChildren()) {
+					if (!"item".equals(item.getName())) {
+						continue;
+					}
+
+					JID jid = null;
+					RetrieveAccountsCallback.Result.Status status = null;
+
+					for (Element field : item.getChildren()) {
+						if (!"field".equals(field.getName())) {
+							continue;
+						}
+						if ("JID".equals(field.getAttribute("var"))) {
+							jid = JID.jidInstance(field.getFirstChild("value").getValue());
+						}
+						if ("Status".equals(field.getAttribute("var"))) {
+							status = RetrieveAccountsCallback.Result.Status.valueOf(field.getFirstChild("value").getValue());
+						}
+					}
+
+					accounts.add(new RetrieveAccountsCallback.Result(Hub.this, jid, status));
+				}
+				callback.onResult(accounts, null);
+			}
+		});
+	}
+
 	@Override
 	public void onLoggedIn(SessionObject sessionObject) {
 		try {
@@ -166,6 +222,86 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 	public interface RemoteConnectionReconnectionCallback {
 
 		void onResult(XMPPException.ErrorCondition errorCondition);
+
+	}
+
+	public interface RetrieveAccountsCallback {
+
+		void onResult(List<Result> results, XMPPException.ErrorCondition error);
+
+		class Result {
+
+			private final Hub hub;
+			public final JID jid;
+			public final Status status;
+
+			public Result(Hub hub, JID jid, Status status) {
+				this.hub = hub;
+				this.jid = jid;
+				this.status = status;
+			}
+
+			public void enable(ActionCallback actionCallback) {
+				executeAction("enable", actionCallback);
+			}
+
+			public void disable(ActionCallback actionCallback) {
+				executeAction("disable", actionCallback);
+			}
+
+			private void executeAction(String action, final ActionCallback callback) {
+				try {
+					JabberDataElement data = new JabberDataElement(XDataType.submit);
+					data.addListSingleField("action", action);
+					data.addJidSingleField("jid", this.jid);
+
+					hub.executeManageAccountsAction(data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+
+								@Override
+								public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+										throws JaxmppException {
+									Element errorEl = responseStanza.getFirstChild("error");
+									String msg = null;
+									if (errorEl != null) {
+										Element text = errorEl.getFirstChild("text");
+										if (text != null) {
+											msg = text.getValue();
+										}
+									}
+									callback.onError(error, msg);
+								}
+
+								@Override
+								public void onTimeout() throws JaxmppException {
+									callback.onError(XMPPException.ErrorCondition.remote_server_timeout,
+													 "Operation timed out.");
+								}
+
+								@Override
+								protected void onResponseReceived(String sessionid, String node, State status,
+																  JabberDataElement data) throws JaxmppException {
+									callback.onSuccess();
+								}
+							});
+				} catch (JaxmppException ex) {
+					callback.onError(XMPPException.ErrorCondition.undefined_condition, ex.getMessage());
+				}
+			}
+
+			public enum Status {
+				active,
+				disabled,
+				pending
+			}
+
+			public interface ActionCallback {
+
+				void onError(XMPPException.ErrorCondition errorCondition, String errorMessage);
+
+				void onSuccess();
+
+			}
+		}
 
 	}
 }
