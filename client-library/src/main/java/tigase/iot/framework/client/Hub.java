@@ -249,6 +249,10 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 				executeAction("disable", actionCallback);
 			}
 
+			public void delete(ActionCallback actionCallback) {
+				executeAction("delete", actionCallback);
+			}
+
 			private void executeAction(String action, final ActionCallback callback) {
 				try {
 					JabberDataElement data = new JabberDataElement(XDataType.submit);

@@ -8,6 +8,8 @@ package tigase.iot.framework.client.client.devices;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.regexp.shared.RegExp;
+import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.ui.*;
@@ -42,6 +44,8 @@ import java.util.logging.Logger;
  * @author andrzej
  */
 public class DevicesListViewImpl extends Composite implements DevicesListView {
+
+	private final RegExp UUID_REGEX = RegExp.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
 
 	private final ClientFactory factory;
 
@@ -310,10 +314,11 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 					factory.hosts().getActiveDeviceHosts(new Devices.DevicesInfoRetrieved() {
 						@Override
 						public void onDeviceInfoRetrieved(Map<JID, DiscoveryModule.Identity> devicesInfo) {
-							Grid grid = new Grid(results.size() + 1, 3);
+							FlexTable grid = new FlexTable();//results.size() + 1, 3);
 							grid.setHTML(0, 0, "<b>Status</b>");
 							grid.setHTML(0, 1, "<b>Device ID</b>");
 							grid.setHTML(0, 2, "<b>Action</b>");
+							grid.getFlexCellFormatter().setColSpan(0, 2, 2);
 
 							grid.getElement().getStyle().setWidth(100, Style.Unit.PCT);
 
@@ -324,27 +329,46 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 							int row = 0;
 							grid.getCellFormatter().setWidth(row, 0, "60px");
-							grid.getCellFormatter().setWidth(row, 2, "60px");
+							grid.getCellFormatter().setWidth(row, 2, "30px");
+							grid.getCellFormatter().setWidth(row, 3, "30px");
 							row++;
 							for (Result result : results) {
-								Label label = new Label(result.jid.getLocalpart());
-								grid.setWidget(row, 1, label);
+								DiscoveryModule.Identity identity = null;
 
-								//DiscoveryModule.Identity identity = devicesInfo.get(result.jid);
 								try {
 									Presence p = PresenceModule.getPresenceStore(factory.jaxmpp().getSessionObject()).getBestPresence(result.jid.getBareJid());
+									Label presenceLabel = null;
 									if (p == null || p.getType() == StanzaType.unavailable) {
-										grid.setText(row, 0, "\u2601");
+										presenceLabel = new Label("\u2601");
 									} else {
-										grid.setText(row, 0, "\u2600");
+										presenceLabel = new Label("\u2600");
+									}
+									presenceLabel.getElement().getStyle().setFontSize(1.6, Style.Unit.EM);
+									grid.setWidget(row, 0, presenceLabel);
+									if (p != null && p.getFrom() != null) {
+										identity = devicesInfo.get(p.getFrom());
 									}
 								} catch (Exception ex) {}
 
-								Label action = null;
+								boolean isClient = UUID_REGEX.exec(result.jid.getLocalpart()) == null;
+
+								String title = isClient ? result.jid.getLocalpart() : (identity != null ? identity.getName() : "Unknown");
+								String subtitle = isClient ? "User client" : result.jid.getLocalpart();
+
+								SafeHtmlBuilder sb = new SafeHtmlBuilder();
+								sb.append(SafeHtmlUtils.fromString(title));
+								sb.appendHtmlConstant("<br/>");
+								sb.appendHtmlConstant("<span style='font-size: 0.75em'>");
+								sb.append(SafeHtmlUtils.fromString(subtitle));
+								sb.appendHtmlConstant("</span>");
+								HTML label = new HTML(sb.toSafeHtml());
+								grid.setWidget(row, 1, label);
+
+								Button action = null;
 								Result.ActionCallback handler = newActionHandler();
 								switch (result.status) {
 									case active:
-										action = new Label("\u274E");
+										action = createButton("\u274E", "Disable");
 										action.addClickHandler(new ClickHandler() {
 											@Override
 											public void onClick(ClickEvent clickEvent) {
@@ -355,7 +379,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 										grid.setText(row, 2, "\u274E");
 										break;
 									case disabled:
-										action = new Label("\u2705");
+										action = createButton("\u2705", "Enable");
 										action.addClickHandler(new ClickHandler() {
 											@Override
 											public void onClick(ClickEvent clickEvent) {
@@ -367,7 +391,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 										grid.setText(row, 2, "\u2705");
 										break;
 									case pending:
-										action = new Label("\u2705");
+										action = createButton("\u2705", "Enable");
 										action.addClickHandler(new ClickHandler() {
 											@Override
 											public void onClick(ClickEvent clickEvent) {
@@ -379,6 +403,23 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 										break;
 								}
 								grid.setWidget(row, 2, action);
+
+								action = createButton("\u274c", "Title");
+								action.addClickHandler(new ClickHandler() {
+									@Override
+									public void onClick(ClickEvent clickEvent) {
+										dialog.hide(false);
+										new MessageDialog("Account removal", SafeHtmlUtils.fromSafeConstant(
+												"You are about to delete the account for " + result.jid.getLocalpart() +
+														".<br/>Are you sure?"), new Runnable() {
+											@Override
+											public void run() {
+												result.delete(handler);
+											}
+										}).show();
+									}
+								});
+								grid.setWidget(row, 3, action);
 								row++;
 							}
 
@@ -393,6 +434,15 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 		} catch (JaxmppException ex) {
 			Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
 		}
+	}
+
+	private Button createButton(String label, String title) {
+		Button actionb = new Button(label);
+		actionb.setStyleName(null);
+		actionb.getElement().getStyle().setBackgroundColor("transparent");
+		actionb.getElement().getStyle().setBorderWidth(0.0, Style.Unit.PX);
+		actionb.setTitle(title);
+		return actionb;
 	}
 
 	private Hub.RetrieveAccountsCallback.Result.ActionCallback newActionHandler() {
