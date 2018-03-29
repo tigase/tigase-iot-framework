@@ -25,6 +25,7 @@ import tigase.bot.RequiredXmppModules;
 import tigase.bot.runtime.AbstractPubSubPublisher;
 import tigase.bot.runtime.XmppService;
 import tigase.eventbus.HandleEvent;
+import tigase.iot.framework.runtime.ConnectionErrorReporter;
 import tigase.jaxmpp.core.client.AsyncCallback;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
@@ -330,14 +331,15 @@ public class PubSubNodesManager
 
 					@Override
 					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-						log.log(Level.WARNING, "at {0} failed to get node {1} subnodes: {2}",
+						log.log(Level.FINE, "at {0} failed to get node {1} subnodes: {2}",
 								new Object[]{pubsubJid, node, error});
+						ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, error, responseStanza);
 						callback.run();
 					}
 
 					@Override
 					public void onTimeout() throws JaxmppException {
-						log.log(Level.WARNING, "at {0} failed to get node {1} subnodes - timeout",
+						log.log(Level.FINE, "at {0} failed to get node {1} subnodes - timeout",
 								new Object[]{pubsubJid, node});
 						callback.run();
 					}
@@ -365,8 +367,9 @@ public class PubSubNodesManager
 					@Override
 					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
 							throws JaxmppException {
-						log.log(Level.WARNING, "{0}, failed to get node {1} info: {2}",
+						log.log(Level.FINE, "{0}, failed to get node {1} info: {2}",
 								new Object[]{PubSubNodesManager.this.name, node, error});
+						ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, error, responseStanza);
 						callback.run();
 					}
 
@@ -425,7 +428,7 @@ public class PubSubNodesManager
 					JID pubsubJid = getPubsubJid(jaxmpp);
 					createNode(jaxmpp, pubsubJid, node.getNodeName(), node.getConfig(), this::finished);
 				} catch (JaxmppException ex) {
-					log.log(Level.WARNING, "failed to ensure that node exists");
+					log.log(Level.FINE, "failed to ensure that node exists", ex);
 					finished();
 				}
 			} else {
@@ -469,7 +472,7 @@ public class PubSubNodesManager
 					JID pubsubJid = getPubsubJid(jaxmpp);
 					deleteNode(jaxmpp, pubsubJid, node, this::finished);
 				} catch (JaxmppException ex) {
-					log.log(Level.WARNING, "failed to ensure that node exists");
+					log.log(Level.FINE, "failed to delete node", ex);
 					finished();
 				}
 			} else {
@@ -626,10 +629,11 @@ public class PubSubNodesManager
 																	   XMPPException.ErrorCondition errorCondition,
 																	   PubSubErrorCondition pubSubErrorCondition)
 														 throws JaxmppException {
-													 log.log(Level.WARNING,
+													 log.log(Level.FINE,
 															 "at {0} node {1} failed to publish item {2} with errors {3} / {4}",
 															 new Object[]{pubsubJid, item.node, item.itemId,
 																		  errorCondition, pubSubErrorCondition});
+													 ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, errorCondition, response);
 												 }
 
 												 @Override
@@ -666,7 +670,7 @@ public class PubSubNodesManager
 			@Override
 			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
 								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				log.log(Level.WARNING, "at {0} failed to create device node - {1} {2}",
+				log.log(Level.FINE, "at {0} failed to create device node - {1} {2}",
 						new Object[]{pubsubJid, errorCondition, pubSubErrorCondition});
 				if (errorCondition == XMPPException.ErrorCondition.conflict) {
 					Set<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
@@ -679,6 +683,7 @@ public class PubSubNodesManager
 						callback.run();
 					}
 				}
+				ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, errorCondition, response);
 			}
 
 			@Override
@@ -729,8 +734,9 @@ public class PubSubNodesManager
 			@Override
 			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
 								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				log.log(Level.WARNING, "at {0} failed to delete device node - {1} {2}",
+				log.log(Level.FINE, "at {0} failed to delete device node - {1} {2}",
 						new Object[]{pubsubJid, errorCondition, pubSubErrorCondition});
+				ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, errorCondition, response);
 				if (callback != null) {
 					callback.run();
 				}

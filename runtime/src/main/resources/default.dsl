@@ -57,6 +57,9 @@ deviceConfigManager (class: 'tigase.iot.framework.runtime.DeviceConfigurationPub
 accountStatusMonitor (class: 'tigase.iot.framework.runtime.AccountStatusMonitor', exportable: true) {
 }
 
+connectionErrorReporter (class: 'tigase.iot.framework.runtime.ConnectionErrorReporter', exportable: true) {
+}
+
 ## IoT Devices - common
 
 ### Android TV sensor
