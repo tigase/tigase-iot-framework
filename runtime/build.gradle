@@ -27,6 +27,14 @@ distZip {
         from 'etc/'
         include 'logger.properties'
     }
+    into("${packageName}/etc/default/") {
+        from 'etc/default'
+        include '*'
+    }
+    into("${packageName}/etc/systemd/") {
+        from 'etc/systemd'
+        include '**/*'
+    }
 }
 
 distributions {

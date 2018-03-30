@@ -16,6 +16,8 @@
 include::text/Overview.asciidoc[]
 include::text/Building.asciidoc[]
 include::text/Running.asciidoc[]
+include::text/Installation.asciidoc[]
+include::text/Upgrade.asciidoc[]
 include::text/Development.asciidoc[]
 include::text/User_interface.asciidoc[]
 include::text/Internal_design.asciidoc[]

@@ -1,0 +1,18 @@
+[Unit]
+Description=Tigase IoT Framework
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+User=tigase
+EnvironmentFile=/etc/default/tigase-iot-framework
+WorkingDirectory=/home/tigase/tigase-iot-framework/
+ExecStart=/home/tigase/tigase-iot-framework/bin/tigase-iot-framework $TIGASE_IOT_FRAMEWORK_OPTS
+StandardOutput=syslog
+StandardError=syslog
+Restart=on-failure
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

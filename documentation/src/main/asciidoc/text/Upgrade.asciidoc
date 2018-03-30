@@ -1,0 +1,81 @@
+
+== Upgrade
+
+You can easily upgrade Tigase IoT Framework to the new version following this steps.
+
+=== Switching working directory
+
+For next steps we need to switch working directory to home directory of user `tigase`
+
+[source,bash]
+----
+cd /home/tigase
+----
+
+=== Stopping old installation
+
+[source,bash]
+----
+sudo systemctl stop tigase-iot-framework
+----
+
+=== Download distribution package
+
+NOTE: We assume that you have `wget` utility installed.
+
+We are going to change working directory to `tigase` user home path and download newest version of Tigase IoT Framework:
+
+[source,bash]
+----
+sudo -u tigase wget http://build.tigase.org/nightlies/dists/latest/tigase-iot-framework.zip
+----
+
+=== Unpacking distribution package
+
+To unpack distribution package and create symlink for easier access we are executing following commands:
+
+[source,bash]
+----
+sudo -u tigase unzip tigase-iot-framework.zip
+----
+
+=== Copy configuration
+
+[source,bash]
+----
+sudo -u tigase tigase-iot-framework/etc/config.tdsl tigase-iot-framework-2.0.0-SNAPSHOT-b62/etc/
+----
+
+WARNING: We assumed that `tigase-iot-framework-2.0.0-SNAPSHOT-b62` is name of the directory unpacked from `tigase-iot-framework.zip`.
+
+=== Replace old installation
+
+[source,bash]
+----
+sudo -u tigase rm tigase-iot-framework
+sudo -u tigase ln -s tigase-iot-framework-2.0.0-SNAPSHOT-b62 tigase-iot-framework
+----
+
+=== Updating startup scripts
+
+[source,bash]
+----
+sudo cp -r tigase-iot-framework/etc/default/* /etc/default/
+sudo cp -r tigase-iot-framework/etc/systemd/* /etc/systemd/
+
+sudo systemctl daemon-reload
+----
+
+=== Starting Tigase IoT Framework
+
+[source,bash]
+----
+sudo systemctl start tigase-iot-framework
+----
+
+=== Summary
+
+At this point we have Tigase IoT Framework upgraded and running.
+
+TIP: If everything works ok, you may safely delete old installation directory of Tigase IoT Framework.
+
