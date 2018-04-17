@@ -162,7 +162,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 						try {
 						factory.hub().getRemoteConnectionCredentials(new Hub.RemoteConnectionCredentialsCallback() {
 								@Override
-								public void onResult(String username, String password, XMPPException.ErrorCondition errorCondition) {
+								public void onResult(String username, String password, String domain, XMPPException.ErrorCondition errorCondition) {
 									if (errorCondition != null) {
 										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
 										return;

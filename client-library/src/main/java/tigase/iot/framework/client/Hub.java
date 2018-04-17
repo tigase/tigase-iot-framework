@@ -60,19 +60,20 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 															   JabberDataElement data) throws JaxmppException {
 								 String username = ((Field<String>) data.getField("username")).getFieldValue();
 								 String password = ((Field<String>) data.getField("password")).getFieldValue();
+								 String domain = ((Field<String>) data.getField("domain")).getFieldValue();
 
-								 callback.onResult(username, password, null);
+								 callback.onResult(username, password, domain, null);
 							 }
 
 							 @Override
 							 public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
 									 throws JaxmppException {
-								 callback.onResult(null, null, error);
+								 callback.onResult(null, null, null, error);
 							 }
 
 							 @Override
 							 public void onTimeout() throws JaxmppException {
-								 callback.onResult(null, null, XMPPException.ErrorCondition.remote_server_timeout);
+								 callback.onResult(null, null, null, XMPPException.ErrorCondition.remote_server_timeout);
 							 }
 						 });
 	}
@@ -203,7 +204,7 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 
 	public interface RemoteConnectionCredentialsCallback {
 
-		void onResult(String username, String password, XMPPException.ErrorCondition errorCondition);
+		void onResult(String username, String password, String domain, XMPPException.ErrorCondition errorCondition);
 
 	}
 
