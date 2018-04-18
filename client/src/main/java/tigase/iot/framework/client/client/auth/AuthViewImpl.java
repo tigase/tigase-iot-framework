@@ -12,6 +12,7 @@ import com.google.gwt.i18n.client.Dictionary;
 import com.google.gwt.storage.client.Storage;
 import com.google.gwt.user.client.ui.*;
 import tigase.iot.framework.client.client.ClientFactory;
+import tigase.jaxmpp.core.client.BareJID;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
 
@@ -175,18 +176,33 @@ public class AuthViewImpl extends Composite implements AuthView {
 		authButton.setEnabled(false);
 
 		factory.devices().setRemoteMode(isRemote());
-		
-		String url = !isRemote() ? "ws://tigase-iot-hub.local:5290/" : "ws://web.iot1.cloud:5290/";
+
+		String url;
+		String domain;
+		String enteredUserName = username.getText();
+		if (enteredUserName != null && enteredUserName.contains("@")) {
+			BareJID jid = BareJID.bareJIDInstance(enteredUserName);
+			domain = jid.getDomain();
+			url = "ws://web." + domain + ":5290/";
+			enteredUserName = jid.getLocalpart();
+		} else if (isRemote()) {
+			url = "ws://web.iot1.cloud:5290/";
+			domain = "iot1.cloud";
+		} else {
+			url = "ws://tigase-iot-hub.local:5290/";
+			domain = "tigase-iot-hub.local";
+		}
 
 		Storage store = Storage.getLocalStorageIfSupported();
 		if (store != null) {
-			store.setItem("username", username.getText());
+			store.setItem("username", enteredUserName);
 		}
-		
-		if (username.getText() == null || username.getText().isEmpty()) {
+
+		if (enteredUserName == null || enteredUserName.isEmpty()) {
 			factory.eventBus().fireEvent(new AuthRequestEvent(null, null, url));
 		} else {
-			factory.eventBus().fireEvent(new AuthRequestEvent(JID.jidInstance(username.getText(), !isRemote() ? "tigase-iot-hub.local" : "iot1.cloud"), password.getText(), url));
+			factory.eventBus()
+					.fireEvent(new AuthRequestEvent(JID.jidInstance(enteredUserName, domain), password.getText(), url));
 		}
 	}
 }
