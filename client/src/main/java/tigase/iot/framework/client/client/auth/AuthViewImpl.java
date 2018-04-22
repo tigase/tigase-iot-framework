@@ -88,7 +88,7 @@ public class AuthViewImpl extends Composite implements AuthView {
 		panel.add(password);
 
 		if ("true".equals(Dictionary.getDictionary("config").get("allowRemoteLogin"))) {
-			remoteConnection = new CheckBox("Connect to remote hub");
+			remoteConnection = new CheckBox("Connect to IoT One Cloud");
 			remoteConnection.setStyleName("auth-checkbox");
 			remoteConnection.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
 				@Override
