@@ -93,6 +93,7 @@ public class DeviceConfigurationPubSubManager
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#notify_config", "1");
 		config.addTextSingleField("pubsub#collection", rootNode);
+		config.addTextSingleField("pubsub#send_last_published_item", "on_sub_and_presence");
 
 		return config;
 	}

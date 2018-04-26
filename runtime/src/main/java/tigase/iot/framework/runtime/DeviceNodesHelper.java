@@ -53,6 +53,7 @@ public class DeviceNodesHelper {
 		config.addTextSingleField("pubsub#persist_items", "1");
 		config.addTextSingleField("pubsub#notify_config", "1");
 		config.addTextSingleField("pubsub#collection", rootNode);
+		config.addTextSingleField("pubsub#send_last_published_item", "on_sub_and_presence");
 		String node = getDeviceNodeName(rootNode, device);
 		return new PubSubNodesManager.Node(node, config);
 	}

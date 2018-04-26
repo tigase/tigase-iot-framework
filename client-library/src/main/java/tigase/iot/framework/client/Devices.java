@@ -86,9 +86,49 @@ public class Devices {
 			public void onNotificationReceived(SessionObject sessionObject, Message message, JID pubSubJID,
 											   String nodeName, String itemId, Element payload, Date delayTime,
 											   String itemType) {
-				processNotification(nodeName, payload);
+				processNotification(pubSubJID, nodeName, payload);
 			}
 		});
+
+		this.jaxmpp.getEventBus().addHandler(PubSubModule.NotificationCollectionChildrenChangedHandler.NotificationCollectionChildrenChangedEvent.class,
+											 new PubSubModule.NotificationCollectionChildrenChangedHandler() {
+												 @Override
+												 public void onNotificationCollectionChildrenChangedReceived(
+														 SessionObject sessionObject, Message message, JID pubSubJID,
+														 String nodeName, String childNode, Action action,
+														 Date delayTime) {
+													 if ("devices".equals(nodeName)) {
+														 FeatureProviderModule featureProviderModule = jaxmpp.getModule(FeatureProviderModule.class);
+														 featureProviderModule.addNewDevice(childNode);
+														 devicesNodesDiscoveryFinished();
+														 try {
+															 checkForNewDevice(pubSubJID, childNode);
+														 } catch (JaxmppException e) {
+															 log.log(Level.WARNING, "Failed to check new device node", e);
+														 }
+													 }
+												 }
+											 });
+
+		this.jaxmpp.getEventBus().addHandler(PubSubModule.NotificationNodeDeletedHander.NotificationNodeDeletedEvent.class,
+											 new PubSubModule.NotificationNodeDeletedHander() {
+												 @Override
+												 public void onNodeDeleted(SessionObject sessionObject, Message message,
+																		   JID pubSubJID, String nodeName) {
+													 Iterator<Device> it = devices.iterator();
+													 Device device = null;
+													 while (it.hasNext()) {
+													 	device = it.next();
+													 	if (device.getNode().equals(nodeName)) {
+													 		it.remove();
+													 		break;
+														}
+													 }
+													 if (device != null) {
+													 	devicesNodesDiscoveryFinished();
+													 }
+												 }
+											 });
 
 		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, new JaxmppCore.LoggedInHandler() {
 			@Override
@@ -119,9 +159,18 @@ public class Devices {
 		return null;
 	}
 
-	private void processNotification(String nodeName, Element payload) {
+	private void processNotification(JID jid, String nodeName, Element payload) {
 		Device device = getDeviceByNode(nodeName);
 		if (device == null) {
+			if (nodeName.endsWith("/config")) {
+				String tmp = nodeName.substring(0, nodeName.length() - "/config".length());
+				try {
+					checkForNewDevice(jid, tmp);
+				} catch (JaxmppException ex) {
+					log.log(Level.WARNING, "failed to check for new device at " + jid + " node " + tmp);
+				}
+			}
+
 			return;
 		}
 
@@ -162,83 +211,99 @@ public class Devices {
 	 */
 	public void refreshDevices() throws JaxmppException {
 		devices.clear();
+		jaxmpp.getModule(FeatureProviderModule.class).resetNewDevicesNodes();
+
 		final JID pubsubJid = getPubSubJid();
 		jaxmpp.getModule(DiscoveryModule.class).getItems(pubsubJid, devicesNode, new DiscoveryModule.DiscoItemsAsyncCallback() {
-
-			private Integer counter;
-
-			private final Object mutex = new Object();
-
-			private void checkAndNotify() {
-				synchronized (mutex) {
-					counter--;
-					if (counter <= 0) {
-						updateCapsOnDevicesChange();
-						jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
-					}
-				}
-			}
-
+			
 			@Override
 			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
 				// ignoring for now
-				updateCapsOnDevicesChange();
-				jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
+				devicesNodesDiscoveryFinished();
 			}
 
 			@Override
 			public void onInfoReceived(String node, ArrayList<DiscoveryModule.Item> items) throws XMLException {
-				counter = items.size();
-				for (final DiscoveryModule.Item item : items) {
-					try {
-						Device.retrieveConfiguration(jaxmpp, pubsubJid, item.getNode(),
-													 new Device.Callback<Device.Configuration>() {
-
-														 @Override
-														 public void onError(XMPPException.ErrorCondition error) {
-															 checkAndNotify();
-														 }
-
-														 @Override
-														 public void onSuccess(Device.Configuration config) {
-															 Device d = createDevice(item, config);
-															 synchronized (mutex) {
-																 counter--;
-																 if (d != null) {
-																	 devices.add(d);
-																 } else {
-																 }
-															 }
-															 checkAndNotify();
-														 }
-													 });
-					} catch (JaxmppException ex) {
-						log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
-					}
-				}
-				if (items.isEmpty()) {
-					updateCapsOnDevicesChange();
-					jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
-				}
+				devicesNodesFound(node, items);
 			}
 
 			@Override
 			public void onTimeout() throws JaxmppException {
 				// ignoring for now
-				updateCapsOnDevicesChange();
-				jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
+				devicesNodesDiscoveryFinished();
 			}
 		});
 
+	}
+
+	protected void devicesNodesFound(String node, List<DiscoveryModule.Item> items) {
+		final Counter counter = new Counter(items.size());
+
+		Runnable finisher = new Runnable() {
+			@Override
+			public void run() {
+				synchronized (counter) {
+					counter.decrement();
+					if (counter.value() <= 0) {
+						devicesNodesDiscoveryFinished();
+					}
+				}
+			}
+		};
+
+		for (final DiscoveryModule.Item item : items) {
+			deviceNodeFound(item, finisher);
+		}
+		if (items.isEmpty()) {
+			devicesNodesDiscoveryFinished();
+		}
+	}
+
+	protected void deviceNodeFound(final DiscoveryModule.Item item, final Runnable finisher) {
+		try {
+			Device.retrieveConfiguration(jaxmpp, item.getJid(), item.getNode(),
+										 new Device.Callback<Device.Configuration>() {
+
+											 @Override
+											 public void onError(XMPPException.ErrorCondition error) {
+												 finisher.run();
+											 }
+
+											 @Override
+											 public void onSuccess(Device.Configuration config) {
+												 Device device = createDevice(item, config);
+												 synchronized (devices) {
+												 	boolean found = false;
+												 	for (Device d : devices) {
+												 		if (d.getNode().equals(device.getNode())) {
+												 			found = true;
+														}
+													}
+													if (!found) {
+												 		devices.add(device);
+													}
+												 }
+												 finisher.run();
+											 }
+										 });
+		} catch (JaxmppException ex) {
+			log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
+		}
+	}
+
+	protected void devicesNodesDiscoveryFinished() {
+		updateCapsOnDevicesChange();
+		jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
 	}
 
 	protected void updateCapsOnDevicesChange() {
 		try {
 			List<String> features = new ArrayList<>();
 			for (Device device : devices) {
-				features.add(device.getNode() + "/state+notify");
+				//features.add(device.getNode() + "/state");
+				features.add(device.getNode());
 			}
-			jaxmpp.getModule(FeatureProviderModule.class).setFeatures(features);
+			jaxmpp.getModule(FeatureProviderModule.class).setDevicesNodes(features);
 			jaxmpp.getSessionObject().setProperty("XEP115VerificationString", null);
 			jaxmpp.getModule(PresenceModule.class).sendInitialPresence();
 			if (!pep) {
@@ -442,6 +507,34 @@ public class Devices {
 		}
 	}
 
+	private void checkForNewDevice(final JID jid, final String node) throws JaxmppException {
+		DiscoveryModule discoModule = jaxmpp.getModule(DiscoveryModule.class);
+		discoModule.getItems(jid, this.devicesNode, new DiscoveryModule.DiscoItemsAsyncCallback() {
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+				devicesNodesDiscoveryFinished();
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				devicesNodesDiscoveryFinished();
+			}
+
+			@Override
+			public void onInfoReceived(String attribute, ArrayList<DiscoveryModule.Item> items) throws XMLException {
+				List<DiscoveryModule.Item> filtered = new ArrayList<>();
+				for (DiscoveryModule.Item item : items) {
+					if (jid.equals(item.getJid()) && node.equals(item.getNode())) {
+						filtered.add(item);
+					}
+				}
+				devicesNodesFound(node, filtered);
+			}
+		});
+	}
+
+
 	/**
 	 * Interface required to be implemented by device list change observers.
 	 */
@@ -472,6 +565,9 @@ public class Devices {
 			implements XmppModule {
 
 		private final String rootFeature;
+
+		private List<String> devicesNodes = new ArrayList<>();
+		private List<String> newDevicesNodes = new ArrayList<>();
 		private List<String> features = new ArrayList<>();
 
 		public FeatureProviderModule(String node) {
@@ -488,14 +584,36 @@ public class Devices {
 			return features.toArray(new String[features.size()]);
 		}
 
-		public void setFeatures(List<String> features) {
-			features.add(rootFeature);
-			this.features = features;
+		public void setDevicesNodes(List<String> devicesNodes) {
+			this.devicesNodes = devicesNodes;
+			this.updateFeatures();
 		}
 
 		@Override
 		public void process(Element element) throws XMPPException, XMLException, JaxmppException {
 
+		}
+
+		public void addNewDevice(String node) {
+			newDevicesNodes.add(node);
+			updateFeatures();
+		}
+
+		public void resetNewDevicesNodes() {
+			newDevicesNodes.clear();
+			updateFeatures();
+		}
+
+		public void updateFeatures() {
+			List<String> nodes = new ArrayList<>();
+			nodes.add(rootFeature);
+			for (String node : devicesNodes) {
+				nodes.add(node + "+notify");
+			}
+			for (String node : newDevicesNodes) {
+				nodes.add(node + "+notify");
+			}
+			this.features = nodes;
 		}
 	}
 
@@ -509,5 +627,22 @@ public class Devices {
 
 		void accept(A a, B b);
 
+	}
+
+	private class Counter {
+
+		private int counter;
+
+		Counter(int counter) {
+			this.counter = counter;
+		}
+
+		void decrement() {
+			counter--;
+		}
+
+		int value() {
+			return counter;
+		}
 	}
 }
