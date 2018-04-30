@@ -166,8 +166,10 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 						continue;
 					}
 
+					String name = null;
 					JID jid = null;
 					RetrieveAccountsCallback.Result.Status status = null;
+					String os = null;
 
 					for (Element field : item.getChildren()) {
 						if (!"field".equals(field.getName())) {
@@ -179,9 +181,15 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 						if ("Status".equals(field.getAttribute("var"))) {
 							status = RetrieveAccountsCallback.Result.Status.valueOf(field.getFirstChild("value").getValue());
 						}
+						if ("Name".equals(field.getAttribute("var"))) {
+							name = field.getFirstChild("value").getValue();
+						}
+						if ("OS".equals(field.getAttribute("var"))) {
+							os = field.getFirstChild("value").getValue();
+						}
 					}
 
-					accounts.add(new RetrieveAccountsCallback.Result(Hub.this, jid, status));
+					accounts.add(new RetrieveAccountsCallback.Result(Hub.this, jid, status, name, os));
 				}
 				callback.onResult(accounts, null);
 			}
@@ -235,11 +243,15 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 			private final Hub hub;
 			public final JID jid;
 			public final Status status;
+			public final String name;
+			public final String os;
 
-			public Result(Hub hub, JID jid, Status status) {
+			public Result(Hub hub, JID jid, Status status, String name, String os) {
 				this.hub = hub;
 				this.jid = jid;
 				this.status = status;
+				this.name = name;
+				this.os = os;
 			}
 
 			public void enable(ActionCallback actionCallback) {

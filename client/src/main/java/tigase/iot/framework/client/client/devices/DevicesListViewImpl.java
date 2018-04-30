@@ -352,8 +352,8 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 								boolean isClient = UUID_REGEX.exec(result.jid.getLocalpart()) == null;
 
-								String title = isClient ? result.jid.getLocalpart() : (identity != null ? identity.getName() : "Unknown");
-								String subtitle = isClient ? "User client" : result.jid.getLocalpart();
+								String title = isClient ? result.jid.getLocalpart() : (result.name != null ? result.name : "Unknown");
+								String subtitle = isClient ? "User client" : (result.os != null ? result.os : result.jid.getLocalpart());
 
 								SafeHtmlBuilder sb = new SafeHtmlBuilder();
 								sb.append(SafeHtmlUtils.fromString(title));

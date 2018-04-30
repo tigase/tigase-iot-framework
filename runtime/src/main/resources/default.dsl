@@ -14,6 +14,8 @@ configManager () {
 
 discoveryPublisher (class: 'tigase.iot.framework.runtime.DiscoveryPublisher', exportable: true) {
 }
+softwareVersionPublisher (class: 'tigase.iot.framework.runtime.SoftwareVersionPublisher', exportable: true) {
+}
 
 ##  Modules
 
