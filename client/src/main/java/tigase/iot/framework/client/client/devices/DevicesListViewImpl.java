@@ -19,6 +19,7 @@ import tigase.iot.framework.client.Hub;
 import tigase.iot.framework.client.Hub.RemoteConnectionStatusCallback;
 import tigase.iot.framework.client.client.ActiveHostsChangedEvent;
 import tigase.iot.framework.client.client.ClientFactory;
+import tigase.iot.framework.client.client.CloudActivationEmailDialog;
 import tigase.iot.framework.client.client.FlexGrid;
 import tigase.iot.framework.client.client.ui.MessageDialog;
 import tigase.iot.framework.client.client.ui.TopBar;
@@ -96,119 +97,162 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				dialog.setStylePrimaryName("dialog-window");
 				dialog.setTitle("Add device");
 
-				Label connectionStatus = new Label("Connection status");
-				connectionStatus.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent event) {
-						try {
-							factory.hub().checkRemoteConnectionStatus(new Hub.RemoteConnectionStatusCallback() {
-								@Override
-								public void onResult(RemoteConnectionStatusCallback.State state, Integer retry, XMPPException.ErrorCondition errorCondition) {
-									if (errorCondition != null) {
-										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
-										return;
+				Hub.CloudSettings settings = factory.hub().getCloudSettings();
+				if ("tigase-iot-hub.local".equals(factory.jaxmpp().getSessionObject().getUserBareJid().getDomain())) {
+					if (settings != null) {
+						ToggleButton toggleButton = new ToggleButton("Enable IoT One Cloud", "Disable IoT One Cloud");
+						toggleButton.addClickHandler(new ClickHandler() {
+							@Override
+							public void onClick(ClickEvent clickEvent) {
+								if (toggleButton.isDown() && (settings.email == null || settings.email.isEmpty())) {
+									dialog.hide();
+									new CloudActivationEmailDialog(factory).show();
+								} else {
+									dialog.hide();
+									try {
+										factory.hub().updateCloudSettings(toggleButton.isDown(), settings.email, new Hub.CompletionHandler() {
+											@Override
+											public void onResult(XMPPException.ErrorCondition errorCondition) {
+												if (errorCondition != null) {
+													toggleButton.setDown(!toggleButton.isDown());
+													new MessageDialog("Error",
+																	  "Could not update settings. Please try again later.")
+															.show();
+												}
+											}
+										});
+									} catch (JaxmppException ex) {
+										toggleButton.setDown(false);
+										new MessageDialog("Error",
+														  "Could not update settings. Please try again later.")
+												.show();
 									}
-									String name = "Unknown";
-									switch (state) {
-										case awaitReconnection:
-											name = "Awaiting for reconnection (try: " + retry + ")";
-											break;
-										case reconnecting:
-											name = "Reconnecting (try: " + retry + ")";
-											break;
-										case connected:
-											name = "Connected";
-											break;
-									}
-									
-									new MessageDialog("Status", SafeHtmlUtils.fromSafeConstant("Connection: " + name)).show();
 								}
-							});
-						} catch (JaxmppException ex) {
-							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
-						}
-						dialog.hide();
-					}					
-				});
-				panel.add(connectionStatus);
-				
-				Label forceReconnection = new Label("Force reconnection");
-				forceReconnection.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent event) {
-						try {
-							factory.hub().forceRemoteConnectionReconnection(new Hub.RemoteConnectionReconnectionCallback() {
-								@Override
-								public void onResult(XMPPException.ErrorCondition errorCondition) {
-									if (errorCondition != null) {
-										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
-										return;
-									}
-									new MessageDialog("Success", "Reconnection initiated").show();
-								}
-							});
-						} catch (JaxmppException ex) {
-							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
-						}
-						dialog.hide();
-					}
-				});
-				panel.add(forceReconnection);
-				
-				Label remoteConnectionCredentials = new Label("Connection credentials");
-				remoteConnectionCredentials.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent event) {
-						try {
-						factory.hub().getRemoteConnectionCredentials(new Hub.RemoteConnectionCredentialsCallback() {
-								@Override
-								public void onResult(String username, String password, String domain, XMPPException.ErrorCondition errorCondition) {
-									if (errorCondition != null) {
-										new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
-										return;
-									}
-
-									new MessageDialog("Credentials", SafeHtmlUtils.fromSafeConstant("Username: " + username + "<br/>Password: " + password)).show();
-								}
-							});
-						} catch (JaxmppException ex) {
-							Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
-						}
-						dialog.hide();
-					}
-				});
-				panel.add(remoteConnectionCredentials);
-
-				Label subscriptionStatus = new Label("Subscription");
-				subscriptionStatus.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent clickEvent) {
-						dialog.hide();
-
-						SubscriptionModule.Subscription sub = factory.hub().getSubscription();
-						String txt = "";
-						if (sub == null) {
-							txt = "Subscription informations not available.<br/>Please try again later.";
-						} else {
-							txt = "Subscription allows for:<br/><ul>";
-							txt += "<li>";
-							if (sub.devices < 0) {
-								txt += "Usage of any number of devices";
-							} else {
-								txt += "Usage of " + sub.devices + " devices";
 							}
-							txt += "</li><li>";
-							if (sub.changesPerSecond < 0) {
-								txt += "Unlimited changes per second";
-							} else {
-								txt += "" + String.valueOf(sub.changesPerSecond) + " changes per second";
-							}
-							txt += "</li></ul>";
-						}
-						new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
+						});
+						toggleButton.setDown(settings.enabled);
+						panel.add(toggleButton);
+						toggleButton.getElement().getStyle().setOutlineWidth(0.0, Style.Unit.PX);
 					}
-				});
-				panel.add(subscriptionStatus);
+				}
+
+				if (settings == null || settings.enabled) {
+					Label connectionStatus = new Label("Connection status");
+					connectionStatus.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							try {
+								factory.hub().checkRemoteConnectionStatus(new Hub.RemoteConnectionStatusCallback() {
+									@Override
+									public void onResult(RemoteConnectionStatusCallback.State state, Integer retry,
+														 XMPPException.ErrorCondition errorCondition) {
+										if (errorCondition != null) {
+											new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+											return;
+										}
+										String name = "Unknown";
+										switch (state) {
+											case awaitReconnection:
+												name = "Awaiting for reconnection (try: " + retry + ")";
+												break;
+											case reconnecting:
+												name = "Reconnecting (try: " + retry + ")";
+												break;
+											case connected:
+												name = "Connected";
+												break;
+										}
+
+										new MessageDialog("Status", SafeHtmlUtils.fromSafeConstant("Connection: " + name)).show();
+									}
+								});
+							} catch (JaxmppException ex) {
+								Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+							}
+							dialog.hide();
+						}
+					});
+					panel.add(connectionStatus);
+
+					Label forceReconnection = new Label("Force reconnection");
+					forceReconnection.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							try {
+								factory.hub().forceRemoteConnectionReconnection(new Hub.RemoteConnectionReconnectionCallback() {
+									@Override
+									public void onResult(XMPPException.ErrorCondition errorCondition) {
+										if (errorCondition != null) {
+											new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+											return;
+										}
+										new MessageDialog("Success", "Reconnection initiated").show();
+									}
+								});
+							} catch (JaxmppException ex) {
+								Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+							}
+							dialog.hide();
+						}
+					});
+					panel.add(forceReconnection);
+
+					Label remoteConnectionCredentials = new Label("Connection credentials");
+					remoteConnectionCredentials.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent event) {
+							try {
+								factory.hub().getRemoteConnectionCredentials(new Hub.RemoteConnectionCredentialsCallback() {
+									@Override
+									public void onResult(String username, String password, String domain, XMPPException.ErrorCondition errorCondition) {
+										if (errorCondition != null) {
+											new MessageDialog("Error", "Server returned an error: " + errorCondition.name()).show();
+											return;
+										}
+
+										new MessageDialog("Credentials", SafeHtmlUtils.fromSafeConstant(
+												"Username: " + username + "<br/>Password: " + password)).show();
+									}
+								});
+							} catch (JaxmppException ex) {
+								Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
+							}
+							dialog.hide();
+						}
+					});
+					panel.add(remoteConnectionCredentials);
+
+					Label subscriptionStatus = new Label("Subscription");
+					subscriptionStatus.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent clickEvent) {
+							dialog.hide();
+
+							SubscriptionModule.Subscription sub = factory.hub().getSubscription();
+							String txt = "";
+							if (sub == null) {
+								txt = "Subscription informations not available.<br/>Please try again later.";
+							} else {
+								txt = "Subscription allows for:<br/><ul>";
+								txt += "<li>";
+								if (sub.devices < 0) {
+									txt += "Usage of any number of devices";
+								} else {
+									txt += "Usage of " + sub.devices + " devices";
+								}
+								txt += "</li><li>";
+								if (sub.changesPerSecond < 0) {
+									txt += "Unlimited changes per second";
+								} else {
+									txt += "" + String.valueOf(sub.changesPerSecond) + " changes per second";
+								}
+								txt += "</li></ul>";
+							}
+							new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
+						}
+					});
+					panel.add(subscriptionStatus);
+				}
 
 				dialog.setWidget(panel);
 				dialog.center();

@@ -22,8 +22,12 @@ package tigase.iot.framework.client;
 
 import tigase.iot.framework.client.modules.SubscriptionModule;
 import tigase.jaxmpp.core.client.*;
+import tigase.jaxmpp.core.client.eventbus.EventHandler;
+import tigase.jaxmpp.core.client.eventbus.JaxmppEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
+import tigase.jaxmpp.core.client.xml.XMLException;
+import tigase.jaxmpp.core.client.xmpp.forms.AbstractField;
 import tigase.jaxmpp.core.client.xmpp.forms.Field;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
@@ -40,6 +44,7 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 	private final JaxmppCore jaxmpp;
 	private final Devices devices;
 	private SubscriptionModule.Subscription subscription;
+	private CloudSettings cloudSettings;
 
 	public Hub(JaxmppCore jaxmpp, Devices devices) {
 		this.jaxmpp = jaxmpp;
@@ -48,7 +53,77 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, this);
 		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionChangedHandler.SubscriptionChangedEvent.class, this);
 	}
-	
+
+	public CloudSettings getCloudSettings() {
+		return cloudSettings;
+	}
+
+	public void getCloudSettings(final CloudSettingsCallback callback) throws JaxmppException {
+		JID jid = JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());
+		JabberDataElement data = new JabberDataElement(XDataType.submit);
+		data.addListSingleField("action", "check");
+		jaxmpp.getModule(AdHocCommansModule.class).execute(jid, "manage-remote-connection", Action.execute, data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+			@Override
+			protected void onResponseReceived(String sessionid, String node, State status, JabberDataElement data)
+					throws JaxmppException {
+				CloudSettings settings = parseSettings(data);
+				cloudSettings = settings;
+				if (callback != null) {
+					if (settings != null) {
+						callback.onResult(settings, null, null);
+					} else {
+						callback.onResult(null, XMPPException.ErrorCondition.internal_server_error, "Invalid response");
+					}
+				}
+				jaxmpp.getEventBus().fire(new CloudSettingsChangedHandler.CloudSettingsChangedEvent(jaxmpp.getSessionObject(), cloudSettings));
+			}
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+				if (callback != null) {
+					callback.onResult(null, error, responseStanza.getErrorMessage());
+				}
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				if (callback != null) {
+					callback.onResult(null, XMPPException.ErrorCondition.remote_server_timeout, null);
+				}
+			}
+		});
+	}
+
+	public void updateCloudSettings(boolean enabled, String email, final CompletionHandler completionHandler)
+			throws JaxmppException {
+		JID jid = JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());
+		JabberDataElement data = new JabberDataElement(XDataType.submit);
+		data.addListSingleField("action", enabled ? "enable" : "disable");
+		if (email != null) {
+			data.addTextSingleField("email", email);
+		}
+		jaxmpp.getModule(AdHocCommansModule.class).execute(jid, "manage-remote-connection", Action.execute, data, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+			@Override
+			protected void onResponseReceived(String sessionid, String node, State status, JabberDataElement data)
+					throws JaxmppException {
+				CloudSettings settings = parseSettings(data);
+				cloudSettings = settings;
+				completionHandler.onResult(null);
+				jaxmpp.getEventBus().fire(new CloudSettingsChangedHandler.CloudSettingsChangedEvent(jaxmpp.getSessionObject(), cloudSettings));
+			}
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+				completionHandler.onResult(error);
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				completionHandler.onResult(XMPPException.ErrorCondition.remote_server_timeout);
+			}
+		});
+	}
+
 	public void getRemoteConnectionCredentials(final RemoteConnectionCredentialsCallback callback)
 			throws JaxmppException {
 		JID jid = JID.jidInstance("pubsub." + jaxmpp.getSessionObject().getUserBareJid().getDomain());
@@ -142,6 +217,27 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 											  "manage-accounts", Action.execute, data, callback);
 	}
 
+	private CloudSettings parseSettings(JabberDataElement data) throws XMLException {
+		if (data == null) {
+			return null;
+		}
+		AbstractField f = data.getField("enabled");
+		if (f == null) {
+			return null;
+		}
+
+		boolean enabled = "1".equals(String.valueOf(f.getFieldValue())) || "true".equalsIgnoreCase(String.valueOf(f.getFieldValue()));
+		f = data.getField("configured");
+		if (f == null) {
+			return null;
+		}
+
+		boolean configured = "1".equals(String.valueOf(f.getFieldValue())) || "true".equalsIgnoreCase(String.valueOf(f.getFieldValue()));
+		f = data.getField("email");
+		String email = f == null ? null : (String) f.getFieldValue();
+		return new CloudSettings(configured, enabled, email);
+	}
+
 	public void retrieveAccounts(final RetrieveAccountsCallback callback) throws JaxmppException {
 		JabberDataElement data = new JabberDataElement(XDataType.submit);
 		data.addListSingleField("action", "list");
@@ -199,7 +295,10 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 	@Override
 	public void onLoggedIn(SessionObject sessionObject) {
 		try {
+			cloudSettings = null;
+			jaxmpp.getEventBus().fire(new CloudSettingsChangedHandler.CloudSettingsChangedEvent(jaxmpp.getSessionObject(), cloudSettings));
 			this.jaxmpp.getModulesManager().getModule(SubscriptionModule.class).retrieveSubscription(null);
+			this.getCloudSettings(null);
 		} catch (JaxmppException ex) {
 			// ignoring...
 		}
@@ -228,9 +327,14 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 
 	}
 
-	public interface RemoteConnectionReconnectionCallback {
+	public interface CompletionHandler {
 
 		void onResult(XMPPException.ErrorCondition errorCondition);
+
+	}
+
+	public interface RemoteConnectionReconnectionCallback extends CompletionHandler {
+
 
 	}
 
@@ -320,5 +424,45 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 			}
 		}
 
+	}
+
+	public static class CloudSettings {
+
+		public final boolean configured;
+		public final boolean enabled;
+		public final String email;
+
+		public CloudSettings(boolean configured, boolean enabled, String email) {
+			this.configured = configured;
+			this.enabled = enabled;
+			this.email = email;
+		}
+
+	}
+
+	public interface CloudSettingsCallback {
+
+		void onResult(CloudSettings settings, XMPPException.ErrorCondition errorCondition, String message) throws JaxmppException;
+
+	}
+
+	public interface CloudSettingsChangedHandler extends EventHandler {
+
+		void onCloudSettingsChanged(SessionObject sessionObject, CloudSettings cloudSettings);
+
+		class CloudSettingsChangedEvent extends JaxmppEvent<CloudSettingsChangedHandler> {
+
+			public final CloudSettings settings;
+
+			public CloudSettingsChangedEvent(SessionObject sessionObject, CloudSettings settings) {
+				super(sessionObject);
+				this.settings = settings;
+			}
+
+			@Override
+			public void dispatch(CloudSettingsChangedHandler handler) throws Exception {
+				handler.onCloudSettingsChanged(sessionObject, settings);
+			}
+		}
 	}
 }

@@ -6,36 +6,10 @@
 package tigase.iot.framework.client.client;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.i18n.client.Dictionary;
 import com.google.gwt.i18n.client.TimeZone;
-import com.google.web.bindery.event.shared.EventBus;
 import com.google.gwt.place.shared.PlaceController;
+import com.google.web.bindery.event.shared.EventBus;
 import com.google.web.bindery.event.shared.SimpleEventBus;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import tigase.jaxmpp.core.client.JID;
-import tigase.jaxmpp.core.client.JaxmppCore;
-import tigase.jaxmpp.core.client.SessionObject;
-import tigase.jaxmpp.core.client.XMPPException.ErrorCondition;
-import tigase.jaxmpp.core.client.exceptions.JaxmppException;
-import tigase.jaxmpp.core.client.xml.XMLException;
-import tigase.jaxmpp.core.client.xmpp.modules.ResourceBinderModule;
-import tigase.jaxmpp.core.client.xmpp.modules.auth.AuthModule;
-import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
-import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
-import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule.DiscoInfoAsyncCallback;
-import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule.Identity;
-import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
-import tigase.jaxmpp.core.client.xmpp.modules.streammng.StreamManagementModule;
-import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
-import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat.DateTimeFormatProvider;
-import tigase.jaxmpp.gwt.client.Jaxmpp;
-import tigase.jaxmpp.gwt.client.Presence;
-import tigase.jaxmpp.gwt.client.Roster;
 import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.Hosts;
 import tigase.iot.framework.client.Hub;
@@ -44,7 +18,29 @@ import tigase.iot.framework.client.client.auth.AuthView;
 import tigase.iot.framework.client.client.auth.AuthViewImpl;
 import tigase.iot.framework.client.client.devices.DevicesListView;
 import tigase.iot.framework.client.client.devices.DevicesListViewImpl;
+import tigase.iot.framework.client.client.ui.MessageDialog;
+import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.JaxmppCore;
+import tigase.jaxmpp.core.client.SessionObject;
+import tigase.jaxmpp.core.client.XMPPException;
+import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xmpp.modules.ResourceBinderModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
+import tigase.jaxmpp.core.client.xmpp.modules.auth.AuthModule;
+import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
+import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule.Identity;
+import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
+import tigase.jaxmpp.core.client.xmpp.modules.streammng.StreamManagementModule;
+import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
+import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat.DateTimeFormatProvider;
+import tigase.jaxmpp.gwt.client.Jaxmpp;
+import tigase.jaxmpp.gwt.client.Presence;
+import tigase.jaxmpp.gwt.client.Roster;
+
+import java.util.Date;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -153,6 +149,40 @@ public class ClientFactoryImpl implements ClientFactory {
 			@Override
 			public void onAuthFailed(SessionObject sessionObject, SaslModule.SaslError error) throws JaxmppException {
 				eventBus().fireEvent(new AuthEvent(null, "Authentication failed", error));
+			}
+		});
+
+		jaxmpp.getEventBus().addHandler(Hub.CloudSettingsChangedHandler.CloudSettingsChangedEvent.class, new Hub.CloudSettingsChangedHandler() {
+			@Override
+			public void onCloudSettingsChanged(SessionObject sessionObject, Hub.CloudSettings cloudSettings) {
+				if (cloudSettings == null) {
+					return;
+				}
+				if (!cloudSettings.configured) {
+					new MessageDialog("Configure IoT One Cloud",
+									  "Your IoT hub is not configured to connect to the IoT One Cloud. Do you wish to configure it now?",
+									  new Runnable() {
+										  @Override
+										  public void run() {
+											  new CloudActivationEmailDialog(ClientFactoryImpl.this).show();
+										  }
+									  }).onCancel(new Runnable() {
+
+						@Override
+						public void run() {
+							try {
+								hub.updateCloudSettings(false, null, new Hub.CompletionHandler() {
+									@Override
+									public void onResult(XMPPException.ErrorCondition errorCondition) {
+										// ignoring result..
+									}
+								});
+							} catch (JaxmppException ex) {
+								// nothing to do..
+							}
+						}
+					}).show();
+				}
 			}
 		});
 

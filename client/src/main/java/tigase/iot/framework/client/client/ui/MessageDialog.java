@@ -11,8 +11,6 @@ import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlUtils;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
-import java.util.List;
-import tigase.jaxmpp.core.client.xml.Element;
 
 /**
  *
@@ -21,6 +19,7 @@ import tigase.jaxmpp.core.client.xml.Element;
 public class MessageDialog {
 
 	private final DialogBox errorDlg;
+	private Runnable onCancel;
 
 	public MessageDialog(String title, String message) {
 		this(title, message, null);
@@ -31,7 +30,15 @@ public class MessageDialog {
 	}
 
 	public MessageDialog(String title, String message, Runnable onOK) {
-		errorDlg = new DialogBox(true, true);
+		errorDlg = new DialogBox(true, true) {
+			@Override
+			public void hide(boolean autoClosed) {
+				super.hide(autoClosed);
+				if (onCancel != null && autoClosed) {
+					onCancel.run();
+				}
+			}
+		};
 		errorDlg.setStylePrimaryName("dialog-window");
 		errorDlg.setGlassEnabled(true);
 		errorDlg.setTitle(title);
@@ -72,5 +79,10 @@ public class MessageDialog {
 
 	public void show() {
 		errorDlg.center();
+	}
+
+	public MessageDialog onCancel(Runnable run) {
+		onCancel = run;
+		return this;
 	}
 }
