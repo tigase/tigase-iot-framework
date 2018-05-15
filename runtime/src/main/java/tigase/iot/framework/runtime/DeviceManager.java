@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Bean responsible for management of a device "driver" instances.
@@ -66,7 +67,7 @@ public class DeviceManager implements RegistrarBean {
 		knownDeviceDrivers = collectKnownDeviceTypesInfo();
 	}
 
-	public void createDevice(String deviceClass, JabberDataElement form) throws XMLException {
+	public void createDevice(String category, String deviceClass, JabberDataElement form) throws XMLException {
 		if (log.isLoggable(Level.FINE)) {
 			log.log(Level.FINE, "creating device of class " + deviceClass + " with configuration " + form.getAsString());
 		}
@@ -83,6 +84,7 @@ public class DeviceManager implements RegistrarBean {
 				builder.with(f.getVar(), f.getFieldValue());
 			}
 		}
+		builder.with("category", category);
 		AbstractBeanConfigurator.BeanDefinition definition = builder.build();
 		definition.setExportable(true);
 
@@ -142,14 +144,14 @@ public class DeviceManager implements RegistrarBean {
 		return null;
 	}
 
-	public List<DeviceDriverInfo> getDeviceDriversInfo(String type) {
+	public List<DeviceDriverInfo> getDeviceDriversInfo(String category) {
 		return knownDeviceDrivers.stream()
-				.filter(info -> type.equals(info.getDeviceType().getId()))
+				.filter(info -> info.supportsCategory(category))
 				.collect(Collectors.toList());
 	}
 
-	public List<DeviceType> getKnownDeviceTypes() {
-		return knownDeviceDrivers.stream().map(DeviceDriverInfo::getDeviceType).distinct().collect(Collectors.toList());
+	public List<IDevice.Category> getKnownDeviceCategories() {
+		return knownDeviceDrivers.stream().flatMap(DeviceDriverInfo::getCategoriesStream).distinct().collect(Collectors.toList());
 	}
 
 	public void updateDeviceLabel(String deviceId, String label) {
@@ -204,7 +206,7 @@ public class DeviceManager implements RegistrarBean {
 			throws IllegalAccessException, InstantiationException {
 		IDevice device = clazz.newInstance();
 
-		return new DeviceDriverInfo(clazz, device.getLabel(), new DeviceType(device.getType(), device.getName()));
+		return new DeviceDriverInfo(clazz, device.getLabel(), device.getCategories());
 	}
 
 	protected JabberDataElement getDeviceForm(Class<IDevice> clazz)
@@ -283,50 +285,17 @@ public class DeviceManager implements RegistrarBean {
 		}
 
 	}
-
-	public class DeviceType {
-
-		private final String name;
-		private final String id;
-
-		public DeviceType(String id, String name) {
-			this.id = id;
-			this.name = name;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public String getId() {
-			return id;
-		}
-
-		@Override
-		public int hashCode() {
-			return id.hashCode();
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof DeviceType) {
-				return id.equals(((DeviceType) obj).id);
-			}
-			return false;
-		}
-	}
-
 	public class DeviceDriverInfo {
 
-		private final DeviceType deviceType;
+		private final Collection<IDevice.Category> categories;
 
 		private final String name;
 		private final Class<IDevice> implementation;
 
-		public DeviceDriverInfo(Class<IDevice> implementation, String name, DeviceType deviceType) {
+		public DeviceDriverInfo(Class<IDevice> implementation, String name, Collection<IDevice.Category> deviceTypes) {
 			this.implementation = implementation;
 			this.name = name;
-			this.deviceType = deviceType;
+			this.categories = deviceTypes;
 		}
 
 		public Class<IDevice> getImplementation() {
@@ -341,8 +310,16 @@ public class DeviceManager implements RegistrarBean {
 			return name;                                       
 		}
 
-		public DeviceType getDeviceType() {
-			return deviceType;
+		public Collection<IDevice.Category> getCategories() {
+			return categories;
+		}
+
+		public Stream<IDevice.Category> getCategoriesStream() {
+			return getCategories().stream();
+		}
+
+		public boolean supportsCategory(String type) {
+			return categories.stream().filter(deviceType -> deviceType.getId().equals(type)).findFirst().isPresent();
 		}
 	}
 	

@@ -45,6 +45,9 @@ public abstract class AbstractSensor<T extends IValue>
 	@Hidden
 	@ConfigField(desc = "Name")
 	private String name;
+	@Hidden
+	@ConfigField(desc = "Category")
+	private String category;
 	@ConfigField(desc = "Label")
 	private String label;
 	@Hidden

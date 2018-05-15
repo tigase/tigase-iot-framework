@@ -37,8 +37,13 @@ import java.util.Date;
  */
 public class LightSensor extends Device<Light> {
 
+
 	public LightSensor(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
-		super(devices, jaxmpp, pubsubJid, node, name);
+	    this(devices, jaxmpp, pubsubJid, node, name, null);
+	}
+
+	public LightSensor(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name, String category) {
+		super(devices, jaxmpp, pubsubJid, node, name, category);
 	}
 
 	@Override

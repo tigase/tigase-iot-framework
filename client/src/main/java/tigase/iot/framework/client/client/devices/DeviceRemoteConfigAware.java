@@ -33,7 +33,7 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 	protected final ClientFactory factory;
 
 	public DeviceRemoteConfigAware(ClientFactory factory, String deviceClass, ImageResource icon, D sensor) {
-		super(deviceClass, icon, sensor);
+		super(deviceClass, Icons.getByCategory(sensor.getCategory(), icon), sensor);
 		this.device = sensor;
 		this.factory = factory;
 

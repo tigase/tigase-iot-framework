@@ -22,6 +22,7 @@
 package tigase.iot.framework.devices;
 
 import tigase.eventbus.EventBus;
+import tigase.iot.framework.devices.annotations.Hidden;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
 import tigase.kernel.beans.UnregisterAware;
@@ -43,6 +44,9 @@ public abstract class AbstractDevice
 	private EventBus eventBus;
 	@ConfigField(desc = "Device name")
 	private String name;
+	@Hidden
+	@ConfigField(desc = "Category")
+	private String category;
 	@ConfigField(desc = "Label")
 	private String label;
 	@ConfigField(desc = "Device type")

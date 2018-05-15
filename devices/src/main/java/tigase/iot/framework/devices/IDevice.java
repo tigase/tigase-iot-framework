@@ -21,6 +21,9 @@
 
 package tigase.iot.framework.devices;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * Interface implemented by every devices used within Tigase IoT framework.
  * 
@@ -35,8 +38,12 @@ public interface IDevice {
 	 */
 	String getName();
 
-	default String getCategory() {
-		return null;
+	/**
+	 * Collection of categories for which this device will be available, ie. "switch", "lights-ceiling", etc.
+	 * @return
+	 */
+	default Collection<Category> getCategories() {
+		return Collections.singleton(new Category(getType(), getName()));
 	}
 
 	String getType();
@@ -44,4 +51,37 @@ public interface IDevice {
 	default String getLabel() {
 		return getName();
 	}
+	
+	class Category {
+
+		private final String name;
+		private final String id;
+
+		public Category(String id, String name) {
+			this.id = id;
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public String getId() {
+			return id;
+		}
+
+		@Override
+		public int hashCode() {
+			return id.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Category) {
+				return id.equals(((Category) obj).id);
+			}
+			return false;
+		}
+	}
+	
 }

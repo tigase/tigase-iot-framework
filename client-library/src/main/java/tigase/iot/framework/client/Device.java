@@ -65,17 +65,31 @@ public abstract class Device<S extends Device.IValue> {
 	private final String id;
 	private final String node;
 	private final String name;
+	private final String category;
 
 	private S value;
 	private ValueChangedHandler<S> observer;
 
 	public Device(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		this(devices, jaxmpp, pubsubJid, node, name, null);
+	}
+
+	public Device(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name, String category) {
 		this.devices = devices;
 		this.jaxmpp = jaxmpp;
 		this.pubsubJid = pubsubJid;
 		this.id = node.split("/")[1];
 		this.node = node;
 		this.name = name;
+		this.category = category;
+	}
+
+	/**
+	 * Return ID of the category to which device belongs
+	 * @return category id
+	 */
+	public String getCategory() {
+		return category;
 	}
 
 	/**

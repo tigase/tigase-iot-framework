@@ -20,6 +20,7 @@
  */
 package tigase.iot.framework.runtime.adhoc;
 
+import tigase.iot.framework.devices.IDevice;
 import tigase.iot.framework.runtime.DeviceManager;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
@@ -59,12 +60,12 @@ public class AddDeviceCommand implements AdHocCommand {
 
 	@Override
 	public void handle(AdHocRequest request, AdHocResponse response) throws JaxmppException {
-		String type = null;
+		String category = null;
 		String deviceClass = null;
 		if (request.getForm() != null) {
-			Field<String> typeField = ((Field<String>) request.getForm().getField("type"));
-			if (typeField != null) {
-				type = typeField.getFieldValue();
+			Field<String> categoryField = ((Field<String>) request.getForm().getField("category"));
+			if (categoryField != null) {
+				category = categoryField.getFieldValue();
 			}
 			Field<String> deviceClassField = ((Field<String>) request.getForm().getField("deviceClass"));
 			if (deviceClassField != null) {
@@ -72,20 +73,20 @@ public class AddDeviceCommand implements AdHocCommand {
 			}
 		}
 
-		if (type == null) {
+		if (category == null) {
 			response.setForm(new JabberDataElement(XDataType.form));
-			ListSingleField typeField = response.getForm().addListSingleField("type", null);
+			ListSingleField typeField = response.getForm().addListSingleField("category", null);
 			typeField.setLabel("Device type");
-			for (DeviceManager.DeviceType deviceType : deviceManager.getKnownDeviceTypes()) {
+			for (IDevice.Category deviceType : deviceManager.getKnownDeviceCategories()) {
 				typeField.addOption(deviceType.getName(), deviceType.getId());
 			}
 			response.setState(State.executing);
 		} else if (deviceClass == null) {
 			JabberDataElement form = new JabberDataElement(XDataType.form);
-			form.addHiddenField("type", type);
+			form.addHiddenField("category", category);
 			ListSingleField deviceClassField = form.addListSingleField("deviceClass", null);
 			deviceClassField.setLabel("Device");
-			for (DeviceManager.DeviceDriverInfo info : deviceManager.getDeviceDriversInfo(type)) {
+			for (DeviceManager.DeviceDriverInfo info : deviceManager.getDeviceDriversInfo(category)) {
 				deviceClassField.addOption(info.getName(), info.getId());
 			}
 			response.setForm(form);
@@ -94,7 +95,7 @@ public class AddDeviceCommand implements AdHocCommand {
 			if (request.getForm().getFields().size() == 2) {
 				JabberDataElement form = deviceManager.getDeviceForm(deviceClass);
 				if (form != null && form.getFields().size() > 0) {
-					form.addHiddenField("type", type);
+					form.addHiddenField("category", category);
 					form.addHiddenField("deviceClass", deviceClass);
 					response.setForm(form);
 					response.setState(State.executing);
@@ -103,7 +104,7 @@ public class AddDeviceCommand implements AdHocCommand {
 				}
 			} else {
 				try {
-					deviceManager.createDevice(deviceClass, request.getForm());
+					deviceManager.createDevice(category, deviceClass, request.getForm());
 				} catch (RuntimeException ex) {
 					throw new XMPPException(XMPPException.ErrorCondition.not_acceptable, ex.getMessage(), ex);
 				}

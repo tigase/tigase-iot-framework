@@ -471,7 +471,6 @@ public class Devices {
 	 * @return
 	 */
 	protected Device createDevice(DiscoveryModule.Item item, Device.Configuration config) {
-		// TODO - use field from config to select device class!
 		try {
 			Field field = config.getValue().getField("type");
 			if (field == null) {
@@ -481,6 +480,8 @@ public class Devices {
 			if (type == null) {
 				return null;
 			}
+			field = config.getValue().getField("category");
+			String category = field == null ? null : (String) field.getFieldValue();
 
 			switch (type) {
 				case "movement-sensor":
@@ -488,19 +489,19 @@ public class Devices {
 				case "tv-sensor":
 					return new TvSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "light-dimmer":
-					return new LightDimmer(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new LightDimmer(this, jaxmpp, item.getJid(), item.getNode(), item.getName(), category);
 				case "light-sensor":
 					return new LightSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "temperature-sensor":
 					return new TemperatureSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "switch":
-					return new Switch(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
+					return new Switch(this, jaxmpp, item.getJid(), item.getNode(), item.getName(), category);
 				case "humidity-sensor":
 					return new HumiditySensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "led-matrix":
 					return new LedMatrixDevice(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				default:
-					return null;
+					return new UnknownDevice(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 			}
 		} catch (XMLException ex) {
 			return null;

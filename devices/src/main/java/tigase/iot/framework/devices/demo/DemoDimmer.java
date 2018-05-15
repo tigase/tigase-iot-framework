@@ -28,8 +28,12 @@ import tigase.iot.framework.values.Light;
 import tigase.kernel.beans.config.ConfigField;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Example implementation of a dimmer which can be used as an example for implementation of drivers for dimmers.
@@ -37,6 +41,14 @@ import java.util.logging.Logger;
 public class DemoDimmer extends AbstractSensor<Light> implements IConfigurationAware, IExecutorDevice<Light> {
 
 	private static final Logger log = Logger.getLogger(DemoDimmer.class.getCanonicalName());
+
+	private static final Collection<Category> SUPPORTED_CATEGORIES = Collections.unmodifiableCollection(Stream.of(
+			new Category("light-dimmer", "Dimmer"),
+			new Category("lights-external", "External lights"),
+			new Category("lights-table", "Table light"),
+			new Category("lights-ceiling", "Ceiling lights"),
+			new Category("lights-spotlight", "Spotlight")
+	).collect(Collectors.toList()));
 
 	@ConfigField(desc = "Pin no.")
 	private Integer pin = 5;
@@ -64,5 +76,10 @@ public class DemoDimmer extends AbstractSensor<Light> implements IConfigurationA
 		log.log(Level.INFO, "{0} - {1}, setting light level to {2}{3}",
 				new Object[]{this.getName(), getLabel(), light.getValue(), light.getUnit()});
 		updateValue(light);
+	}
+
+	@Override
+	public Collection<Category> getCategories() {
+		return SUPPORTED_CATEGORIES;
 	}
 }

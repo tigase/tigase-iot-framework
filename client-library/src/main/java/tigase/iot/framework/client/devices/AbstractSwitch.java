@@ -1,8 +1,8 @@
 /*
- * LightDimmer.java
+ * AbstractSwitch.java
  *
  * Tigase IoT Framework
- * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
+ * Copyright (C) 2011-2018 "Tigase, Inc." <office@tigase.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,11 +18,11 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-
 package tigase.iot.framework.client.devices;
 
+import tigase.iot.framework.client.Device;
 import tigase.iot.framework.client.Devices;
-import tigase.iot.framework.client.values.Light;
+import tigase.iot.framework.client.values.OnOffState;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -31,33 +31,33 @@ import tigase.jaxmpp.core.client.xml.ElementFactory;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
 
-/**
- * Class implements representation of remote light dimmer device.
- *
- * Created by andrzej on 26.11.2016.
- */
-public class LightDimmer extends LightSensor {
+import java.util.Date;
 
-	public LightDimmer(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name, String category) {
+public class AbstractSwitch extends Device<OnOffState> {
+
+	public AbstractSwitch(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		this(devices, jaxmpp, pubsubJid, node, name, null);
+	}
+
+	public AbstractSwitch(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name, String category) {
 		super(devices, jaxmpp, pubsubJid, node, name, category);
 	}
 
 	@Override
-	public void setValue(Light newValue, Callback<Light> callback) throws JaxmppException {
+	public void setValue(OnOffState newValue, Callback<OnOffState> callback) throws JaxmppException {
 		super.setValue(newValue, callback);
 	}
 
 	@Override
-	protected Element encodeToPayload(Light value) {
+	protected Element encodeToPayload(OnOffState value) {
 		try {
 			Element timestampElem = ElementFactory.create("timestamp");
 			timestampElem.setAttribute("value", new DateTimeFormat().format(value.getTimestamp()));
 
-			Element numeric = ElementFactory.create("numeric");
-			numeric.setAttribute("name", Light.NAME);
+			Element numeric = ElementFactory.create("boolean");
+			numeric.setAttribute("name", OnOffState.NAME);
 			numeric.setAttribute("automaticReadout", "false");
 			numeric.setAttribute("value", String.valueOf(value.getValue()));
-			numeric.setAttribute("unit", value.getUnit().toString());
 
 			timestampElem.addChild(numeric);
 
@@ -66,4 +66,22 @@ public class LightDimmer extends LightSensor {
 		}
 		return null;
 	}
+
+	@Override
+	protected OnOffState parsePayload(Element elem) {
+		try {
+			Element numeric = elem.getFirstChild("boolean");
+			if (numeric == null || !OnOffState.NAME.equals(numeric.getAttribute("name"))) {
+				return null;
+			}
+
+			Boolean value = Boolean.parseBoolean(numeric.getAttribute("value"));
+			Date timestamp = parseTimestamp(elem);
+
+			return new OnOffState(value, timestamp);
+		} catch (XMLException ex) {
+			return null;
+		}
+	}
+
 }

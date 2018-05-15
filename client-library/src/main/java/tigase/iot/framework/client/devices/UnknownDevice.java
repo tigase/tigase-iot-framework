@@ -1,8 +1,8 @@
 /*
- * Switch.java
+ * UnknownDevice.java
  *
  * Tigase IoT Framework
- * Copyright (C) 2011-2017 "Tigase, Inc." <office@tigase.com>
+ * Copyright (C) 2011-2018 "Tigase, Inc." <office@tigase.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,19 +18,27 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-
 package tigase.iot.framework.client.devices;
 
+import tigase.iot.framework.client.Device;
 import tigase.iot.framework.client.Devices;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
+import tigase.jaxmpp.core.client.xml.Element;
 
-/**
- * Class represents an implementation of a switch device.
- */
-public class Switch extends AbstractSwitch {
+public class UnknownDevice extends Device {
 
-	public Switch(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name, String category) {
-		super(devices, jaxmpp, pubsubJid, node, name, category);
+	public UnknownDevice(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
+		super(devices, jaxmpp, pubsubJid, node, name);
+	}
+	
+	@Override
+	protected Element encodeToPayload(Device.IValue value) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	protected Device.IValue parsePayload(Element elem) {
+		return null;
 	}
 }

@@ -27,14 +27,27 @@ import tigase.iot.framework.devices.IExecutorDevice;
 import tigase.iot.framework.values.OnOffState;
 import tigase.kernel.beans.config.ConfigField;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PinSwitch
 		extends AbstractSensor<OnOffState>
 		implements IExecutorDevice<OnOffState>, IConfigurationAware {
 
 	private static final Logger log = Logger.getLogger(PinSwitch.class.getCanonicalName());
+
+	private static final Collection<Category> SUPPORTED_CATEGORIES = Collections.unmodifiableCollection(Stream.of(
+					new Category("switch", "Switch"),
+					new Category("socket", "Socket"),
+					new Category("lights-external", "External lights"),
+					new Category("lights-table", "Table light"),
+					new Category("lights-ceiling", "Ceiling lights"),
+					new Category("lights-spotlight", "Spotlight")
+						  ).collect(Collectors.toList()));
 
 	@ConfigField(desc = "WiringPi Pin number")
 	private Integer pin = 2;
@@ -68,6 +81,11 @@ public class PinSwitch
 		if (output != null) {
 			gpio.unprovisionPin(output);
 		}
+	}
+
+	@Override
+	public Collection<Category> getCategories() {
+		return SUPPORTED_CATEGORIES;
 	}
 
 	public void setPin(Integer pin) {
