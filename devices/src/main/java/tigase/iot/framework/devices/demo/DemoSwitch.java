@@ -24,6 +24,7 @@ package tigase.iot.framework.devices.demo;
 import tigase.iot.framework.devices.AbstractSensor;
 import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.devices.IExecutorDevice;
+import tigase.iot.framework.devices.annotations.Advanced;
 import tigase.iot.framework.values.OnOffState;
 import tigase.kernel.beans.config.ConfigField;
 
@@ -54,6 +55,7 @@ public class DemoSwitch extends AbstractSensor<OnOffState> implements IConfigura
 	@ConfigField(desc = "Pin no.")
 	private Integer pin = 2;
 
+	@Advanced
 	@ConfigField(desc = "Enable with high state")
 	private boolean enableWithHigh = true;
 
