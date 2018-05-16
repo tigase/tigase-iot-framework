@@ -16,6 +16,7 @@ import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 
 import java.util.logging.Level;
@@ -157,44 +158,7 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 
 	public void displayConfiguration(Configuration config) {
 		try {
-			FlowPanel panel = new FlowPanel();
-			panel.setStylePrimaryName("context-menu");
-
-			Form form = new Form();
-			form.setData(config.getValue());
-
-			DialogBox dialog = new DialogBox(true, true);
-			dialog.setStylePrimaryName("dialog-window");
-			dialog.setTitle("Configuration");
-
-			panel.add(form);
-
-			Button button = new Button("Confirm");
-			button.addClickHandler(new ClickHandler() {
-				@Override
-				public void onClick(ClickEvent event) {
-					try {
-						JabberDataElement config = form.getData();
-						dialog.hide();
-
-						device.setConfiguration(config, new tigase.iot.framework.client.Device.Callback<Configuration>() {
-							public void onError(XMPPException.ErrorCondition error) {
-
-							}
-
-							public void onSuccess(Configuration result) {
-
-							}
-						});
-					} catch (JaxmppException ex) {
-						Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
-					}
-				}
-			});
-			panel.add(button);
-
-			dialog.setWidget(panel);
-			dialog.center();
+			new ConfigureDeviceDlg(factory, config);
 		} catch (JaxmppException ex) {
 			Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -241,5 +205,76 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		
 		dialog.setWidget(panel);
 		dialog.center();
+	}
+
+	private class ConfigureDeviceDlg {
+
+		private final Button advancedButton;
+		private final Button confirmButton;
+
+		public ConfigureDeviceDlg(ClientFactory factory, Configuration config) throws JaxmppException {
+				FlowPanel panel = new FlowPanel();
+				panel.setStylePrimaryName("context-menu");
+
+				Form form = new Form();
+				form.setData(config.getValue());
+
+				DialogBox dialog = new DialogBox(true, true);
+				dialog.setStylePrimaryName("dialog-window");
+				dialog.setTitle("Configuration");
+
+				panel.add(form);
+
+				if (form.hasAdvanced()) {
+					advancedButton = new Button("Show advanced");
+					advancedButton.addClickHandler(new ClickHandler() {
+						@Override
+						public void onClick(ClickEvent clickEvent) {
+							try {
+								form.showAdvanced(!form.isAdvancedVisible());
+								if (form.isAdvancedVisible()) {
+									advancedButton.setHTML("Show basic");
+								} else {
+									advancedButton.setHTML("Show advanced");
+								}
+								confirmButton.setVisible(!form.isAdvancedVisible());
+							} catch (XMLException ex) {
+								// should not happen..
+							}
+						}
+					});
+					panel.add(advancedButton);
+				} else {
+					advancedButton = null;
+				}
+
+				confirmButton = new Button("Confirm");
+				confirmButton.addClickHandler(new ClickHandler() {
+					@Override
+					public void onClick(ClickEvent event) {
+						try {
+							JabberDataElement config = form.getData();
+							dialog.hide();
+
+							device.setConfiguration(config, new tigase.iot.framework.client.Device.Callback<Configuration>() {
+								public void onError(XMPPException.ErrorCondition error) {
+
+								}
+
+								public void onSuccess(Configuration result) {
+
+								}
+							});
+						} catch (JaxmppException ex) {
+							Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+						}
+					}
+				});
+				panel.add(confirmButton);
+
+				dialog.setWidget(panel);
+				dialog.center();
+		}
+		
 	}
 }

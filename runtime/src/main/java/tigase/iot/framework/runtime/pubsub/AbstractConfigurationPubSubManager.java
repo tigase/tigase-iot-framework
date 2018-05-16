@@ -25,6 +25,7 @@ import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.devices.Value;
+import tigase.iot.framework.devices.annotations.Advanced;
 import tigase.iot.framework.devices.annotations.Fixed;
 import tigase.iot.framework.devices.annotations.Hidden;
 import tigase.iot.framework.runtime.ConfigManager;
@@ -292,6 +293,7 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 						data.addFixedField(field.getName(), String.valueOf(value));
 						continue;
 					}
+					boolean advanced = field.getAnnotation(Advanced.class) != null;
 					if (Collection.class.isAssignableFrom(field.getType())) {
 						TextMultiField f = data.addTextMultiField(field.getName());
 						f.setLabel(cf.desc());
@@ -302,15 +304,21 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 									.toArray(String[]::new);
 							f.setFieldValue(values);
 						}
+						if (advanced) {
+							f.setAttribute("advanced", "true");
+						}
 					} else {
 						Object value = field.get(device);
-						tigase.jaxmpp.core.client.xmpp.forms.Field f;
+						tigase.jaxmpp.core.client.xmpp.forms.AbstractField f;
 						if (value instanceof Boolean) {
 							f = data.addBooleanField(field.getName(), (Boolean) value);
 						} else {
 							f = data.addTextSingleField(field.getName(), String.valueOf(value));
 						}
-						f.setLabel(cf.desc());
+						f.setLabel(cf.desc());     
+						if (advanced) {
+							f.setAttribute("advanced", "true");
+						}
 					}
 				}
 			}

@@ -11,9 +11,6 @@ import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FlowPanel;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.client.ui.Form;
 import tigase.iot.framework.client.client.ui.MessageDialog;
@@ -21,12 +18,16 @@ import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
-import tigase.jaxmpp.core.client.xmpp.forms.Field;
+import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.Action;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
+
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -38,6 +39,9 @@ public class AddDeviceDlg {
 	private final JID deviceHostJid;
 	private final Form form;
 	private final DialogBox dialog;
+
+	private final Button advancedButton;
+	private final Button submitButton;
 
 	public AddDeviceDlg(ClientFactory factory, JID deviceHostJid) {
 		this.factory = factory;
@@ -54,14 +58,33 @@ public class AddDeviceDlg {
 
 		panel.add(form);
 
-		Button button = new Button("Submit");
-		button.addClickHandler(new ClickHandler() {
+		advancedButton = new Button("Show advanced");
+		advancedButton.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent clickEvent) {
+				try {
+					form.showAdvanced(!form.isAdvancedVisible());
+					if (form.isAdvancedVisible()) {
+						advancedButton.setHTML("Show basic");
+					} else {
+						advancedButton.setHTML("Show advanced");
+					}
+					submitButton.setVisible(!form.isAdvancedVisible());
+				} catch (XMLException ex) {
+					// should not happen..
+				}
+			}
+		});
+		panel.add(advancedButton);
+
+		submitButton = new Button("Submit");
+		submitButton.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				submit();
 			}
 		});
-		panel.add(button);
+		panel.add(submitButton);
 
 		dialog.setWidget(panel);
 		dialog.center();
@@ -90,6 +113,7 @@ public class AddDeviceDlg {
 					timer.schedule(300);
 				} else {
 					form.setData(data);
+					advancedButton.setVisible(form.hasAdvanced());
 				}
 			}
 

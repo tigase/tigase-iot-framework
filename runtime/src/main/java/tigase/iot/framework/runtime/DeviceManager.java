@@ -21,6 +21,7 @@
 package tigase.iot.framework.runtime;
 
 import tigase.iot.framework.devices.IDevice;
+import tigase.iot.framework.devices.annotations.Advanced;
 import tigase.iot.framework.devices.annotations.Hidden;
 import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
@@ -232,6 +233,7 @@ public class DeviceManager implements RegistrarBean {
 						continue;
 					}
 
+					boolean advanced = field.getAnnotation(Advanced.class) != null;
 					ValuesProvider providerAnnotation = field.getAnnotation(ValuesProvider.class);
 					if (providerAnnotation != null) {
 						tigase.iot.framework.ValuesProvider provider = kernel.getParent()
@@ -249,12 +251,18 @@ public class DeviceManager implements RegistrarBean {
 								String[] values = (String[]) collectionOfValues.stream().map(value -> value.toString()).toArray(String[]::new);
 								f.setFieldValue(values);
 							}
+							if (advanced) {
+								f.setAttribute("advanced", "true");
+							}
 						} else {
 							Object value = field.get(device);
 							ListSingleField f = data.addListSingleField(field.getName(), String.valueOf(value));
 							f.setLabel(cf.desc());
 							for (tigase.iot.framework.ValuesProvider.ValuePair pair : pairs) {
 								f.addOption(pair.getLabel(), pair.getValue());
+							}
+							if (advanced) {
+								f.setAttribute("advanced", "true");
 							}
 						}
 					} else {
@@ -266,16 +274,21 @@ public class DeviceManager implements RegistrarBean {
 								String[] values = (String[]) collectionOfValues.stream().map(value -> value.toString()).toArray(String[]::new);
 								f.setFieldValue(values);
 							}
+							if (advanced) {
+								f.setAttribute("advanced", "true");
+							}
 						} else {
 							Object value = field.get(device);
-							tigase.jaxmpp.core.client.xmpp.forms.Field f;
+							tigase.jaxmpp.core.client.xmpp.forms.AbstractField f;
 							if (value instanceof Boolean) {
 								f = data.addBooleanField(field.getName(), (Boolean) value);
 							} else {
 								f = data.addTextSingleField(field.getName(), String.valueOf(value));
 							}
 							f.setLabel(cf.desc());
-//						f.setDesc(cf.desc());
+							if (advanced) {
+								f.setAttribute("advanced", "true");
+							}
 						}
 					}
 				} catch (IllegalAccessException ex) {

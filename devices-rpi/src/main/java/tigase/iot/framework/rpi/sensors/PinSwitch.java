@@ -24,6 +24,7 @@ import com.pi4j.io.gpio.*;
 import tigase.iot.framework.devices.AbstractSensor;
 import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.devices.IExecutorDevice;
+import tigase.iot.framework.devices.annotations.Advanced;
 import tigase.iot.framework.values.OnOffState;
 import tigase.kernel.beans.config.ConfigField;
 
@@ -52,9 +53,10 @@ public class PinSwitch
 	@ConfigField(desc = "WiringPi Pin number")
 	private Integer pin = 2;
 
+	@Advanced
 	@ConfigField(desc = "Enable with high state")
 	private boolean enableWithHigh = true;
-
+	
 	@ConfigField(desc = "Initial state")
 	private boolean initialValue = false;
 

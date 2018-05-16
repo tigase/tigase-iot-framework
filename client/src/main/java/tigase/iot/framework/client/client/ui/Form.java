@@ -4,15 +4,16 @@
  */
 package tigase.iot.framework.client.client.ui;
 
-import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
-import java.util.*;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.*;
-import tigase.iot.framework.client.client.ClientFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  *
@@ -22,7 +23,10 @@ public class Form extends Composite {
 
         private final FlexTable layout;
         private JabberDataElement data;
-        
+
+        private boolean advanced = false;
+        private boolean hasAdvanced = false;
+
         public Form() {
                 layout = new FlexTable();
                 layout.addStyleName("jabberDataForm");
@@ -33,8 +37,58 @@ public class Form extends Composite {
         public void reset() {
                 layout.clear();
         }
-        
+
+        public List<AbstractField> getDisplayedFields() throws XMLException {
+                List<AbstractField> list = new ArrayList<>();
+                for (AbstractField field : data.getFields()) {
+                        boolean advancedField = "true".equals(field.getAttribute("advanced"));
+                        if (advancedField == advanced) {
+                                list.add(field);
+                        }
+                }
+                return list;
+        }
+
         public void setData(JabberDataElement data) throws JaxmppException {
+                hasAdvanced = false;
+                for (AbstractField field : data.getFields()) {
+                        hasAdvanced |= "true".equals(field.getAttribute("advanced"));
+                        if (hasAdvanced) {
+                                break;
+                        }
+                }
+
+                this.data = data;
+                displayFields();
+        }
+        
+        public JabberDataElement getData() throws JaxmppException {
+                if (data == null) {
+                        return null;
+                }
+
+                readFieldValues();
+
+                return data;
+        }
+
+        public boolean hasAdvanced() {
+                return hasAdvanced;
+        }
+
+        public boolean isAdvancedVisible() {
+                return advanced;
+        }
+
+        public void showAdvanced(boolean show) throws XMLException {
+                readFieldValues();
+                advanced = show;
+                displayFields();
+        }
+
+        private void displayFields() throws XMLException {
+                layout.removeAllRows();
+
                 int row = 0;
                 String instructions = data.getInstructions();
                 if (instructions != null) {
@@ -42,24 +96,22 @@ public class Form extends Composite {
                         layout.setText(row, 1, instructions);
                         row++;
                 }
-                
-                this.data = data;
-                
-                for (AbstractField field : data.getFields()) {
+
+                for (AbstractField field : getDisplayedFields()) {
                         String name = field.getLabel();
-						if (name == null) name = field.getLabel();
+                        if (name == null) name = field.getLabel();
                         if (name == null) name = field.getVar();
-                        
+
                         if ("hidden".equals(field.getType())) {
                                 continue;
                         }
-                        
+
                         Label fieldLabel = new Label(name);
 //                        fieldLabel.setWidth("180px");
                         layout.setWidget(row, 0, fieldLabel);
-                        
+
                         Widget w = null;
-                        
+
                         if ("boolean".equals(field.getType())) {
                                 CheckBox checkbox = new CheckBox();
                                 if (field.getFieldValue() != null) {
@@ -83,7 +135,7 @@ public class Form extends Composite {
                                                 if (value != null) {
                                                         value += "\n";
                                                 }
-                                                else {  
+                                                else {
                                                         value = "";
                                                 }
                                                 value += v;
@@ -91,7 +143,7 @@ public class Form extends Composite {
                                         if (value != null) {
                                                 textArea.setValue(value);
                                         }
-																}
+                                }
                                 w = textArea;
                         }
                         else if ("jid-multi".equals(field.getType())) {
@@ -106,19 +158,19 @@ public class Form extends Composite {
                                                 else {
                                                         value = "";
                                                 }
-																								if (v != null) {
-																									value += v.toString();
-																								}
+                                                if (v != null) {
+                                                        value += v.toString();
+                                                }
                                         }
                                         if (value != null) {
                                                 textArea.setValue(value);
                                         }
-																}
+                                }
                                 w = textArea;
                         }
                         else if ("text-private".equals(field.getType())) {
                                 PasswordTextBox textBox = new PasswordTextBox();
-                                if (field.getFieldValue() != null) {                                
+                                if (field.getFieldValue() != null) {
                                         textBox.setText(field.getFieldValue().toString());
                                 }
                                 w = textBox;
@@ -149,7 +201,7 @@ public class Form extends Composite {
                                         if (label == null) label = option.getFirstChild().getValue();
                                         listBox.addItem(label, option.getFirstChild().getValue());
                                 }
-                                String[] values = ((ListMultiField) field).getFieldValue();                                
+                                String[] values = ((ListMultiField) field).getFieldValue();
                                 if (values != null) {
                                         HashSet<String> vals = new HashSet<String>();
                                         for (String v : values) {
@@ -164,25 +216,21 @@ public class Form extends Composite {
                                 }
                                 w = listBox;
                         }
-                        else {                                
+                        else {
                                 Label label = new Label();
                                 if (field.getFieldValue() != null) {
                                         label.setText(field.getFieldValue().toString());
                                 }
                                 w = label;
                         }
-                        
+
                         layout.setWidget(row, 1, w);
-                                                                        
+
                         row++;
                 }
-
         }
-        
-        public JabberDataElement getData() throws JaxmppException {                
-			if (data == null) {
-				return null;
-			}
+
+        private void readFieldValues() throws XMLException {
                 int row = 0;
 
                 String instructions = data.getInstructions();
@@ -190,7 +238,7 @@ public class Form extends Composite {
                         row++;
                 }
                 
-                for (AbstractField field : data.getFields()) {
+                for (AbstractField field : getDisplayedFields()) {
                         if ("hidden".equals(field.getType())) {
                                 continue;
                         }
@@ -258,7 +306,5 @@ public class Form extends Composite {
                         
                         row++;
                 }
-                
-                return data;
         }
 }
