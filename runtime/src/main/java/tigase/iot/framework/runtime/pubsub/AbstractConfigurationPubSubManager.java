@@ -28,6 +28,7 @@ import tigase.iot.framework.devices.Value;
 import tigase.iot.framework.devices.annotations.Advanced;
 import tigase.iot.framework.devices.annotations.Fixed;
 import tigase.iot.framework.devices.annotations.Hidden;
+import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.iot.framework.runtime.ConfigManager;
 import tigase.iot.framework.runtime.DeviceNodesHelper;
 import tigase.iot.framework.runtime.formatters.ConfigurationFormatter;
@@ -291,6 +292,12 @@ public abstract class AbstractConfigurationPubSubManager<T extends IConfiguratio
 					if (fixed != null) {
 						Object value = field.get(device);
 						data.addFixedField(field.getName(), String.valueOf(value));
+						continue;
+					}
+					ValuesProvider providerAnnotation = field.getAnnotation(ValuesProvider.class);
+					if (providerAnnotation != null) {
+						Object value = field.get(device);
+						data.addFixedField(field.getName(), String.valueOf(value)).setLabel(cf.desc());
 						continue;
 					}
 					boolean advanced = field.getAnnotation(Advanced.class) != null;

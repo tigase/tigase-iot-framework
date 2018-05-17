@@ -22,6 +22,7 @@ package tigase.iot.framework.runtime;
 
 import tigase.iot.framework.devices.IDevice;
 import tigase.iot.framework.devices.annotations.Advanced;
+import tigase.iot.framework.devices.annotations.Fixed;
 import tigase.iot.framework.devices.annotations.Hidden;
 import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.iot.framework.runtime.pubsub.PubSubNodesManager;
@@ -230,6 +231,12 @@ public class DeviceManager implements RegistrarBean {
 					if (hidden != null) {
 						Object value = field.get(device);
 						data.addHiddenField(field.getName(), String.valueOf(value));
+						continue;
+					}
+					Fixed fixed = field.getAnnotation(Fixed.class);
+					if (fixed != null) {
+						Object value = field.get(device);
+						data.addFixedField(field.getName(), String.valueOf(value));
 						continue;
 					}
 

@@ -24,7 +24,6 @@ package tigase.iot.framework.rpi.sensors.w1;
 import tigase.iot.framework.devices.AbstractPeriodSensor;
 import tigase.iot.framework.devices.IConfigurationAware;
 import tigase.iot.framework.devices.IValue;
-import tigase.iot.framework.devices.annotations.Fixed;
 import tigase.iot.framework.devices.annotations.ValuesProvider;
 import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.Inject;
@@ -43,7 +42,6 @@ public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractP
 	protected com.pi4j.io.w1.W1Device w1Device;
 
 	@ConfigField(desc = "1-Wire device id")
-	@Fixed
 	@ValuesProvider(beanName = "w1Master")
 	private String deviceId;
 
@@ -84,6 +82,8 @@ public abstract class W1AbstractPeriodDevice<T extends IValue> extends AbstractP
 	@Override
 	public void beforeUnregister() {
 		super.beforeUnregister();
-		w1Master.releaseDevice(deviceId, this);
+		if (deviceId != null) {
+			w1Master.releaseDevice(deviceId, this);
+		}
 	}
 }

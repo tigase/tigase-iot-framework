@@ -36,7 +36,7 @@ public class DHT22 extends AbstractPeriodSensor<Humidity>
 	@ConfigField(desc = "Information")
 	private String info = "This device requires DHTXXD from http://abyz.me.uk/rpi/pigpio/code/DHTXXD.zip to be installed and working.";
 
-	@ConfigField(desc = "Path to DHT22 file from DHTXXD project")
+	@ConfigField(desc = "Path to DHTXXD file")
 	private String pathToDht22File = "/usr/local/bin/dht22";
 
 	@ConfigField(desc = "BCM Pin number")
