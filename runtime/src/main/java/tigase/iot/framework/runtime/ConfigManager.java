@@ -90,7 +90,7 @@ public class ConfigManager
 
 	}
 
-	public void applyConfigChanges() {
+	public synchronized void applyConfigChanges() {
 		DSLBeanConfigurator configurator = this.kernel.getParent().getInstance(DSLBeanConfigurator.class);
 		Map<String, Object> mergedConfig = ConfigHelper.merge(originalConfig, config);
 
@@ -119,7 +119,7 @@ public class ConfigManager
 		applyConfigChanges();
 	}
 
-	public boolean removeBeanDefinition(String name) {
+	public synchronized boolean removeBeanDefinition(String name) {
 		if (config.remove(name) != null) {
 			applyConfigChanges();
 			return true;
@@ -127,7 +127,7 @@ public class ConfigManager
 		return false;
 	}
 
-	public void updateBeanDefinition(String beanName, Consumer<AbstractBeanConfigurator.BeanDefinition> consumer) {
+	public synchronized void updateBeanDefinition(String beanName, Consumer<AbstractBeanConfigurator.BeanDefinition> consumer) {
 		AbstractBeanConfigurator.BeanDefinition definition = (AbstractBeanConfigurator.BeanDefinition) config.get(beanName);
 		if (definition != null) {
 			consumer.accept(definition);

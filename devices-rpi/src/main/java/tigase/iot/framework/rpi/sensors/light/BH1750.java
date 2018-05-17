@@ -28,6 +28,8 @@ import tigase.kernel.beans.Initializable;
 import tigase.kernel.beans.UnregisterAware;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Implementation of a sensor which reads data from the connection BH1750 sensor.
@@ -38,13 +40,15 @@ public class BH1750
 		extends I2CAbstractPeriodDevice<Light>
 		implements Initializable, UnregisterAware {
 
+	private static final Logger log = Logger.getLogger(BH1750.class.getCanonicalName());
+
 	public BH1750() {
 		super("light-sensor", "Light sensor", "BH1750", 60 * 1000);
 	}
 
 	@Override
 	protected Light readValue(I2CDevice device) throws IOException {
-		device.write((byte) 0x10);
+		device.write((byte) 0x20);
 
 		byte[] data = new byte[2];
 
@@ -53,7 +57,14 @@ public class BH1750
 			throw new RuntimeException("Read error: read only " + r + " bytes");
 		}
 
-		return new Light((data[0] << 8) | data[1], Light.Unit.lm);
+		int v1 = ((data[0] & 0xff) << 8) | (data[1] & 0xff);
+		if (log.isLoggable(Level.FINEST)) {
+			log.log(Level.FINEST,
+					"read data: " + Integer.toHexString(data[0] & 0xff) + Integer.toHexString(data[1] & 0xff) +
+							", value = " + v1);
+		}
+
+		return new Light(v1, Light.Unit.lm);
 	}
 
 }
