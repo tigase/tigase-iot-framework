@@ -46,7 +46,9 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 	private static final Logger log = Logger.getLogger(I2CAbstractPeriodDevice.class.getCanonicalName());
 
 	@ConfigField(desc = "Device address on I2C bus")
-	private int address;
+	private String address;
+
+	private Integer addressInt = null;
 
 	@ConfigField(desc = "I2C Bus number")
 	private int bus = I2CBus.BUS_1;
@@ -69,7 +71,7 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 	@Override
 	protected T readValue() {
 		try {
-			I2CDevice device = i2cBus.getDevice(address);
+			I2CDevice device = i2cBus.getDevice(addressInt);
 			return readValue(device);
 		} catch (IOException ex) {
 			log.log(Level.WARNING, "Could not read data from I2C device at " + address, ex);
@@ -89,4 +91,12 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 		super.initialize();
 	}
 
+	public void setAddress(String address) {
+		this.address = address;
+		addressInt = Integer.parseInt(address, 16);
+	}
+
+	public String getAddress() {
+		return address;
+	}
 }
