@@ -55,14 +55,21 @@ public class DHT22
 				String line = null;
 				while ((line = reader.readLine()) != null) {
 					String[] parts = line.split(" ");
-					if (parts.length != 5) {
+					if (!"0".equals(parts[0])) {
 						throw new RuntimeException("Read failed");
 					}
-					Double v = Double.parseDouble(parts[1]);
-					if ("C".equals(parts[2])) {
+					if (parts.length == 3) {
+						Double v = Double.parseDouble(parts[1]);
 						return new Temperature(Temperature.Scale.CELSIUS, v);
-					} else if ("F".equals(parts[2])) {
-						return new Temperature(Temperature.Scale.FARENHEIT, v);
+					} else if (parts.length == 5) {
+						Double v = Double.parseDouble(parts[1]);
+						if ("C".equals(parts[2])) {
+							return new Temperature(Temperature.Scale.CELSIUS, v);
+						} else if ("F".equals(parts[2])) {
+							return new Temperature(Temperature.Scale.FARENHEIT, v);
+						}
+					} else {
+						throw new RuntimeException("Read failed");
 					}
 				}
 				throw new RuntimeException("Read failed");

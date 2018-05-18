@@ -92,8 +92,12 @@ public abstract class AbstractPeriodSensor<T extends IValue>
 	 */
 	protected void refresh() {
 		log.log(Level.FINEST, "{0}, refreshing..", getName());
-		T val = readValue();
-		log.log(Level.FINEST, "{0}, got data: {1}", new Object[]{getName(), val});
-		updateValue(val);
+		try {
+			T val = readValue();
+			log.log(Level.FINEST, "{0}, got data: {1}", new Object[]{getName(), val});
+			updateValue(val);
+		} catch (Throwable ex) {
+			log.log(Level.FINEST, getName() + ", got exception:", ex);
+		}
 	}
 }

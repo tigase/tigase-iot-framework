@@ -54,10 +54,16 @@ public class DHT22 extends AbstractPeriodSensor<Humidity>
 				String line = null;
 				while ((line = reader.readLine()) != null) {
 					String[] parts = line.split(" ");
-					if (parts.length != 5) {
+					if (!"0".equals(parts[0])) {
 						throw new RuntimeException("Read failed");
 					}
-					return new Humidity(Double.parseDouble(parts[3]));
+					if (parts.length == 3) {
+						return new Humidity(Double.parseDouble(parts[2]));
+					} else if (parts.length == 5) {
+						return new Humidity(Double.parseDouble(parts[3]));
+					} else {
+						throw new RuntimeException("Read failed");
+					}
 				}
 				throw new RuntimeException("Read failed");
 			}
