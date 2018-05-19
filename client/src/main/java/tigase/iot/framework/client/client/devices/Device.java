@@ -18,7 +18,7 @@ import com.google.gwt.user.client.ui.Label;
 public class Device extends Composite {
 
 	private final Image icon;
-	private final Label header;
+	protected final Label header;
 	private final Label label;
 
 	public Device(String deviceClass, ImageResource icon) {

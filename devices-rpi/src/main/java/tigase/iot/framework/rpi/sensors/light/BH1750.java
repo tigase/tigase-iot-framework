@@ -43,7 +43,7 @@ public class BH1750
 	private static final Logger log = Logger.getLogger(BH1750.class.getCanonicalName());
 
 	public BH1750() {
-		super("light-sensor", "Light sensor", "BH1750", 60 * 1000);
+		super("light-sensor", "Light sensor", "BH1750", 60 * 1000, "23");
 	}
 
 	@Override

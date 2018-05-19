@@ -55,8 +55,9 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 
 	private I2CBus i2cBus;
 
-	public I2CAbstractPeriodDevice(String type, String name, String label, long period) {
+	public I2CAbstractPeriodDevice(String type, String name, String label, long period, String defaultAddress) {
 		super(type, name, label, period);
+		setAddress(defaultAddress);
 	}
 
 	/**
@@ -92,8 +93,10 @@ public abstract class I2CAbstractPeriodDevice<T extends IValue> extends Abstract
 	}
 
 	public void setAddress(String address) {
-		this.address = address;
-		addressInt = Integer.parseInt(address, 16);
+		if (address != null) {
+			this.address = address;
+			addressInt = Integer.parseInt(address, 16);
+		}
 	}
 
 	public String getAddress() {

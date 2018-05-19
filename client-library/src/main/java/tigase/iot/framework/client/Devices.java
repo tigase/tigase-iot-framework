@@ -500,6 +500,8 @@ public class Devices {
 					return new HumiditySensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				case "led-matrix":
 					return new LedMatrixDevice(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
+				case "pressure-sensor":
+					return new PressureSensor(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 				default:
 					return new UnknownDevice(this, jaxmpp, item.getJid(), item.getNode(), item.getName());
 			}

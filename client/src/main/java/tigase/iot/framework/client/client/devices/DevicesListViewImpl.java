@@ -344,6 +344,9 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 			} else if (device instanceof tigase.iot.framework.client.devices.HumiditySensor) {
 				HumiditySensor item = new HumiditySensor(factory, (tigase.iot.framework.client.devices.HumiditySensor) device);
 				flexGrid.add(item);
+			} else if (device instanceof tigase.iot.framework.client.devices.PressureSensor) {
+				PressureSensor item = new PressureSensor(factory, (tigase.iot.framework.client.devices.PressureSensor) device);
+				flexGrid.add(item);
 			} else {
 				UnknownDevice item = new UnknownDevice(factory, device);
 				flexGrid.add(item);
