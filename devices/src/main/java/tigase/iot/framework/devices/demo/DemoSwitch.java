@@ -49,7 +49,9 @@ public class DemoSwitch extends AbstractSensor<OnOffState> implements IConfigura
 			new Category("lights-external", "External lights"),
 			new Category("lights-table", "Table light"),
 			new Category("lights-ceiling", "Ceiling lights"),
-			new Category("lights-spotlight", "Spotlight")
+			new Category("lights-spotlight", "Spotlight"),
+			new Category("lights-led", "LED"),
+			new Category("motor", "Motor")
 	).collect(Collectors.toList()));
 	
 	@ConfigField(desc = "Pin no.")

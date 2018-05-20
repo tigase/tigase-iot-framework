@@ -16,10 +16,14 @@ public interface Icons
 				return Icons.INSTANCE.lightsCeiling();
 			case "lights-external":
 				return Icons.INSTANCE.lightsExternal();
+			case "lights-led":
+				return Icons.INSTANCE.lightsLed();
 			case "lights-spotlight":
 				return Icons.INSTANCE.lightsSpotlight();
 			case "lights-table":
 				return Icons.INSTANCE.lightsTable();
+			case "motor":
+				return Icons.INSTANCE.engine();
 			case "socket":
 				return Icons.INSTANCE.socket();
 			default:
@@ -28,6 +32,9 @@ public interface Icons
 	}
 	
 	Icons INSTANCE = GWT.create(Icons.class);
+
+	@Source("icons/engine-64.png")
+	ImageResource engine();
 
 	@Source("icons/humidity-64.png")
 	ImageResource humidity();
@@ -43,6 +50,9 @@ public interface Icons
 
 	@Source("icons/lightsexternal-64.png")
 	ImageResource lightsExternal();
+
+	@Source("icons/led-64.png")
+	ImageResource lightsLed();
 
 	@Source("icons/lightsspotlight-64.png")
 	ImageResource lightsSpotlight();

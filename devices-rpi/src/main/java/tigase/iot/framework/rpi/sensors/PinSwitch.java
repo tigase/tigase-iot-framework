@@ -47,8 +47,10 @@ public class PinSwitch
 					new Category("lights-external", "External lights"),
 					new Category("lights-table", "Table light"),
 					new Category("lights-ceiling", "Ceiling lights"),
-					new Category("lights-spotlight", "Spotlight")
-						  ).collect(Collectors.toList()));
+					new Category("lights-spotlight", "Spotlight"),
+					new Category("lights-led", "LED"),
+					new Category("motor", "Motor")
+	).collect(Collectors.toList()));
 
 	@ConfigField(desc = "WiringPi Pin number")
 	private Integer pin = 2;
