@@ -80,7 +80,7 @@ public class PubSubNodesManager
 	protected Set<String> features = new CopyOnWriteArraySet<>();
 	protected Set<String> observedNodes;
 	@Inject(nullAllowed = true)
-	protected List<NodesObserver> observers;
+	protected List<NodesObserver> observers = Collections.emptyList();
 
 	@Inject(nullAllowed = true)
 	private List<PubSubNodeAware> nodesAware;
@@ -121,7 +121,7 @@ public class PubSubNodesManager
 		synchronized (this) {
 			this.features.clear();
 			this.observedNodes = getObservedNodes().collect(Collectors.toSet());
-			this.observedNodes.stream().map(node -> node + "+notify").forEach(feature -> this.features.add(feature));
+			this.observedNodes.stream().map(node -> node + "+notify").forEach(this.features::add);
 
 			if (xmppService != null) {
 				xmppService.getAllConnections().stream().filter(jaxmpp -> jaxmpp.isConnected()).forEach(jaxmpp -> {

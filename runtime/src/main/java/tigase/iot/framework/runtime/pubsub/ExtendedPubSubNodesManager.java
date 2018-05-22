@@ -40,6 +40,8 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 import tigase.jaxmpp.j2se.Jaxmpp;
 import tigase.kernel.beans.Inject;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -63,7 +65,7 @@ public class ExtendedPubSubNodesManager
 	private DeviceManager deviceManager;
 
 	@Inject(nullAllowed = true)
-	private List<IExecutorDevice<IValue>> executorDevices;
+	private List<IExecutorDevice<IValue>> executorDevices = Collections.emptyList();
 
 	@Inject
 	private List<ValueFormatter> formatters;
@@ -195,6 +197,16 @@ public class ExtendedPubSubNodesManager
 		} catch (JaxmppException ex) {
 			log.log(Level.WARNING, "failed to handle node configuration change notification", ex);
 		}
+	}
+
+	public void setExecutorDevices(List<IExecutorDevice<IValue>> executorDevices) {
+		if (executorDevices == null) {
+			executorDevices = new ArrayList<>();
+		}
+		if ((!this.executorDevices.containsAll(executorDevices)) || (!executorDevices.containsAll(executorDevices))) {
+			this.executorDevices = executorDevices;
+		}
+		updateObservedNodes();
 	}
 
 	protected void updateNodeLabelFromNodeTitle(Jaxmpp jaxmpp, String deviceId) throws JaxmppException {
