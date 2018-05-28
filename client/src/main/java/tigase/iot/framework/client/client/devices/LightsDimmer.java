@@ -16,30 +16,27 @@ import tigase.iot.framework.client.client.ClientFactory;
 import tigase.iot.framework.client.values.Light;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Class is an implementation of a representation (UI) for a remote light dimmer device.
+ *
  * @author andrzej
  */
-public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {
-		
+public class LightsDimmer
+		extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {
+
 	public LightsDimmer(ClientFactory factory, tigase.iot.framework.client.devices.LightDimmer sensor) {
 		super(factory, "lights-dimmer", Icons.INSTANCE.lightBulb(), sensor);
-	}
-	
-	@Override
-	public void setValue(Integer value) {
-		String str = value == null ? "--" : String.valueOf(value);
-		setValue(str + " %");
 	}
 
 	@Override
 	protected FlowPanel prepareContextMenu(DialogBox dialog) {
-		FlowPanel panel =  super.prepareContextMenu(dialog);
-		
+		FlowPanel panel = super.prepareContextMenu(dialog);
+
 		Label changeValue = new Label("Adjust");
 		changeValue.addClickHandler(new ClickHandler() {
 			@Override
@@ -48,19 +45,25 @@ public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase
 				showValues();
 			}
 		});
-		
+
 		panel.insert(changeValue, 0);
-		
+
 		return panel;
 	}
-	
+
+	@Override
+	public void setValue(Integer value) {
+		String str = value == null ? "--" : String.valueOf(value);
+		setValue(str + " %");
+	}
+
 	protected void showValues() {
 		final DialogBox dialog = new DialogBox(true, true);
 		dialog.setStylePrimaryName("dialog-window");
 
 		FlowPanel panel = new FlowPanel();
 		panel.setStylePrimaryName("context-menu");
-		for (int i=10; i>=0; i--) {
+		for (int i = 10; i >= 0; i--) {
 			final int value = i * 10;
 			String label = "" + value + "%";
 			if (value < 50) {
@@ -75,18 +78,20 @@ public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase
 				@Override
 				public void onClick(ClickEvent event) {
 					try {
-						device.setValue(new Light(value, Light.Unit.procent), new tigase.iot.framework.client.Device.Callback<Light>() {
-							@Override
-							public void onError(XMPPException.ErrorCondition error) {
-								Window.alert("failed to change light level = " + error);
-							}
-							
-							@Override
-							public void onSuccess(Light result) {
-								LightsDimmer.this.valueChanged(result);
-								dialog.hide();
-							}
-						});
+						device.setValue(new Light(value, Light.Unit.procent),
+										new tigase.iot.framework.client.Device.Callback<Light>() {
+											@Override
+											public void onError(Stanza response,
+																XMPPException.ErrorCondition errorCondition) {
+												Window.alert("failed to change light level = " + response);
+											}
+
+											@Override
+											public void onSuccess(Light result) {
+												LightsDimmer.this.valueChanged(result);
+												dialog.hide();
+											}
+										});
 					} catch (JaxmppException ex) {
 						Logger.getLogger(LightsDimmer.class.getName()).log(Level.SEVERE, null, ex);
 					}
@@ -96,6 +101,6 @@ public class LightsDimmer extends DeviceRemoteConfigAware<Integer, Light, tigase
 		}
 		dialog.setWidget(panel);
 		dialog.center();
-	}	
-	
+	}
+
 }

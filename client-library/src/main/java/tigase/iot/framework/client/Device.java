@@ -52,23 +52,104 @@ import java.util.logging.Logger;
 
 /**
  * Abstract class providing base implementation for client side device representation.
- *
+ * <p>
  * Created by andrzej on 26.11.2016.
  */
 public abstract class Device<S extends Device.IValue> {
 
 	private static final Logger log = Logger.getLogger(Device.class.getCanonicalName());
-
-	private final Devices devices;
-	private final JaxmppCore jaxmpp;
-	private final JID pubsubJid;
-	private final String id;
-	private final String node;
-	private final String name;
 	private final String category;
-
-	private S value;
+	private final Devices devices;
+	private final String id;
+	private final JaxmppCore jaxmpp;
+	private final String name;
+	private final String node;
+	private final JID pubsubJid;
 	private ValueChangedHandler<S> observer;
+	private S value;
+
+	/**
+	 * Method user to parse element and create device configuration change event from it.
+	 *
+	 * @param payload
+	 *
+	 * @return
+	 *
+	 * @throws JaxmppException
+	 */
+	protected static Configuration parseConfig(Element payload) throws JaxmppException {
+		Element valueEl = payload.getFirstChild();
+		Date timestamp = parseTimestamp(payload);
+		if (timestamp == null || valueEl == null) {
+			throw new JaxmppException("Invalid value to parse");
+		}
+
+		JabberDataElement data = new JabberDataElement(valueEl);
+		return new Configuration(data, timestamp);
+	}
+
+	/**
+	 * Method to parse element and retrieve timestamp from it.
+	 *
+	 * @param payload
+	 *
+	 * @return
+	 *
+	 * @throws XMLException
+	 */
+	protected static Date parseTimestamp(Element payload) throws XMLException {
+		if (payload == null || !"timestamp".equals(payload.getName())) {
+			return null;
+		}
+		return new DateTimeFormat().parse(payload.getAttribute("value"));
+	}
+
+	/**
+	 * Method called to retrieve device configuration from PubSub node
+	 *
+	 * @param jaxmpp
+	 * @param pubsubJid
+	 * @param deviceNode
+	 * @param callback
+	 *
+	 * @throws JaxmppException
+	 */
+	public static void retrieveConfiguration(JaxmppCore jaxmpp, JID pubsubJid, String deviceNode,
+											 final Callback<Configuration> callback) throws JaxmppException {
+		jaxmpp.getModule(PubSubModule.class)
+				.retrieveItem(pubsubJid.getBareJid(), deviceNode + "/config", null, 1,
+							  new PubSubModule.RetrieveItemsAsyncCallback() {
+								  @Override
+								  protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+														PubSubErrorCondition pubSubErrorCondition)
+										  throws JaxmppException {
+									  callback.onError(response, errorCondition);
+								  }
+
+								  @Override
+								  protected void onRetrieve(IQ responseStanza, String nodeName,
+															Collection<Item> items) {
+									  Configuration config = null;
+									  if (!items.isEmpty()) {
+										  try {
+											  config = parseConfig(items.iterator().next().getPayload());
+										  } catch (JaxmppException ex) {
+											  log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
+										  }
+									  }
+									  if (config == null) {
+										  callback.onError(null, null);
+									  } else {
+										  callback.onSuccess(config);
+									  }
+								  }
+
+								  @Override
+								  public void onTimeout() throws JaxmppException {
+									  callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+								  }
+							  });
+	}
 
 	public Device(Devices devices, JaxmppCore jaxmpp, JID pubsubJid, String node, String name) {
 		this(devices, jaxmpp, pubsubJid, node, name, null);
@@ -85,85 +166,21 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	/**
+	 * Method serializes value to element representation.
+	 *
+	 * @param value
+	 *
+	 * @return
+	 */
+	protected abstract Element encodeToPayload(S value);
+
+	/**
 	 * Return ID of the category to which device belongs
+	 *
 	 * @return category id
 	 */
 	public String getCategory() {
 		return category;
-	}
-
-	/**
-	 * Retrieve name of device
-	 * @return device name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * Set device name
-	 *
-	 * @param name of device
-	 * @param callback fired when name is set
-	 * @throws JaxmppException
-	 */
-	public void setName(final String name, final Callback<String> callback) throws JaxmppException {
-		if (this.name.equals(name)) {
-			callback.onSuccess(name);
-			return;
-		}
-
-		jaxmpp.getModule(PubSubModule.class).getNodeConfiguration(pubsubJid.getBareJid(), node, new PubSubModule.NodeConfigurationAsyncCallback() {
-			@Override
-			protected void onReceiveConfiguration(IQ responseStanza, String node, JabberDataElement config) {
-				try {
-					TextSingleField field = config.getField("pubsub#title");
-					if (field == null) {
-						config.addTextSingleField("pubsub#title", name);
-					} else {
-						field.setFieldValue(name);
-					}
-					jaxmpp.getModule(PubSubModule.class).configureNode(pubsubJid.getBareJid(), node, config, new AsyncCallback() {
-						@Override
-						public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-							callback.onError(error);
-						}
-
-						@Override
-						public void onSuccess(Stanza responseStanza) throws JaxmppException {
-							callback.onSuccess(name);
-						}
-
-						@Override
-						public void onTimeout() throws JaxmppException {
-							callback.onError(null);
-						}
-					});
-
-				} catch (JaxmppException ex) {
-					callback.onError(XMPPException.ErrorCondition.internal_server_error);
-				}
-			}
-
-			@Override
-			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
-								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				callback.onError(errorCondition);
-			}
-
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(null);
-			}
-		});
-	}
-
-	/**
-	 * Retrieve name of pubsub node of a device
-	 * @return
-	 */
-	public String getNode() {
-		return node;
 	}
 
 	public String getId() {
@@ -171,7 +188,26 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	/**
+	 * Retrieve name of device
+	 *
+	 * @return device name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Retrieve name of pubsub node of a device
+	 *
+	 * @return
+	 */
+	public String getNode() {
+		return node;
+	}
+
+	/**
 	 * Retrieve cached device state/value
+	 *
 	 * @return
 	 */
 	public S getValue() {
@@ -180,79 +216,123 @@ public abstract class Device<S extends Device.IValue> {
 
 	/**
 	 * Retrieve device state/value from PubSub node
+	 *
 	 * @param callback - called with retrieval result
+	 *
 	 * @throws JaxmppException
 	 */
 	public void getValue(final Callback<S> callback) throws JaxmppException {
-		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), node + "/state", null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
-			@Override
-			protected void onRetrieve(IQ responseStanza, String nodeName, Collection<Item> items) {
-				S value = null;
-				if (items != null && !items.isEmpty()) {
-					Item item = items.iterator().next();
-					value = parsePayload(item.getPayload());
-				}
-				updateValue(value);
-				callback.onSuccess(value);
-			}
+		jaxmpp.getModule(PubSubModule.class)
+				.retrieveItem(pubsubJid.getBareJid(), node + "/state", null, 1,
+							  new PubSubModule.RetrieveItemsAsyncCallback() {
+								  @Override
+								  protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+														PubSubErrorCondition pubSubErrorCondition)
+										  throws JaxmppException {
+									  callback.onError(response, errorCondition);
+								  }
 
-			@Override
-			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
-								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				callback.onError(errorCondition);
-			}
+								  @Override
+								  protected void onRetrieve(IQ responseStanza, String nodeName,
+															Collection<Item> items) {
+									  S value = null;
+									  if (items != null && !items.isEmpty()) {
+										  Item item = items.iterator().next();
+										  value = parsePayload(item.getPayload());
+									  }
+									  updateValue(value);
+									  callback.onSuccess(value);
+								  }
 
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(null);
-			}
-		});
+								  @Override
+								  public void onTimeout() throws JaxmppException {
+									  callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+								  }
+							  });
 	}
 
 	/**
-	 * Method called to retrieve device configuration from PubSub node
-	 * @param jaxmpp
-	 * @param pubsubJid
-	 * @param deviceNode
-	 * @param callback
-	 * @throws JaxmppException
+	 * Method converts element into value object.
+	 *
+	 * @param item
+	 *
+	 * @return
 	 */
-	public static void retrieveConfiguration(JaxmppCore jaxmpp, JID pubsubJid, String deviceNode,
-											 final Callback<Configuration> callback) throws JaxmppException {
-		jaxmpp.getModule(PubSubModule.class).retrieveItem(pubsubJid.getBareJid(), deviceNode + "/config", null, 1, new PubSubModule.RetrieveItemsAsyncCallback() {
-			@Override
-			protected void onRetrieve(IQ responseStanza, String nodeName, Collection<Item> items) {
-				Configuration config = null;
-				if (!items.isEmpty()) {
-					try {
-						config = parseConfig(items.iterator().next().getPayload());
-					} catch (JaxmppException ex) {
-						log.log(Level.WARNING, "Failed to retrieve device configuration", ex);
+	protected abstract S parsePayload(Element item);
+
+	public void remove(final Callback<Object> callback) throws JaxmppException {
+		String node = devices.nodeForwardEncoder(JID.jidInstance("pubsub.tigase-iot-hub.local"), this.node);
+		jaxmpp.getModule(DiscoveryModule.class)
+				.getInfo(devices.isRemoteMode() ? devices.getRemoteHubJid() : pubsubJid, node, new AsyncCallback() {
+					@Override
+					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+							throws JaxmppException {
+						callback.onError(responseStanza, error);
 					}
-				}
-				if (config == null) {
-					callback.onError(null);
-				} else {
-					callback.onSuccess(config);
-				}
-			}
 
-			@Override
-			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
-								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				callback.onError(errorCondition);
-			}
+					@Override
+					public void onSuccess(Stanza responseStanza) throws JaxmppException {
+						Element x = responseStanza.findChild(new String[]{"iq", "query", "x"});
+						if (x != null) {
+							JabberDataElement data = new JabberDataElement(x);
+							if (data != null) {
+								AbstractField<JID> creator = data.getField("pubsub#creator");
+								if (creator != null) {
+									JabberDataElement form = new JabberDataElement(XDataType.submit);
+									form.addFixedField("device", id);
 
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(null);
-			}
-		});
+									JID creatorJid = creator.getFieldValue();
+									if (creatorJid.getResource() == null) {
+										creatorJid = JID.jidInstance(creatorJid.getBareJid(), "iot");
+									}
+									devices.executeDeviceHostAdHocCommand(creatorJid, "remove-device", Action.execute,
+																		  form,
+																		  new AdHocCommansModule.AdHocCommansAsyncCallback() {
+																			  @Override
+																			  public void onError(Stanza responseStanza,
+																								  XMPPException.ErrorCondition error)
+																					  throws JaxmppException {
+																				  callback.onError(responseStanza,
+																								   error);
+																			  }
+
+																			  @Override
+																			  protected void onResponseReceived(
+																					  String sessionid, String node,
+																					  State status,
+																					  JabberDataElement data)
+																					  throws JaxmppException {
+																				  callback.onSuccess(null);
+																			  }
+
+																			  @Override
+																			  public void onTimeout()
+																					  throws JaxmppException {
+																				  callback.onError(null,
+																								   XMPPException.ErrorCondition.remote_server_timeout);
+																			  }
+																		  });
+								} else {
+									callback.onError(null, XMPPException.ErrorCondition.internal_server_error);
+								}
+							}
+						} else {
+							callback.onError(null, XMPPException.ErrorCondition.internal_server_error);
+						}
+					}
+
+					@Override
+					public void onTimeout() throws JaxmppException {
+						callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+					}
+				});
 	}
 
 	/**
 	 * Metod retrieves device configuration from PubSub node
+	 *
 	 * @param callback
+	 *
 	 * @throws JaxmppException
 	 */
 	public void retrieveConfiguration(final Callback<Configuration> callback) throws JaxmppException {
@@ -265,96 +345,105 @@ public abstract class Device<S extends Device.IValue> {
 	 *
 	 * @param config
 	 * @param callback
+	 *
 	 * @throws JaxmppException
 	 */
-	public void setConfiguration(final JabberDataElement config, final Callback<Configuration> callback) throws JaxmppException {
+	public void setConfiguration(final JabberDataElement config, final Callback<Configuration> callback)
+			throws JaxmppException {
 		Element timestamp = ElementFactory.create("timestamp");
 		final Date date = new Date();
 		timestamp.setAttribute("value", new DateTimeFormat().format(date));
 
 		timestamp.addChild(config);
 
-		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node + "/config", null, timestamp, new PubSubModule.PublishAsyncCallback() {
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(null);
-			}
+		jaxmpp.getModule(PubSubModule.class)
+				.publishItem(pubsubJid.getBareJid(), node + "/config", null, timestamp,
+							 new PubSubModule.PublishAsyncCallback() {
+								 @Override
+								 protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+													   PubSubErrorCondition pubSubErrorCondition)
+										 throws JaxmppException {
+									 callback.onError(response, errorCondition);
+								 }
 
-			@Override
-			protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
-								  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
-				callback.onError(errorCondition);
-			}
+								 @Override
+								 public void onPublish(String itemId) {
+									 callback.onSuccess(new Configuration(config, date));
+								 }
 
-			@Override
-			public void onPublish(String itemId) {
-				callback.onSuccess(new Configuration(config, date));
-			}
-		});
+								 @Override
+								 public void onTimeout() throws JaxmppException {
+									 callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+								 }
+							 });
 	}
 
-	public void remove(final Callback<Object> callback) throws JaxmppException {
-		String node = devices.nodeForwardEncoder(JID.jidInstance("pubsub.tigase-iot-hub.local"), this.node);
-		jaxmpp.getModule(DiscoveryModule.class).getInfo(devices.isRemoteMode() ? devices.getRemoteHubJid() : pubsubJid, node, new AsyncCallback() {
-			@Override
-			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
-					throws JaxmppException {
-				callback.onError(error);
-			}
+	/**
+	 * Set device name
+	 *
+	 * @param name of device
+	 * @param callback fired when name is set
+	 *
+	 * @throws JaxmppException
+	 */
+	public void setName(final String name, final Callback<String> callback) throws JaxmppException {
+		if (this.name.equals(name)) {
+			callback.onSuccess(name);
+			return;
+		}
 
-			@Override
-			public void onSuccess(Stanza responseStanza) throws JaxmppException {
-				Element x = responseStanza.findChild(new String[] { "iq", "query", "x"});
-				if (x != null) {
-					JabberDataElement data = new JabberDataElement(x);
-					if (data != null) {
-						AbstractField<JID> creator = data.getField("pubsub#creator");
-						if (creator != null) {
-							JabberDataElement form = new JabberDataElement(XDataType.submit);
-							form.addFixedField("device", id);
+		jaxmpp.getModule(PubSubModule.class)
+				.getNodeConfiguration(pubsubJid.getBareJid(), node, new PubSubModule.NodeConfigurationAsyncCallback() {
+					@Override
+					protected void onEror(IQ response, XMPPException.ErrorCondition errorCondition,
+										  PubSubErrorCondition pubSubErrorCondition) throws JaxmppException {
+						callback.onError(response, response.getErrorCondition());
+					}
 
-							JID creatorJid = creator.getFieldValue();
-							if (creatorJid.getResource() == null) {
-								creatorJid = JID.jidInstance(creatorJid.getBareJid(), "iot");
+					@Override
+					protected void onReceiveConfiguration(IQ responseStanza, String node, JabberDataElement config) {
+						try {
+							TextSingleField field = config.getField("pubsub#title");
+							if (field == null) {
+								config.addTextSingleField("pubsub#title", name);
+							} else {
+								field.setFieldValue(name);
 							}
-							devices.executeDeviceHostAdHocCommand(creatorJid, "remove-device", Action.execute,
-																			   form, new AdHocCommansModule.AdHocCommansAsyncCallback() {
-										@Override
-										protected void onResponseReceived(String sessionid, String node, State status,
-																		  JabberDataElement data)
-												throws JaxmppException {
-											callback.onSuccess(null);
-										}
-
+							jaxmpp.getModule(PubSubModule.class)
+									.configureNode(pubsubJid.getBareJid(), node, config, new AsyncCallback() {
 										@Override
 										public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
 												throws JaxmppException {
-											callback.onError(error);
+											callback.onError(responseStanza, responseStanza.getErrorCondition());
+										}
+
+										@Override
+										public void onSuccess(Stanza responseStanza) throws JaxmppException {
+											callback.onSuccess(name);
 										}
 
 										@Override
 										public void onTimeout() throws JaxmppException {
-											callback.onError(XMPPException.ErrorCondition.remote_server_timeout);
+											callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
 										}
 									});
-						} else {
-							callback.onError(XMPPException.ErrorCondition.internal_server_error);
+
+						} catch (JaxmppException ex) {
+							log.log(Level.WARNING, "Internal error", ex);
+							callback.onError(null, XMPPException.ErrorCondition.undefined_condition);
 						}
 					}
-				} else {
-					callback.onError(XMPPException.ErrorCondition.internal_server_error);
-				}
-			}
 
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(XMPPException.ErrorCondition.remote_server_timeout);
-			}
-		});
+					@Override
+					public void onTimeout() throws JaxmppException {
+						callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+					}
+				});
 	}
 
 	/**
 	 * Set or replace device value observer. It will be called whenever device value changes.
+	 *
 	 * @param observer
 	 */
 	public void setObserver(ValueChangedHandler<S> observer) {
@@ -362,40 +451,41 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	/**
-	 * Method user to parse element and create device configuration change event from it.
-	 * 
-	 * @param payload
-	 * @return
+	 * Method informs remote device that its value is being changed. It should result on
+	 * value change on the remote device.
+	 *
+	 * @param newValue
+	 * @param callback
+	 *
 	 * @throws JaxmppException
 	 */
-	protected static Configuration parseConfig(Element payload) throws JaxmppException {
-		Element valueEl = payload.getFirstChild();
-		Date timestamp = parseTimestamp(payload);
-		if (timestamp == null || valueEl == null) {
-			throw  new JaxmppException("Invalid value to parse");
-		}
+	protected void setValue(final S newValue, final Callback<S> callback) throws JaxmppException {
+		Element payload = encodeToPayload(newValue);
+		jaxmpp.getModule(PubSubModule.class)
+				.publishItem(pubsubJid.getBareJid(), node + "/state", null, payload, new AsyncCallback() {
+					@Override
+					public void onError(Stanza responseStanza, XMPPException.ErrorCondition error)
+							throws JaxmppException {
+						callback.onError(responseStanza, error);
+					}
 
-		JabberDataElement data = new JabberDataElement(valueEl);
-		return new Configuration(data, timestamp);
-	}
+					@Override
+					public void onSuccess(Stanza responseStanza) throws JaxmppException {
+						Device.this.value = newValue;
+						callback.onSuccess(newValue);
+					}
 
-	/**
-	 * Method to parse element and retrieve timestamp from it.
-	 * @param payload
-	 * @return
-	 * @throws XMLException
-	 */
-	protected static Date parseTimestamp(Element payload) throws XMLException {
-		if (payload == null || !"timestamp".equals(payload.getName())) {
-			return null;
-		}
-		return new DateTimeFormat().parse(payload.getAttribute("value"));
+					@Override
+					public void onTimeout() throws JaxmppException {
+						callback.onError(null, XMPPException.ErrorCondition.remote_server_timeout);
+					}
+				});
 	}
 
 	/**
 	 * Method called when local device representation is informed that remote
 	 * device state/value has changed.
-	 * 
+	 *
 	 * @param newValue
 	 */
 	protected void updateValue(S newValue) {
@@ -412,53 +502,102 @@ public abstract class Device<S extends Device.IValue> {
 	}
 
 	/**
-	 * Method informs remote device that its value is being changed. It should result on
-	 * value change on the remote device.
-	 * 
-	 * @param newValue
-	 * @param callback
-	 * @throws JaxmppException
+	 * Interface implemented by callbacks which should be called as a result of execution of asynchronous methods.
+	 *
+	 * @param <T>
 	 */
-	protected void setValue(final S newValue, final Callback<S> callback) throws JaxmppException {
-		Element payload = encodeToPayload(newValue);
-		jaxmpp.getModule(PubSubModule.class).publishItem(pubsubJid.getBareJid(), node + "/state", null, payload, new AsyncCallback() {
-			@Override
-			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
-				callback.onError(error);
-			}
+	public interface Callback<T> {
 
-			@Override
-			public void onSuccess(Stanza responseStanza) throws JaxmppException {
-				Device.this.value = newValue;
-				callback.onSuccess(newValue);
-			}
+		/**
+		 * Called when call returned error.
+		 *
+		 * @param response
+		 * @param errorCondition
+		 */
+		void onError(Stanza response, XMPPException.ErrorCondition errorCondition);
 
-			@Override
-			public void onTimeout() throws JaxmppException {
-				callback.onError(null);
-			}
-		});
+		/**
+		 * Called when call returned success.
+		 *
+		 * @param result
+		 */
+		void onSuccess(T result);
+
 	}
 
 	/**
-	 * Method serializes value to element representation.
-	 * @param value
-	 * @return
+	 * Interface which needs to be implemented by all classes representing device state/value.
+	 *
+	 * @param <D>
 	 */
-	protected abstract Element encodeToPayload(S value);
+	public interface IValue<D> {
+
+		/**
+		 * Get timestamp of value/state change
+		 *
+		 * @return
+		 */
+		Date getTimestamp();
+
+		/**
+		 * Get new value/state of a device
+		 *
+		 * @return
+		 */
+		D getValue();
+
+	}
 
 	/**
-	 * Method converts element into value object.
-	 * @param item
-	 * @return
+	 * Interface which needs to be implemented by any class which wants to observer device state/value changes.
+	 *
+	 * @param <T>
 	 */
-	protected abstract S parsePayload(Element item);
+	public interface ValueChangedHandler<T extends IValue>
+			extends EventHandler {
+
+		void valueChanged(T value);
+
+		/**
+		 * Event fired when value/state of device changes.
+		 *
+		 * @param <T>
+		 */
+		class ValueChangedEvent<T extends IValue>
+				extends Event<ValueChangedHandler<T>> {
+
+			private final T value;
+
+			public ValueChangedEvent(T value) {
+				this.value = value;
+			}
+
+			@Override
+			public void dispatch(ValueChangedHandler<T> handler) {
+				handler.valueChanged(value);
+			}
+
+		}
+	}
+
+	/**
+	 * Class represents configuration of a device.
+	 */
+	public static class Configuration
+			extends Value<JabberDataElement> {
+
+		public Configuration(JabberDataElement value, Date timestamp) {
+			super(value, timestamp);
+		}
+	}
 
 	/**
 	 * Base class for objects representing value/state of remote device.
+	 *
 	 * @param <D>
 	 */
-	public static class Value<D> implements IValue<D> {
+	public static class Value<D>
+			implements IValue<D> {
 
 		private final Date timestamp;
 		private final D value;
@@ -476,84 +615,6 @@ public abstract class Device<S extends Device.IValue> {
 		@Override
 		public D getValue() {
 			return value;
-		}
-	}
-
-	/**
-	 * Class represents configuration of a device.
-	 */
-	public static class Configuration extends Value<JabberDataElement> {
-
-		public Configuration(JabberDataElement value, Date timestamp) {
-			super(value, timestamp);
-		}
-	}
-
-	/**
-	 * Interface which needs to be implemented by all classes representing device state/value.
-	 * @param <D>
-	 */
-	public interface IValue<D> {
-
-		/**
-		 * Get timestamp of value/state change
-		 * @return
-		 */
-		Date getTimestamp();
-
-		/**
-		 * Get new value/state of a device
-		 * @return
-		 */
-		D getValue();
-
-	}
-
-	/**
-	 * Interface implemented by callbacks which should be called as a result of execution of asynchronous methods.
-	 * @param <T>
-	 */
-	public interface Callback<T> {
-
-		/**
-		 * Called when call returned error.
-		 * @param error
-		 */
-		void onError(XMPPException.ErrorCondition error);
-
-		/**
-		 * Called when call returned success.
-		 * @param result
-		 */
-		void onSuccess(T result);
-
-	}
-
-	/**
-	 * Interface which needs to be implemented by any class which wants to observer device state/value changes.
-	 * @param <T>
-	 */
-	public interface ValueChangedHandler<T extends IValue> extends EventHandler {
-
-		void valueChanged(T value);
-
-		/**
-		 * Event fired when value/state of device changes.
-		 * @param <T>
-		 */
-		class ValueChangedEvent<T extends IValue> extends Event<ValueChangedHandler<T>> {
-
-			private final T value;
-
-			public ValueChangedEvent(T value) {
-				this.value = value;
-			}
-
-			@Override
-			public void dispatch(ValueChangedHandler<T> handler) {
-				handler.valueChanged(value);
-			}
-
 		}
 	}
 }

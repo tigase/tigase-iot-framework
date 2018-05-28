@@ -18,6 +18,7 @@ import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.XMLException;
 import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
+import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +29,8 @@ import java.util.logging.Logger;
  *
  * @author andrzej
  */
-public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.client.Device.IValue<S>, D extends tigase.iot.framework.client.Device<T>> extends DeviceRemoteAware<S, T> {
+public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.client.Device.IValue<S>, D extends tigase.iot.framework.client.Device<T>>
+		extends DeviceRemoteAware<S, T> {
 
 	protected final D device;
 	protected final ClientFactory factory;
@@ -56,6 +58,14 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 
 		dialog.setWidget(panel);
 		dialog.center();
+	}
+
+	public void displayConfiguration(Configuration config) {
+		try {
+			new ConfigureDeviceDlg(factory, config);
+		} catch (JaxmppException ex) {
+			Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+		}
 	}
 
 	protected FlowPanel prepareContextMenu(DialogBox dialog) {
@@ -93,6 +103,68 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		return panel;
 	}
 
+	private void removeDevice() {
+		FlowPanel panel = new FlowPanel();
+		panel.setStylePrimaryName("context-menu");
+
+		DialogBox dialog = new DialogBox(true, true);
+		dialog.setStylePrimaryName("dialog-window");
+		dialog.setTitle("Remove device");
+
+		Label warning = new Label("Do you really want to remove this device?");
+		panel.add(warning);
+
+		Button remove = new Button("Yes");
+		remove.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				try {
+					device.remove(new tigase.iot.framework.client.Device.Callback<Object>() {
+						@Override
+						public void onError(Stanza response, XMPPException.ErrorCondition errorCondition) {
+							Window.alert("Failed to removed device: " + response);
+						}
+
+						@Override
+						public void onSuccess(Object result) {
+							try {
+								factory.devices().refreshDevices();
+							} catch (JaxmppException ex) {
+								Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+							}
+						}
+					});
+					dialog.hide();
+				} catch (JaxmppException ex) {
+					Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+				}
+			}
+		});
+		panel.add(remove);
+
+		dialog.setWidget(panel);
+		dialog.center();
+	}
+
+	protected void showConfigWindow() {
+		try {
+			device.retrieveConfiguration(new tigase.iot.framework.client.Device.Callback<Configuration>() {
+				@Override
+				public void onError(Stanza response, XMPPException.ErrorCondition errorCondition) {
+					Window.alert("Failed to retrieve device configuration: " + response);
+				}
+
+				@Override
+				public void onSuccess(Configuration result) {
+					displayConfiguration(result);
+				}
+
+			});
+		} catch (JaxmppException ex) {
+			Window.alert("Failed to retrieve device configuration: " + ex.getMessage());
+		}
+	}
+
 	protected void showRenameWindow() {
 		final DialogBox dialog = new DialogBox(true, true);
 		dialog.setStylePrimaryName("dialog-window");
@@ -117,8 +189,8 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 				try {
 					device.setName(name, new tigase.iot.framework.client.Device.Callback<String>() {
 						@Override
-						public void onError(XMPPException.ErrorCondition error) {
-							Window.alert("Could not rename device:" + error);
+						public void onError(Stanza response, XMPPException.ErrorCondition errorCondition) {
+							Window.alert("Could not rename device:" + response);
 						}
 
 						@Override
@@ -137,144 +209,76 @@ public abstract class DeviceRemoteConfigAware<S, T extends tigase.iot.framework.
 		dialog.center();
 	}
 
-	protected void showConfigWindow() {
-		try {
-			device.retrieveConfiguration(new tigase.iot.framework.client.Device.Callback<Configuration>() {
-				@Override
-				public void onError(XMPPException.ErrorCondition error) {
-					Window.alert("Failed to retrieve device configuration: " + error);
-				}
-
-				@Override
-				public void onSuccess(Configuration result) {
-					displayConfiguration(result);
-				}
-
-			});
-		} catch (JaxmppException ex) {
-			Window.alert("Failed to retrieve device configuration: " + ex.getMessage());
-		}
-	}
-
-	public void displayConfiguration(Configuration config) {
-		try {
-			new ConfigureDeviceDlg(factory, config);
-		} catch (JaxmppException ex) {
-			Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
-		}
-	}
-
-	private void removeDevice() {
-		FlowPanel panel = new FlowPanel();
-		panel.setStylePrimaryName("context-menu");
-
-		DialogBox dialog = new DialogBox(true, true);
-		dialog.setStylePrimaryName("dialog-window");
-		dialog.setTitle("Remove device");
-
-		Label warning = new Label("Do you really want to remove this device?");
-		panel.add(warning);
-		
-		Button remove = new Button("Yes");
-		remove.addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				try {
-					device.remove(new tigase.iot.framework.client.Device.Callback<Object>() {
-						@Override
-						public void onError(XMPPException.ErrorCondition error) {
-							Window.alert("Failed to removed device: " + error);
-						}
-						
-						@Override
-						public void onSuccess(Object result) {
-							try {
-								factory.devices().refreshDevices();
-							} catch (JaxmppException ex) {
-								Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
-							}
-						}
-					});
-					dialog.hide();
-				} catch (JaxmppException ex) {
-					Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
-				}
-			}			
-		});
-		panel.add(remove);
-		
-		dialog.setWidget(panel);
-		dialog.center();
-	}
-
 	private class ConfigureDeviceDlg {
 
 		private final Button advancedButton;
 		private final Button confirmButton;
 
 		public ConfigureDeviceDlg(ClientFactory factory, Configuration config) throws JaxmppException {
-				FlowPanel panel = new FlowPanel();
-				panel.setStylePrimaryName("context-menu");
+			FlowPanel panel = new FlowPanel();
+			panel.setStylePrimaryName("context-menu");
 
-				Form form = new Form();
-				form.setData(config.getValue());
+			Form form = new Form();
+			form.setData(config.getValue());
 
-				DialogBox dialog = new DialogBox(true, true);
-				dialog.setStylePrimaryName("dialog-window");
-				dialog.setTitle("Configuration");
+			DialogBox dialog = new DialogBox(true, true);
+			dialog.setStylePrimaryName("dialog-window");
+			dialog.setTitle("Configuration");
 
-				panel.add(form);
+			panel.add(form);
 
-				if (form.hasAdvanced()) {
-					advancedButton = new Button("Show advanced");
-					advancedButton.addClickHandler(new ClickHandler() {
-						@Override
-						public void onClick(ClickEvent clickEvent) {
-							try {
-								form.showAdvanced(!form.isAdvancedVisible());
-								if (form.isAdvancedVisible()) {
-									advancedButton.setHTML("Show basic");
-								} else {
-									advancedButton.setHTML("Show advanced");
-								}
-								confirmButton.setVisible(!form.isAdvancedVisible());
-							} catch (XMLException ex) {
-								// should not happen..
-							}
-						}
-					});
-					panel.add(advancedButton);
-				} else {
-					advancedButton = null;
-				}
-
-				confirmButton = new Button("Confirm");
-				confirmButton.addClickHandler(new ClickHandler() {
+			if (form.hasAdvanced()) {
+				advancedButton = new Button("Show advanced");
+				advancedButton.addClickHandler(new ClickHandler() {
 					@Override
-					public void onClick(ClickEvent event) {
+					public void onClick(ClickEvent clickEvent) {
 						try {
-							JabberDataElement config = form.getData();
-							dialog.hide();
-
-							device.setConfiguration(config, new tigase.iot.framework.client.Device.Callback<Configuration>() {
-								public void onError(XMPPException.ErrorCondition error) {
-
-								}
-
-								public void onSuccess(Configuration result) {
-
-								}
-							});
-						} catch (JaxmppException ex) {
-							Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+							form.showAdvanced(!form.isAdvancedVisible());
+							if (form.isAdvancedVisible()) {
+								advancedButton.setHTML("Show basic");
+							} else {
+								advancedButton.setHTML("Show advanced");
+							}
+							confirmButton.setVisible(!form.isAdvancedVisible());
+						} catch (XMLException ex) {
+							// should not happen..
 						}
 					}
 				});
-				panel.add(confirmButton);
+				panel.add(advancedButton);
+			} else {
+				advancedButton = null;
+			}
 
-				dialog.setWidget(panel);
-				dialog.center();
+			confirmButton = new Button("Confirm");
+			confirmButton.addClickHandler(new ClickHandler() {
+				@Override
+				public void onClick(ClickEvent event) {
+					try {
+						JabberDataElement config = form.getData();
+						dialog.hide();
+
+						device.setConfiguration(config,
+												new tigase.iot.framework.client.Device.Callback<Configuration>() {
+													public void onError(Stanza response,
+																		XMPPException.ErrorCondition errorCondition) {
+
+													}
+
+													public void onSuccess(Configuration result) {
+
+													}
+												});
+					} catch (JaxmppException ex) {
+						Logger.getLogger(DeviceRemoteConfigAware.class.getName()).log(Level.SEVERE, null, ex);
+					}
+				}
+			});
+			panel.add(confirmButton);
+
+			dialog.setWidget(panel);
+			dialog.center();
 		}
-		
+
 	}
 }
