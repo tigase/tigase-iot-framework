@@ -454,7 +454,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 								}
 								grid.setWidget(row, 2, action);
 
-								action = createButton("\u274c", "Title");
+								action = createButton("\u274c", "Remove");
 								action.addClickHandler(new ClickHandler() {
 									@Override
 									public void onClick(ClickEvent clickEvent) {

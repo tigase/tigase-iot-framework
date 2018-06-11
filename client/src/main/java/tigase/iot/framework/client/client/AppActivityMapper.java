@@ -7,6 +7,8 @@ package tigase.iot.framework.client.client;
 import com.google.gwt.activity.shared.Activity;
 import com.google.gwt.activity.shared.ActivityMapper;
 import com.google.gwt.place.shared.Place;
+import tigase.iot.framework.client.client.account.AccountLockedActivity;
+import tigase.iot.framework.client.client.account.AccountLockedPlace;
 import tigase.iot.framework.client.client.auth.AuthActivity;
 import tigase.iot.framework.client.client.auth.AuthPlace;
 import tigase.iot.framework.client.client.devices.DevicesListActivity;
@@ -32,6 +34,9 @@ public class AppActivityMapper implements ActivityMapper {
 		}
 		if (place instanceof DevicesListPlace) {
 			return new DevicesListActivity((DevicesListPlace) place, clientFactory);
+		}
+		if (place instanceof AccountLockedPlace) {
+			return new AccountLockedActivity((AccountLockedPlace) place, clientFactory);
 		}
 		return null;
 	}

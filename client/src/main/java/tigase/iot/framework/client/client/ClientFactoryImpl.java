@@ -13,12 +13,17 @@ import com.google.web.bindery.event.shared.SimpleEventBus;
 import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.Hosts;
 import tigase.iot.framework.client.Hub;
+import tigase.iot.framework.client.client.account.AccountLockedPlace;
+import tigase.iot.framework.client.client.account.AccountLockedView;
+import tigase.iot.framework.client.client.account.AccountLockedViewImpl;
 import tigase.iot.framework.client.client.auth.AuthEvent;
 import tigase.iot.framework.client.client.auth.AuthView;
 import tigase.iot.framework.client.client.auth.AuthViewImpl;
+import tigase.iot.framework.client.client.devices.DevicesListPlace;
 import tigase.iot.framework.client.client.devices.DevicesListView;
 import tigase.iot.framework.client.client.devices.DevicesListViewImpl;
 import tigase.iot.framework.client.client.ui.MessageDialog;
+import tigase.iot.framework.client.modules.AccountStatusModule;
 import tigase.jaxmpp.core.client.JID;
 import tigase.jaxmpp.core.client.JaxmppCore;
 import tigase.jaxmpp.core.client.SessionObject;
@@ -29,6 +34,7 @@ import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.auth.AuthModule;
 import tigase.jaxmpp.core.client.xmpp.modules.auth.SaslModule;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule.Identity;
+import tigase.jaxmpp.core.client.xmpp.modules.presence.PresenceModule;
 import tigase.jaxmpp.core.client.xmpp.modules.pubsub.PubSubModule;
 import tigase.jaxmpp.core.client.xmpp.modules.streammng.StreamManagementModule;
 import tigase.jaxmpp.core.client.xmpp.utils.DateTimeFormat;
@@ -54,6 +60,7 @@ public class ClientFactoryImpl implements ClientFactory {
 	private final Devices devices;
 
 	private final EventBus eventBus = GWT.create(SimpleEventBus.class);
+	private final AccountLockedView accountLockedView;
 	private final AuthViewImpl authView;
 	private final DevicesListViewImpl devicesListView;
 	private final PlaceController placeController;
@@ -115,7 +122,8 @@ public class ClientFactoryImpl implements ClientFactory {
 			}
 		});
 		hub = new Hub(jaxmpp, devices);
-		
+
+		accountLockedView = new AccountLockedViewImpl(this);
 		authView = new AuthViewImpl(this);
 		devicesListView = new DevicesListViewImpl(this);
 		placeController = new PlaceController(eventBus());
@@ -186,6 +194,25 @@ public class ClientFactoryImpl implements ClientFactory {
 			}
 		});
 
+		jaxmpp.getEventBus().addHandler(AccountStatusModule.AccountStatusChangedHandler.AccountStatusChangedEvent.class,
+										new AccountStatusModule.AccountStatusChangedHandler() {
+											@Override
+											public void accountStatusChanged(SessionObject sessionObject,
+																			 Hub.RetrieveAccountsCallback.Result.Status status) {
+												if (status != Hub.RetrieveAccountsCallback.Result.Status.active) {
+													placeController.goTo(new AccountLockedPlace());
+												} else {
+													placeController.goTo(new DevicesListPlace());
+													try {
+														jaxmpp.getModule(PresenceModule.class).sendInitialPresence();
+														devices().refreshDevices();
+													} catch (Exception ex) {
+														// nothing to do..
+													}
+												}
+											}
+										});
+
 	}
 	
 	@Override
@@ -202,6 +229,11 @@ public class ClientFactoryImpl implements ClientFactory {
 	@Override
 	public EventBus eventBus() {
 		return eventBus;
+	}
+
+	@Override
+	public AccountLockedView accountLockedView() {
+		return accountLockedView;
 	}
 
 	@Override

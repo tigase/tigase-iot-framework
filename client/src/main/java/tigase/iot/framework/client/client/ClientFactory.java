@@ -7,6 +7,7 @@ package tigase.iot.framework.client.client;
 
 import com.google.gwt.place.shared.PlaceController;
 import com.google.web.bindery.event.shared.EventBus;
+import tigase.iot.framework.client.client.account.AccountLockedView;
 import tigase.jaxmpp.gwt.client.Jaxmpp;
 import tigase.iot.framework.client.Devices;
 import tigase.iot.framework.client.Hosts;
@@ -25,8 +26,10 @@ public interface ClientFactory {
 	EventBus eventBus();
 	
 	Devices devices();
-	
-	AuthView authView();		
+
+	AccountLockedView accountLockedView();
+
+	AuthView authView();
 
 	DevicesListView devicesListView();
 	

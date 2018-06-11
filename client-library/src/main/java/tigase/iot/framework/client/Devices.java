@@ -147,6 +147,15 @@ public class Devices {
 						}
 					}
 				});
+
+		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedOutHandler.LoggedOutEvent.class, new JaxmppCore.LoggedOutHandler() {
+			@Override
+			public void onLoggedOut(SessionObject sessionObject) {
+				devices.clear();
+				Devices.this.jaxmpp.getModule(FeatureProviderModule.class).resetNewDevicesNodes();
+				devicesNodesDiscoveryFinished();
+			}
+		});
 	}
 
 	private void checkForNewDevice(final JID jid, final String node) throws JaxmppException {

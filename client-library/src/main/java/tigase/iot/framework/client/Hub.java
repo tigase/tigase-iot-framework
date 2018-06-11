@@ -20,6 +20,7 @@
  */
 package tigase.iot.framework.client;
 
+import tigase.iot.framework.client.modules.AccountStatusModule;
 import tigase.iot.framework.client.modules.SubscriptionModule;
 import tigase.jaxmpp.core.client.*;
 import tigase.jaxmpp.core.client.eventbus.EventHandler;
@@ -50,6 +51,7 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 		this.jaxmpp = jaxmpp;
 		this.devices = devices;
 		this.jaxmpp.getModulesManager().register(new SubscriptionModule());
+		this.jaxmpp.getModulesManager().register(new AccountStatusModule());
 		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, this);
 		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionChangedHandler.SubscriptionChangedEvent.class, this);
 	}

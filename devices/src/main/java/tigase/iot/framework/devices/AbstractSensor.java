@@ -34,6 +34,13 @@ import java.util.logging.Logger;
 /**
  * Abstract implementation of {@link tigase.iot.framework.devices.ISensor} interfaces.
  *
+ * T needs to be a class representing a value returned by this sensor. If should be one of the following list of classes
+ * (available in tigase.iot.framework.values package) for supported value types:
+ * Humidity
+ * Light
+ * Movement
+ * Pressure
+ * Temperature
  * Created by andrzej on 22.10.2016.
  */
 public abstract class AbstractSensor<T extends IValue>
@@ -55,6 +62,18 @@ public abstract class AbstractSensor<T extends IValue>
 	private String type;
 	private T value;
 
+	/**
+	 * Type and name variables need to be filled with device type id and corresponding device type name. Those can
+	 * be one of the pairs from the following list:
+	 *
+	 * type = "humidity-sensor"; name = "Humidity sensor";
+	 * type = "light-sensor"; name = "Light sensor";
+	 * type = "movement-sensor"; name = "Motion sensor";
+	 * type = "pressure-sensor"; name = "Pressure sensor";
+	 * type = "temperature-sensor"; name = "Temperature sensor";
+	 *
+	 * Label should be a name of the actual sensors used to read data, ie. BH1750
+	 */
 	public AbstractSensor(String type, String name, String label) {
 		this.type = type;
 		this.name = name;
