@@ -120,6 +120,44 @@ public void onValueChanged(ExtendedPubSubNodesManager.ValueChangedEvent event) {
 It will be called whenever new state/value will be published by any sensor or a device. You need to check `source` variable of a `ValueChangedEvent` to look for a node of a device in which state you are interested in.
 In `value` variable of a `ValueChangedEvent` you will find newly published device state which node you will find in `source` variable.
 
+=== Quickstart
+Tigase IoT Framework provides you with examples for creating support for a new devices in Java and Python.
+At https://tigase.tech/projects/tigase-iot-framework-examples/ you will find a project with examples which will help you get started with adding support for a new device.
+All you need to do is:
+
+==== Clone a repository containing examples
+[source,bash]
+-----
+git clone https://git.tigase.tech/tigase-iot-framework-examples/ tigase-iot-framework-examples
+-----
+
+==== Choose a language of your choice
+We provide support for Java and Python, so you may write code for communication in Java or Python and only do some basic mapping in Java to expose your driver to the IoT Framework.
+
+==== Open project with examples for the language which you selected
+You may edit source codes of the project in any text editor you want. But we would suggest usage of some IDE with support for Java and Gradle.
+
+==== Modify example drivers
+At this point, you may select proper template and fill it with your code for communicating with the sensor.
+
+==== Run your code
+To make it easier, our example projects contain gradle `run` task, so you can start IoT framework with your driver with just one command:
+[source,bash]
+-----
+./gradlew run
+-----
+This command will start Tigase IoT Framework (new instance) and will try to connect to the IoT hub. All configuration of this instances will be stored in `etc/config.tdsl` file in your examples project directory.
+
+==== Package your driver
+When you are done, you may run
+[source,bash]
+-----
+./gradlew jar
+-----
+which will create a jar file which you may add to your existing Tigase IoT Framework installation.
+
+NOTE: Jar file will be located at `build/libs` directory in your examples project directory.
+
 === Creating new project using Tigase IoT Framework
 
 ==== Creating project
