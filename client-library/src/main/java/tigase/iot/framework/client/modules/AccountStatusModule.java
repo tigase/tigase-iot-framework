@@ -34,12 +34,21 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 
 import java.util.logging.Level;
 
-public class AccountStatusModule extends AbstractIQModule {
+public class AccountStatusModule
+		extends AbstractIQModule {
 
 	public static final String IOT_ACCOUNT_XMLNS = "http://tigase.org/protocol/iot-account";
 
 	private static final Criteria CRITERIA = ElementCriteria.name("iq")
 			.add(ElementCriteria.name("account", IOT_ACCOUNT_XMLNS));
+
+	public static Hub.RetrieveAccountsCallback.Result.Status getStatus(SessionObject sessionObject) {
+		return sessionObject.getProperty(IOT_ACCOUNT_XMLNS + "#AccountStatus");
+	}
+
+	private static void setStatus(SessionObject sessionObject, Hub.RetrieveAccountsCallback.Result.Status status) {
+		sessionObject.setProperty(IOT_ACCOUNT_XMLNS + "#AccountStatus", status);
+	}
 
 	@Override
 	public Criteria getCriteria() {
@@ -61,9 +70,11 @@ public class AccountStatusModule extends AbstractIQModule {
 		Element accountEl = iq.getChildrenNS("account", IOT_ACCOUNT_XMLNS);
 		String statusStr = accountEl.getAttribute("status");
 		try {
-			fireEvent(new AccountStatusChangedHandler.AccountStatusChangedEvent(this.context.getSessionObject(),
-																				Hub.RetrieveAccountsCallback.Result.Status
-																						.valueOf(statusStr)));
+			Hub.RetrieveAccountsCallback.Result.Status status = Hub.RetrieveAccountsCallback.Result.Status.valueOf(
+					statusStr);
+			setStatus(this.context.getSessionObject(), status);
+			fireEvent(
+					new AccountStatusChangedHandler.AccountStatusChangedEvent(this.context.getSessionObject(), status));
 		} catch (Throwable ex) {
 			log.log(Level.WARNING, "count not process account status change notification", ex);
 		}
@@ -74,7 +85,8 @@ public class AccountStatusModule extends AbstractIQModule {
 
 		void accountStatusChanged(SessionObject sessionObject, Hub.RetrieveAccountsCallback.Result.Status status);
 
-		class AccountStatusChangedEvent extends JaxmppEvent<AccountStatusChangedHandler> {
+		class AccountStatusChangedEvent
+				extends JaxmppEvent<AccountStatusChangedHandler> {
 
 			public final Hub.RetrieveAccountsCallback.Result.Status status;
 
