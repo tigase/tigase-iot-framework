@@ -466,7 +466,7 @@ public class Devices {
 			if (resource == null) {
 				resource = "";
 			}
-			return "forward:" + "tigase-iot-hub.local" + "/" + resource + "/" + node;
+			return "forward:" + jid.getBareJid() + "/" + resource + "/" + node;
 		}
 		return node;
 	}
