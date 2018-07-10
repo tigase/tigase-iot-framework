@@ -215,7 +215,7 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 
 	private void executeManageAccountsAction(JabberDataElement data, AsyncCallback callback) throws JaxmppException {
 		//JID jid = devices.isRemoteMode() ? : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
-		devices.executeDeviceHostAdHocCommand(JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain()),
+		devices.executeDeviceHostAdHocCommand(JID.jidInstance("tigase-iot-hub.local"),
 											  "manage-accounts", Action.execute, data, callback);
 	}
 
