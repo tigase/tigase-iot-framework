@@ -80,3 +80,23 @@ run {
         args("-log", "etc/logger.properties")
     }
 }
+
+tasks.withType(CreateStartScripts).each { task ->
+    task.doLast {
+        String text = task.windowsScript.text;
+        text = text.replaceFirst(/(set CLASSPATH=%APP_HOME%\\lib\\).*/, { "${it[1]}*" })
+        task.windowsScript.write text;
+
+        text = task.unixScript.text;
+        def lines = text.split("\n").collect { line ->
+            if (line.startsWith("CLASSPATH=")) {
+                int idx = line.indexOf(':');
+                return line.substring(0, idx + 1) + "`ls -d \${APP_HOME}/lib/*.jar 2>/dev/null | grep -v wrapper | tr '\\n' :`/lib/xxx.jar";
+            } else {
+                return line;
+            }
+        };
+        
+        task.unixScript.write lines.join("\n");
+    }
+}
