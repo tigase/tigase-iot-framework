@@ -548,7 +548,9 @@ public class Devices {
 									public void after(
 											PresenceModule.BeforePresenceSendHandler.BeforePresenceSendEvent event) {
 										try {
-											jaxmpp.send(event.getPresence());
+											if (jaxmpp.isConnected()) {
+												jaxmpp.send(event.getPresence());
+											}
 										} catch (JaxmppException ex) {
 											ex.printStackTrace();
 										}
