@@ -4,18 +4,20 @@ subprojects {
     group 'tigase.iot'
     version '2.0.0-SNAPSHOT'
 
-    publishing {
-        repositories {
-            mavenLocal()
-            maven {
-                credentials {
-                    username "$mavenRepoUsername"
-                    password "$mavenRepoPassword"
-                }
-                if (project.version.endsWith("-SNAPSHOT")) {
-                    url "http://maven-repo.tigase.org/repository/snapshot"
-                } else {
-                    url "http://maven-repo.tigase.org/repository/release"
+    if (project.hasProperty("mavenRepoUsername") && project.hasProperty("mavenRepoPassword")) {
+        publishing {
+            repositories {
+                mavenLocal()
+                maven {
+                    credentials {
+                        username "$mavenRepoUsername"
+                        password "$mavenRepoPassword"
+                    }
+                    if (project.version.endsWith("-SNAPSHOT")) {
+                        url "http://maven-repo.tigase.org/repository/snapshot"
+                    } else {
+                        url "http://maven-repo.tigase.org/repository/release"
+                    }
                 }
             }
         }
