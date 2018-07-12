@@ -128,12 +128,12 @@ public class SubscriptionModule extends AbstractIQModule {
 
 		public final String id;
 		public final int devices;
-		public final double changesPerSecond;
+		public final double changesPerMinute;
 
-		Subscription(String id, int devices, double changesPerSecond) {
+		Subscription(String id, int devices, double changesPerMinute) {
 			this.id = id;
 			this.devices = devices;
-			this.changesPerSecond = changesPerSecond;
+			this.changesPerMinute = changesPerMinute;
 		}
 
 		private static Subscription fromElement(Element elem) throws XMLException {
@@ -143,17 +143,17 @@ public class SubscriptionModule extends AbstractIQModule {
 
 			String id = elem.getAttribute("id");
 			int devices = -1;
-			double changesPerSecond = -1.0;
+			double changesPerMinute = -1.0;
 			String tmp = elem.getAttribute("devices-limit");
 			if (tmp != null) {
 				devices = Integer.parseInt(tmp);
 			}
-			tmp = elem.getAttribute("changes-per-second");
+			tmp = elem.getAttribute("changes-per-minute");
 			if (tmp != null) {
-				changesPerSecond = Double.parseDouble(tmp);
+				changesPerMinute = Double.parseDouble(tmp);
 			}
 
-			return new Subscription(id, devices, changesPerSecond);
+			return new Subscription(id, devices, changesPerMinute);
 		}
 	}
 

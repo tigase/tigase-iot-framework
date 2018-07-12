@@ -231,7 +231,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 							SubscriptionModule.Subscription sub = factory.hub().getSubscription();
 							String txt = "";
 							if (sub == null) {
-								txt = "Subscription informations not available.<br/>Please try again later.";
+								txt = "Subscription information not available.<br/>Please try again later.";
 							} else {
 								txt = "Subscription allows for:<br/><ul>";
 								txt += "<li>";
@@ -241,10 +241,10 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 									txt += "Usage of " + sub.devices + " devices";
 								}
 								txt += "</li><li>";
-								if (sub.changesPerSecond < 0) {
-									txt += "Unlimited changes per second";
+								if (sub.changesPerMinute < 0) {
+									txt += "Unlimited changes per minute";
 								} else {
-									txt += "" + String.valueOf(sub.changesPerSecond) + " changes per second";
+									txt += "" + String.valueOf((int) sub.changesPerMinute) + " changes per minute";
 								}
 								txt += "</li></ul>";
 							}
