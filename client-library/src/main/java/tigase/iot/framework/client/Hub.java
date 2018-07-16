@@ -28,10 +28,7 @@ import tigase.jaxmpp.core.client.eventbus.JaxmppEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xml.Element;
 import tigase.jaxmpp.core.client.xml.XMLException;
-import tigase.jaxmpp.core.client.xmpp.forms.AbstractField;
-import tigase.jaxmpp.core.client.xmpp.forms.Field;
-import tigase.jaxmpp.core.client.xmpp.forms.JabberDataElement;
-import tigase.jaxmpp.core.client.xmpp.forms.XDataType;
+import tigase.jaxmpp.core.client.xmpp.forms.*;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.Action;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.AdHocCommansModule;
 import tigase.jaxmpp.core.client.xmpp.modules.adhoc.State;
@@ -40,11 +37,13 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.SubscriptionChangedHandler {
+public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.SubscriptionChangedHandler,
+							SubscriptionModule.SubscriptionUsageChangedHandler {
 
 	private final JaxmppCore jaxmpp;
 	private final Devices devices;
 	private SubscriptionModule.Subscription subscription;
+	private SubscriptionModule.SubscriptionUsage subscriptionUsage;
 	private CloudSettings cloudSettings;
 
 	public Hub(JaxmppCore jaxmpp, Devices devices) {
@@ -54,6 +53,7 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 		this.jaxmpp.getModulesManager().register(new AccountStatusModule());
 		this.jaxmpp.getEventBus().addHandler(JaxmppCore.LoggedInHandler.LoggedInEvent.class, this);
 		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionChangedHandler.SubscriptionChangedEvent.class, this);
+		this.jaxmpp.getEventBus().addHandler(SubscriptionModule.SubscriptionUsageChangedHandler.SubscriptionUsageChangedEvent.class, this);
 	}
 
 	public CloudSettings getCloudSettings() {
@@ -213,6 +213,35 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 		 return subscription;
 	}
 
+	public SubscriptionModule.SubscriptionUsage getSubscriptionUsage() {
+		return subscriptionUsage;
+	}
+
+	public void retrieveHubSubscriptionUsage(final CloudStatiscsCallback callback) throws JaxmppException {
+		devices.executeDeviceHostAdHocCommand(JID.jidInstance("pubsub.tigase-iot-hub.local"), "get-cloud-statistics", Action.execute, null, new AdHocCommansModule.AdHocCommansAsyncCallback() {
+			@Override
+			protected void onResponseReceived(String sessionid, String node, State status, JabberDataElement data)
+					throws JaxmppException {
+
+				FixedField field = data.getField("Devices");
+				int devices = Integer.parseInt(field.getFieldValue());
+				field = data.getField("Queued items");
+				int queue = Integer.parseInt(field.getFieldValue());
+				callback.onResult(new CloudStatistics(devices, queue), null, null);
+			}
+
+			@Override
+			public void onError(Stanza responseStanza, XMPPException.ErrorCondition error) throws JaxmppException {
+				 callback.onResult(null, error, responseStanza.getErrorMessage());
+			}
+
+			@Override
+			public void onTimeout() throws JaxmppException {
+				callback.onResult(null, XMPPException.ErrorCondition.remote_server_timeout, null);
+			}
+		});
+	}
+
 	private void executeManageAccountsAction(JabberDataElement data, AsyncCallback callback) throws JaxmppException {
 		//JID jid = devices.isRemoteMode() ? : JID.jidInstance(jaxmpp.getSessionObject().getUserBareJid().getDomain());
 		devices.executeDeviceHostAdHocCommand(JID.jidInstance("tigase-iot-hub.local"),
@@ -309,6 +338,12 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 	@Override
 	public void subscriptionChanged(SessionObject sessionObject, SubscriptionModule.Subscription subscription) {
 		this.subscription = subscription;
+	}
+
+	@Override
+	public void subscriptionUsageChanged(SessionObject sessionObject,
+										 SubscriptionModule.SubscriptionUsage subscriptionUsage) {
+		this.subscriptionUsage = subscriptionUsage;
 	}
 
 	public interface RemoteConnectionCredentialsCallback {
@@ -466,5 +501,23 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 				handler.onCloudSettingsChanged(sessionObject, settings);
 			}
 		}
+	}
+
+	public static class CloudStatistics {
+
+		public final int devices;
+		public final int queuedChanges;
+
+		CloudStatistics(int devices, int queuedChanges) {
+			this.devices = devices;
+			this.queuedChanges = queuedChanges;
+		}
+
+	}
+
+	public interface CloudStatiscsCallback {
+
+		void onResult(CloudStatistics statistics, XMPPException.ErrorCondition errorCondition, String message) throws JaxmppException;
+
 	}
 }

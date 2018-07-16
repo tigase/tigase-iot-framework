@@ -25,6 +25,7 @@ import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.criteria.Criteria;
 import tigase.jaxmpp.core.client.criteria.ElementCriteria;
+import tigase.jaxmpp.core.client.criteria.Or;
 import tigase.jaxmpp.core.client.eventbus.EventHandler;
 import tigase.jaxmpp.core.client.eventbus.JaxmppEvent;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
@@ -36,13 +37,15 @@ import tigase.jaxmpp.core.client.xmpp.stanzas.IQ;
 import tigase.jaxmpp.core.client.xmpp.stanzas.Stanza;
 import tigase.jaxmpp.core.client.xmpp.stanzas.StanzaType;
 
-public class SubscriptionModule extends AbstractIQModule {
+public class SubscriptionModule
+		extends AbstractIQModule {
 
 	public static final String SUBSCRIPTION_XMLNS = "http://tigase.org/protocol/subscriptions#iot";
 
 	private static final Criteria CRITERIA = ElementCriteria.name("iq")
-			.add(ElementCriteria.name("subscription", SUBSCRIPTION_XMLNS));
-	
+			.add(new Or(ElementCriteria.name("subscription", SUBSCRIPTION_XMLNS),
+						ElementCriteria.name("usage", SUBSCRIPTION_XMLNS)));
+
 	@Override
 	public Criteria getCriteria() {
 		return CRITERIA;
@@ -60,7 +63,14 @@ public class SubscriptionModule extends AbstractIQModule {
 
 	@Override
 	protected void processSet(IQ iq) throws JaxmppException {
-		processSubscription(Subscription.fromElement(iq.getChildrenNS("subscription", SUBSCRIPTION_XMLNS)));
+		Element el = iq.getChildrenNS("subscription", SUBSCRIPTION_XMLNS);
+		if (el != null) {
+			processSubscription(Subscription.fromElement(el));
+		}
+		el = iq.getChildrenNS("usage", SUBSCRIPTION_XMLNS);
+		if (el != null) {
+			processSubscriptionUsage(SubscriptionUsage.fromElement(el));
+		}
 
 		IQ result = IQ.create();
 		result.setId(iq.getId());
@@ -88,7 +98,7 @@ public class SubscriptionModule extends AbstractIQModule {
 					callback.onSuccess(subscription);
 				}
 			}
-			
+
 			@Override
 			public void onTimeout() throws JaxmppException {
 				if (callback != null) {
@@ -100,15 +110,27 @@ public class SubscriptionModule extends AbstractIQModule {
 
 	protected void processSubscription(Subscription subscription) throws XMLException {
 		if (subscription != null) {
-			context.getEventBus().fire(new SubscriptionChangedHandler.SubscriptionChangedEvent(context.getSessionObject(), subscription));
+			context.getEventBus()
+					.fire(new SubscriptionChangedHandler.SubscriptionChangedEvent(context.getSessionObject(),
+																				  subscription));
 		}
 	}
 
-	public interface SubscriptionChangedHandler extends EventHandler {
+	protected void processSubscriptionUsage(SubscriptionUsage usage) throws XMLException {
+		if (usage != null) {
+			context.getEventBus()
+					.fire(new SubscriptionUsageChangedHandler.SubscriptionUsageChangedEvent(context.getSessionObject(),
+																							usage));
+		}
+	}
+
+	public interface SubscriptionChangedHandler
+			extends EventHandler {
 
 		void subscriptionChanged(SessionObject sessionObject, Subscription subscription);
 
-		class SubscriptionChangedEvent extends JaxmppEvent<SubscriptionChangedHandler> {
+		class SubscriptionChangedEvent
+				extends JaxmppEvent<SubscriptionChangedHandler> {
 
 			public final Subscription subscription;
 
@@ -122,6 +144,29 @@ public class SubscriptionModule extends AbstractIQModule {
 				subscriptionChangedHandler.subscriptionChanged(sessionObject, subscription);
 			}
 		}
+	}
+
+	public interface SubscriptionUsageChangedHandler
+			extends EventHandler {
+
+		void subscriptionUsageChanged(SessionObject sessionObject, SubscriptionUsage subscriptionUsage);
+
+		class SubscriptionUsageChangedEvent
+				extends JaxmppEvent<SubscriptionUsageChangedHandler> {
+
+			private final SubscriptionUsage usage;
+
+			protected SubscriptionUsageChangedEvent(SessionObject sessionObject, SubscriptionUsage usage) {
+				super(sessionObject);
+				this.usage = usage;
+			}
+
+			@Override
+			public void dispatch(SubscriptionUsageChangedHandler handler) throws Exception {
+				handler.subscriptionUsageChanged(sessionObject, usage);
+			}
+		}
+
 	}
 
 	public static class Subscription {
@@ -166,5 +211,29 @@ public class SubscriptionModule extends AbstractIQModule {
 		public void onSuccess(Stanza responseStanza) throws JaxmppException {
 			onSuccess(Subscription.fromElement(responseStanza.getChildrenNS("subscription", SUBSCRIPTION_XMLNS)));
 		}
+	}
+
+	public static class SubscriptionUsage {
+
+		public final double changesPerMinute;
+
+		SubscriptionUsage(double changesPerMinute) {
+			this.changesPerMinute = changesPerMinute;
+		}
+
+		private static SubscriptionUsage fromElement(Element elem) throws XMLException {
+			if (elem == null) {
+				throw new IllegalArgumentException("null");
+			}
+
+			double changesPerMinute = -1.0;
+			String tmp = elem.getAttribute("changes-per-minute");
+			if (tmp != null) {
+				changesPerMinute = Double.parseDouble(tmp);
+			}
+
+			return new SubscriptionUsage(changesPerMinute);
+		}
+
 	}
 }

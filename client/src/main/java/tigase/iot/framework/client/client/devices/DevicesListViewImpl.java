@@ -26,6 +26,7 @@ import tigase.iot.framework.client.client.ui.TopBar;
 import tigase.iot.framework.client.devices.TemperatureSensor;
 import tigase.iot.framework.client.modules.SubscriptionModule;
 import tigase.jaxmpp.core.client.JID;
+import tigase.jaxmpp.core.client.SessionObject;
 import tigase.jaxmpp.core.client.XMPPException;
 import tigase.jaxmpp.core.client.exceptions.JaxmppException;
 import tigase.jaxmpp.core.client.xmpp.modules.disco.DiscoveryModule;
@@ -52,8 +53,9 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 	private final FlexGrid flexGrid;
 
+	private final Label changesPerMinuteLabel;
 	private final Label hostsLabel;
-	
+
 	public DevicesListViewImpl(ClientFactory factory) {
 		this.factory = factory;
 
@@ -68,7 +70,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 		DockLayoutPanel panel = new DockLayoutPanel(Style.Unit.EM);
 
 		TopBar topBar = new TopBar("Devices");
-		
+
 		topBar.addAction("\u2716", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
@@ -86,7 +88,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				showAllDevicesList();
 			}
 		});
-		
+
 		topBar.addAction("\uD83D\uDCF6", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
@@ -229,26 +231,53 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 							dialog.hide();
 
 							SubscriptionModule.Subscription sub = factory.hub().getSubscription();
-							String txt = "";
 							if (sub == null) {
-								txt = "Subscription information not available.<br/>Please try again later.";
+								String txt = "Subscription information not available.<br/>Please try again later.";
+								new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
 							} else {
-								txt = "Subscription allows for:<br/><ul>";
-								txt += "<li>";
-								if (sub.devices < 0) {
-									txt += "Usage of any number of devices";
-								} else {
-									txt += "Usage of " + sub.devices + " devices";
+								try {
+									factory.hub().retrieveHubSubscriptionUsage(new Hub.CloudStatiscsCallback() {
+										@Override
+										public void onResult(Hub.CloudStatistics statistics, XMPPException.ErrorCondition errorCondition,
+															 String message) throws JaxmppException {
+											String txt = txt = "Subscription allows for:<br/><ul>";
+											txt += "<li>";
+											if (sub.devices < 0) {
+												txt += "Usage of any number of devices";
+											} else {
+												txt += "Usage of " + sub.devices + " devices";
+											}
+											txt += "</li><li>";
+											if (sub.changesPerMinute < 0) {
+												txt += "Unlimited changes per minute";
+											} else {
+												txt += "" + String.valueOf((int) sub.changesPerMinute) +
+														" changes per minute";
+											}
+											txt += "</li></ul>";
+
+											if (statistics != null) {
+												txt += "<br/>";
+												txt += "You have " + statistics.devices + " devices";
+												SubscriptionModule.SubscriptionUsage usage = factory.hub().getSubscriptionUsage();
+												if (usage != null) {
+													txt += "and you are sending " + String.valueOf((int) usage.changesPerMinute) + " requests per minute";
+												}
+												txt += ".";
+
+												if (statistics.queuedChanges > 0) {
+													txt += "<br/>";
+													txt += String.valueOf(statistics.queuedChanges) + " changes waiting for delivery to the IoT1 Cloud!";
+												}
+											}
+											new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
+										}
+									});
+								} catch (JaxmppException ex) {
+									String txt = "Subscription information not available.<br/>Please try again later.";
+									new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
 								}
-								txt += "</li><li>";
-								if (sub.changesPerMinute < 0) {
-									txt += "Unlimited changes per minute";
-								} else {
-									txt += "" + String.valueOf((int) sub.changesPerMinute) + " changes per minute";
-								}
-								txt += "</li></ul>";
 							}
-							new MessageDialog("Subscription", SafeHtmlUtils.fromSafeConstant(txt)).show();
 						}
 					});
 					panel.add(subscriptionStatus);
@@ -258,7 +287,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				dialog.center();
 			}
 		});
-		
+
 		topBar.addAction("\uD83D\uDD04", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
@@ -267,9 +296,28 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 				} catch (JaxmppException ex) {
 					Logger.getLogger(DevicesListViewImpl.class.getName()).log(Level.SEVERE, null, ex);
 				}
-			}			
+			}
 		});
-		
+
+		changesPerMinuteLabel = topBar.addAction("\u23F1 0 req/min", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent clickEvent) {
+				// nothing to do...
+			}
+		});
+		factory.jaxmpp()
+				.getEventBus()
+				.addHandler(SubscriptionModule.SubscriptionUsageChangedHandler.SubscriptionUsageChangedEvent.class,
+							new SubscriptionModule.SubscriptionUsageChangedHandler() {
+
+								@Override
+								public void subscriptionUsageChanged(SessionObject sessionObject,
+																	 SubscriptionModule.SubscriptionUsage subscriptionUsage) {
+									changesPerMinuteLabel.setText("\u23F1 " + subscriptionUsage.changesPerMinute + " req/min");
+								}
+							});
+
+
 		hostsLabel = topBar.addAction("Hosts: 0", new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
@@ -283,7 +331,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 								return o1.getValue().getName().compareTo(o2.getValue().getName());
 							}
 						});
-			
+
 						StringBuilder sb = new StringBuilder();
 						for (Map.Entry<JID, DiscoveryModule.Identity> e : items) {
 							if (sb.length() > 0) {
@@ -294,7 +342,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 						new MessageDialog("Connected hosts: " + activeHosts.size(), SafeHtmlUtils.fromSafeConstant(sb.toString())).show();
 					}
 				});
-			}			
+			}
 		});
 		factory.eventBus().addHandler(ActiveHostsChangedEvent.TYPE, new ActiveHostsChangedEvent.Handler() {
 			@Override
@@ -314,12 +362,12 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 	protected void updateDevices(List<Device> devices) {
 		flexGrid.clear();
-		
+
 		devices.sort(new Comparator<Device>(){
 			@Override
 			public int compare(Device o1, Device o2) {
 				return (o1.getName() != null ? o1.getName() : "").compareTo(o2.getName() != null ? o2.getName() : "");
-			}			
+			}
 		});
 
 		for (Device device : devices) {
@@ -571,7 +619,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 
 			FlowPanel panel = new FlowPanel();
 			panel.setStylePrimaryName("context-menu");
-			
+
 			List<Map.Entry<JID, DiscoveryModule.Identity>> items = new ArrayList<>(devicesInfo.entrySet());
 			items.sort(new Comparator<Map.Entry<JID, DiscoveryModule.Identity>>() {
 				@Override
@@ -579,7 +627,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 					return o1.getValue().getName().compareTo(o2.getValue().getName());
 				}
 			});
-			
+
 			for (Map.Entry<JID, DiscoveryModule.Identity> item : items) {
 				Label itemLabel = new Label(item.getValue().getName());
 				itemLabel.addClickHandler(new ClickHandler() {
