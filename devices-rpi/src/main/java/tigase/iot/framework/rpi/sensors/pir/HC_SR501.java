@@ -51,7 +51,7 @@ public class HC_SR501
 	@ConfigField(desc = "WiringPi Pin number")
 	private int pin = 21;         // equals to broadcom 5
 
-	@ConfigField(desc = "Time in miliseconds after which we should change state to inactive if there was no movement in this time")
+	@ConfigField(desc = "Delay time in ms")
 	private long timeout = 5 * 60 * 1000;
 
 	@Inject
