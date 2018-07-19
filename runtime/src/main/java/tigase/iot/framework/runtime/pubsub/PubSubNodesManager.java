@@ -24,6 +24,7 @@ package tigase.iot.framework.runtime.pubsub;
 import tigase.bot.RequiredXmppModules;
 import tigase.bot.runtime.AbstractPubSubPublisher;
 import tigase.bot.runtime.XmppService;
+import tigase.eventbus.EventBus;
 import tigase.eventbus.HandleEvent;
 import tigase.iot.framework.runtime.ConnectionErrorReporter;
 import tigase.jaxmpp.core.client.AsyncCallback;
@@ -54,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -260,6 +262,10 @@ public class PubSubNodesManager
 				}
 			}
 		}
+	}
+
+	private EventBus getEventBus() {
+		return eventBus;
 	}
 
 	private static final String EXISTING_PUBSUB_NODES = "EXISTING_PUBSUB_NODES";
@@ -565,90 +571,18 @@ public class PubSubNodesManager
 	public void publishItem(String node, String itemId, Element payload) {
 		Item item = new Item(node, itemId, payload);
 		xmppService.getAllConnections().forEach(jaxmpp -> {
-			Queue<Item> queue;
+			ItemsPublisherQueue queue;
 			synchronized (jaxmpp) {
 				queue = jaxmpp.getSessionObject().getUserProperty(PUBSUB_PUBLISH_QUEUE);
 				if (queue == null) {
-					queue = new ArrayDeque<>();
+					queue = new ItemsPublisherQueue(name, jaxmpp, this::getEventBus, this::getPubsubJid);
+
 					jaxmpp.getSessionObject().setUserProperty(PUBSUB_PUBLISH_QUEUE, queue);
 				}
 			}
-			synchronized (queue) {
-				queue.offer(item);
-			}
-			publishWaitingItems(jaxmpp);
+
+			queue.publish(item);
 		});
-	}
-
-	/**
-	 * Publish all items which were waiting for being published to PubSub nodes.
-	 * @param jaxmpp
-	 */
-	private void publishWaitingItems(Jaxmpp jaxmpp) {
-		Queue<Item> queue = jaxmpp.getSessionObject().getUserProperty(PUBSUB_PUBLISH_QUEUE);
-		if (queue == null) {
-			return;
-		}
-
-		synchronized (queue) {
-			Collection<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
-			if (existingNodes == null) {
-				return;
-			}
-
-			final JID pubsubJid = getPubsubJid(jaxmpp);
-			PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
-
-			for (Iterator<Item> it = queue.iterator(); it.hasNext(); ) {
-				final Item item = it.next();
-				if (!existingNodes.contains(item.node)) {
-					continue;
-				}
-
-				if (!jaxmpp.isConnected()) {
-					return;
-				}
-
-				try {
-					if (log.isLoggable(Level.FINE)) {
-						log.fine("at " + pubsubJid.getBareJid() + " node " + item.node + " publishing item with id = " +
-										 item.itemId + " and payload = " + item.payload.getAsString());
-					}
-					pubSubModule.publishItem(pubsubJid.getBareJid(), item.node, item.itemId, item.payload,
-											 new PubSubModule.PublishAsyncCallback() {
-
-												 @Override
-												 public void onTimeout() throws JaxmppException {
-													 log.log(Level.WARNING,
-															 "at {0} node {1} failed to publish item {2} with timeout",
-															 new Object[]{pubsubJid, item.node, item.itemId});
-												 }
-
-												 @Override
-												 protected void onEror(IQ response,
-																	   XMPPException.ErrorCondition errorCondition,
-																	   PubSubErrorCondition pubSubErrorCondition)
-														 throws JaxmppException {
-													 log.log(Level.FINE,
-															 "at {0} node {1} failed to publish item {2} with errors {3} / {4}",
-															 new Object[]{pubsubJid, item.node, item.itemId,
-																		  errorCondition, pubSubErrorCondition});
-													 ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBus, errorCondition, response);
-												 }
-
-												 @Override
-												 public void onPublish(String itemId) {
-													 log.log(Level.FINE, "at {0} node {1} published item as {2}",
-															 new Object[]{pubsubJid,
-																		  item.node, itemId});
-												 }
-											 });
-					it.remove();
-				} catch (JaxmppException ex) {
-					log.log(Level.WARNING, this.name + ", item publication failed", ex);
-				}
-			}
-		}
 	}
 	
 	/**
@@ -771,7 +705,9 @@ public class PubSubNodesManager
 	 */
 	@HandleEvent
 	private void nodeReady(NodeReady nodeReady) {
-		publishWaitingItems(nodeReady.jaxmpp);
+		Optional.ofNullable(
+				(ItemsPublisherQueue) nodeReady.jaxmpp.getSessionObject().getUserProperty(PUBSUB_PUBLISH_QUEUE))
+				.ifPresent(ItemsPublisherQueue::publish);
 	}
 
 	@HandleEvent
@@ -1009,4 +945,130 @@ public class PubSubNodesManager
 			}
 		}
 	}
+
+	private static class ItemsPublisherQueue {
+
+		private static final Logger log = Logger.getLogger(ItemsPublisherQueue.class.getCanonicalName());
+
+		private final LinkedBlockingQueue<Item> items = new LinkedBlockingQueue<>();
+		private final String name;
+		private final Jaxmpp jaxmpp;
+		private final Function<Jaxmpp, JID> pubsubJidSupplier;
+		private final Supplier<EventBus> eventBusSupplier;
+
+		ItemsPublisherQueue(String name, Jaxmpp jaxmpp, Supplier<EventBus> eventBusSupplier, Function<Jaxmpp,JID> pubsubJidSupplier) {
+			this.name = name;
+			this.jaxmpp = jaxmpp;
+			this.eventBusSupplier = eventBusSupplier;
+			this.pubsubJidSupplier = pubsubJidSupplier;
+		}
+
+		public synchronized void publish() {
+			processItems();
+		}
+
+		public synchronized void publish(Item item) {
+			invalidateItems(item.node);
+			items.offer(item);
+			processItems();
+		}
+
+		public synchronized void clear() {
+			items.clear();
+		}
+
+		public synchronized void invalidateItems(String node) {
+			boolean result = items.removeIf(item -> node.equals(item.node));
+			log.log(Level.WARNING, "invalidating items for node " + node + ", result = " + result);
+		}
+
+		private synchronized void processItems() {
+			if (!jaxmpp.isConnected()) {
+				return;
+			}
+
+			Collection<String> existingNodes = jaxmpp.getSessionObject().getUserProperty("EXISTING_PUBSUB_NODES");
+			if (existingNodes == null) {
+				return;
+			}
+
+			Iterator<Item> it = items.iterator();
+			while (it.hasNext()) {
+				Item item = it.next();
+
+				if (!existingNodes.contains(item.node)) {
+					continue;
+				}
+
+				if (!publishItem(item)) {
+					return;
+				}
+				it.remove();
+			}
+		}
+
+		private boolean publishItem(Item item) {
+			final JID pubsubJid = pubsubJidSupplier.apply(jaxmpp);
+			PubSubModule pubSubModule = jaxmpp.getModule(PubSubModule.class);
+
+			try {
+				if (log.isLoggable(Level.FINE)) {
+					log.fine("at " + pubsubJid.getBareJid() + " node " + item.node + " publishing item with id = " +
+									 item.itemId + " and payload = " + item.payload.getAsString());
+				}
+				log.log(Level.WARNING, "publishing item at node " + item.node);
+				pubSubModule.publishItem(pubsubJid.getBareJid(), item.node, item.itemId, item.payload,
+										 new PubSubModule.PublishAsyncCallback() {
+
+											 @Override
+											 public void onTimeout() throws JaxmppException {
+												 log.log(Level.WARNING,
+														 "at {0} node {1} failed to publish item {2} with timeout",
+														 new Object[]{pubsubJid, item.node, item.itemId});
+												 onFailure(item);
+											 }
+
+											 @Override
+											 protected void onEror(IQ response,
+																   XMPPException.ErrorCondition errorCondition,
+																   PubSubErrorCondition pubSubErrorCondition)
+													 throws JaxmppException {
+												 log.log(Level.FINE,
+														 "at {0} node {1} failed to publish item {2} with errors {3} / {4}",
+														 new Object[]{pubsubJid, item.node, item.itemId,
+																	  errorCondition, pubSubErrorCondition});
+												 ConnectionErrorReporter.PolicyViolationErrorEvent.fireIfNeeded(eventBusSupplier.get(), errorCondition, response);
+												 if (errorCondition == XMPPException.ErrorCondition.item_not_found ||
+														 errorCondition ==
+																 XMPPException.ErrorCondition.feature_not_implemented ||
+														 errorCondition == XMPPException.ErrorCondition.forbidden) {
+													 return;
+												 } else {
+													 onFailure(item);
+												 }
+											 }
+
+											 @Override
+											 public void onPublish(String itemId) {
+												 log.log(Level.FINE, "at {0} node {1} published item as {2}",
+														 new Object[]{pubsubJid,
+																	  item.node, itemId});
+											 }
+										 });
+				return true;
+			} catch (JaxmppException ex) {
+				log.log(Level.WARNING, this.name + ", item publication failed", ex);
+				return false;
+			}
+		}
+
+		private void onFailure(Item item) {
+			synchronized (this) {
+				if (!items.stream().filter(it ->  item.node.equals(it.node)).findFirst().isPresent()) {
+					items.offer(item);
+				}
+			}
+		}
+	}
+
 }
