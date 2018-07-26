@@ -54,6 +54,7 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 	private final FlexGrid flexGrid;
 
 	private final Label changesPerMinuteLabel;
+	private final Label totalDevicesLabel;
 	private final Label hostsLabel;
 
 	public DevicesListViewImpl(ClientFactory factory) {
@@ -316,6 +317,20 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 									changesPerMinuteLabel.setText("\u23F1 " + subscriptionUsage.changesPerMinute + " req/min");
 								}
 							});
+
+		totalDevicesLabel = topBar.addAction("", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent clickEvent) {
+				// nothing to do...
+			}
+		});
+		factory.jaxmpp().getEventBus().addHandler(Devices.TotalDevicesCountChangedHandler.TotalDevicesCountChangedEvent.class,
+												  new Devices.TotalDevicesCountChangedHandler() {
+													  @Override
+													  public void totalDevicesCountChanged(Integer totalDevicesCount) {
+														  totalDevicesLabel.setText(totalDevicesCount == null ? "" : ((totalDevicesCount == 1) ? "\ud83d\udce1 1 device" : ("\ud83d\udce1 " + totalDevicesCount + " devices")));
+													  }
+												  });
 
 
 		hostsLabel = topBar.addAction("Hosts: 0", new ClickHandler() {

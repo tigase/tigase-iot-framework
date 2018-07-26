@@ -62,6 +62,7 @@ public class Devices {
 	private final JaxmppCore jaxmpp;
 	private List<Device> devices = new ArrayList<Device>();
 	private boolean pep;
+	private Integer totalDevicesCount;
 
 	public Devices(JaxmppCore jaxmpp, boolean pep) {
 		this(jaxmpp, "devices", pep);
@@ -154,8 +155,29 @@ public class Devices {
 				devices.clear();
 				Devices.this.jaxmpp.getModule(FeatureProviderModule.class).resetNewDevicesNodes();
 				devicesNodesDiscoveryFinished();
+				setTotalDevicesCount(null);
 			}
 		});
+
+		this.jaxmpp.getEventBus().addHandler(PresenceModule.ContactChangedPresenceHandler.ContactChangedPresenceEvent.class,
+											 new PresenceModule.ContactChangedPresenceHandler() {
+												 @Override
+												 public void onContactChangedPresence(SessionObject sessionObject,
+																					  Presence stanza, JID jid,
+																					  Presence.Show show, String status,
+																					  Integer priority)
+														 throws JaxmppException {
+													 if (jid != null && "iot-hub".equals(jid.getResource())) {
+													 	Element el = stanza.getChildrenNS("devices",
+																						  "http://tigase.org/protocol/iot");
+													 	String countStr = el == null ? null : el.getAttribute("count");
+													 	Integer count = countStr == null ? null : Integer.parseInt(countStr);
+													 	if (isRemoteMode()) {
+															setTotalDevicesCount(count);
+														}
+													 }
+												 }
+											 });
 	}
 
 	private void checkForNewDevice(final JID jid, final String node) throws JaxmppException {
@@ -305,6 +327,9 @@ public class Devices {
 	protected void devicesNodesDiscoveryFinished() {
 		updateCapsOnDevicesChange();
 		jaxmpp.getEventBus().fire(new ChangedHandler.ChangedEvent(devices));
+		if (!isRemoteMode()) {
+			setTotalDevicesCount(devices.size());
+		}
 	}
 
 	protected void devicesNodesFound(String node, List<DiscoveryModule.Item> items) {
@@ -562,6 +587,12 @@ public class Devices {
 		}
 	}
 
+	private void setTotalDevicesCount(Integer count) {
+		this.totalDevicesCount = count;
+		this.jaxmpp.getEventBus()
+				.fire(new TotalDevicesCountChangedHandler.TotalDevicesCountChangedEvent(totalDevicesCount));
+	}
+
 	public interface BiConsumer<A, B> {
 
 		void accept(A a, B b);
@@ -594,6 +625,26 @@ public class Devices {
 			}
 
 		}
+	}
+
+	public interface TotalDevicesCountChangedHandler extends EventHandler {
+
+		void totalDevicesCountChanged(Integer totalDevicesCount);
+
+		class TotalDevicesCountChangedEvent extends Event<TotalDevicesCountChangedHandler> {
+
+			private final Integer totalDevicesCount;
+
+			TotalDevicesCountChangedEvent(Integer totalDevicesCount) {
+				this.totalDevicesCount = totalDevicesCount;
+			}
+
+			@Override
+			public void dispatch(TotalDevicesCountChangedHandler handler) throws Exception {
+				handler.totalDevicesCountChanged(totalDevicesCount);
+			}
+		}
+
 	}
 
 	public interface DevicesInfoRetrieved {
