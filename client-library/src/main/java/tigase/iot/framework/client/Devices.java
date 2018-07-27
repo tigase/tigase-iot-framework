@@ -587,6 +587,10 @@ public class Devices {
 		}
 	}
 
+	public Integer getTotalDevicesCount() {
+		return totalDevicesCount;
+	}
+
 	private void setTotalDevicesCount(Integer count) {
 		this.totalDevicesCount = count;
 		this.jaxmpp.getEventBus()
