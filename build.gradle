@@ -4,10 +4,10 @@ subprojects {
     group 'tigase.iot'
     version '2.0.0-SNAPSHOT'
 
-    if (project.hasProperty("mavenRepoUsername") && project.hasProperty("mavenRepoPassword")) {
-        publishing {
-            repositories {
-                mavenLocal()
+    publishing {
+        repositories {
+            mavenLocal()
+            if (project.hasProperty("mavenRepoUsername") && project.hasProperty("mavenRepoPassword")) {
                 maven {
                     credentials {
                         username "$mavenRepoUsername"

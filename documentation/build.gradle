@@ -12,6 +12,20 @@ buildscript {
     }
 }
 
+jar {
+    from('src/main/asciidoc') {
+        include '**'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
 asciidoctorj {
     version = '1.5.3'
 }
