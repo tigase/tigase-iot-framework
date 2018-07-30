@@ -149,7 +149,13 @@ public class ExtendedPubSubNodesManager
 				executorDevices.stream()
 						.filter(executor -> event.getNodeName()
 								.equals(DeviceNodesHelper.getDeviceStateNodeName(this.rootNode, executor)))
-						.forEach(executor -> executor.setValue(value));
+						.forEach(executor -> {
+							try {
+								executor.setValue(value);
+							} catch (Throwable ex) {
+								log.log(Level.WARNING, "could not change value of device " + executor.getName(), ex);
+							}
+						});
 			}
 		});
 	}

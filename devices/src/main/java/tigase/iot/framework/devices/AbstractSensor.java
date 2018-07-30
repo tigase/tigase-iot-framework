@@ -130,6 +130,17 @@ public abstract class AbstractSensor<T extends IValue>
 	}
 
 	/**
+	 * Method which should be called when executor device state changes on user action
+	 * and value was not adjusted in any way by the device. If value was adjusted then
+	 * call <code>updateValue(T)</code> instead.
+	 *
+	 * @param newValue - value to set
+	 */
+	protected synchronized void setValue(T newValue) {
+		this.value = newValue;
+	}
+
+	/**
 	 * Class of an event which is fired when sensor value is updated/changed.
 	 *
 	 * @param <T> - type of value

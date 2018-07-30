@@ -120,7 +120,7 @@ public class PinSwitch
 		}
 		output.setState(v);
 
-		updateValue(value);
+		super.setValue(value);
 	}
 
 	private void initializeOutput() {

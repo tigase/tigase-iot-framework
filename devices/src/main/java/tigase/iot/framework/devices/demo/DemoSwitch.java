@@ -83,8 +83,8 @@ public class DemoSwitch extends AbstractSensor<OnOffState> implements IConfigura
 
 		log.log(Level.INFO, "{0} - {1}, setting switch to {2}",
 				new Object[]{this.getName(), getLabel(), value.getValue()});
-		updateValue(value);
-
+		
+		super.setValue(value);
 	}
 
 	@Override

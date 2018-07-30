@@ -22,6 +22,7 @@
 package tigase.iot.framework.devices;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Base class implementing {@link tigase.iot.framework.devices.IValue} which provides
@@ -65,5 +66,14 @@ public class Value<T>
 
 	protected void toString(StringBuilder sb) {
 		sb.append(", value: " + value);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!this.getClass().isInstance(obj)) {
+			return false;
+		}
+
+		return Objects.equals(value, ((Value<T>)obj).value);
 	}
 }

@@ -75,7 +75,8 @@ public class DemoDimmer extends AbstractSensor<Light> implements IConfigurationA
 
 		log.log(Level.INFO, "{0} - {1}, setting light level to {2}{3}",
 				new Object[]{this.getName(), getLabel(), light.getValue(), light.getUnit()});
-		updateValue(light);
+
+		super.setValue(light);
 	}
 
 	@Override

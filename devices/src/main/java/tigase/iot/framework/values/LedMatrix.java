@@ -3,6 +3,7 @@ package tigase.iot.framework.values;
 import tigase.iot.framework.devices.IValue;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 public class LedMatrix
 		implements IValue<String> {
@@ -102,5 +103,13 @@ public class LedMatrix
 		sb.append(getValue());
 		sb.append(")");
 		return sb.toString();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof LedMatrix) {
+			return Arrays.equals(buffer, ((LedMatrix) obj).buffer);
+		}
+		return false;
 	}
 }
