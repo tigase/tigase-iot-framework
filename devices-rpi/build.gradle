@@ -6,10 +6,19 @@ apply plugin: 'java'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+task sourceJar(type: Jar) {
+    classifier 'sources'
+    from('src/main/java') {
+        include 'tigase/iot/framework/rpi/sensors/pir/HC_SR501.java'
+        include 'tigase/iot/framework/rpi/sensors/light/BH1750.java'
+    }
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            artifact tasks.sourceJar
         }
     }
 }
