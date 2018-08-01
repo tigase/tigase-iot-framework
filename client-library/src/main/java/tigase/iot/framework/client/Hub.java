@@ -227,7 +227,15 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 				int devices = Integer.parseInt(field.getFieldValue());
 				field = data.getField("Queued items");
 				int queue = Integer.parseInt(field.getFieldValue());
-				callback.onResult(new CloudStatistics(devices, queue), null, null);
+				Integer lastMinutePublishedItemsCount = null;
+				field = data.getField("Last minute published items count");
+				if (field != null) {
+					String val = field.getFieldValue();
+					if (val != null) {
+						lastMinutePublishedItemsCount = Integer.parseInt(val);
+					}
+				}
+				callback.onResult(new CloudStatistics(devices, queue, lastMinutePublishedItemsCount), null, null);
 			}
 
 			@Override
@@ -507,10 +515,12 @@ public class Hub implements JaxmppCore.LoggedInHandler, SubscriptionModule.Subsc
 
 		public final int devices;
 		public final int queuedChanges;
+		public final Integer lastMinutePublishedItemsCount;
 
-		CloudStatistics(int devices, int queuedChanges) {
+		CloudStatistics(int devices, int queuedChanges, Integer lastMinutePublishedItemsCount) {
 			this.devices = devices;
 			this.queuedChanges = queuedChanges;
+			this.lastMinutePublishedItemsCount = lastMinutePublishedItemsCount;
 		}
 
 	}

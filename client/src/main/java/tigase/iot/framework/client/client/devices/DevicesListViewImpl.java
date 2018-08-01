@@ -262,11 +262,19 @@ public class DevicesListViewImpl extends Composite implements DevicesListView {
 												txt += "You have " + statistics.devices + " devices";
 												SubscriptionModule.SubscriptionUsage usage = factory.hub().getSubscriptionUsage();
 												if (usage != null) {
-													txt += "and you are sending " + String.valueOf((int) usage.changesPerMinute) + " requests per minute";
+													if (usage.changesPerMinuteAvg != null) {
+														txt += " and you are now using " + String.valueOf(usage.changesPerMinuteAvg.intValue()) + " changes per minute on average";
+													} else {
+														txt += " and you are sending " + String.valueOf((int) usage.changesPerMinute) +
+																" requests per minute";
+													}
 												}
 												txt += ".";
 
-												if (statistics.queuedChanges > 0) {
+												if (statistics.lastMinutePublishedItemsCount != null) {
+													txt += "<br/>";
+													txt += "Local hub wanted to publish " + String.valueOf(statistics.lastMinutePublishedItemsCount) + " changes during last minute.";
+												} else if (statistics.queuedChanges > 0) {
 													txt += "<br/>";
 													txt += String.valueOf(statistics.queuedChanges) + " changes waiting for delivery to the IoT1 Cloud!";
 												}

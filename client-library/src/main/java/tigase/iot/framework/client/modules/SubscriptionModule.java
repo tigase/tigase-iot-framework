@@ -216,9 +216,11 @@ public class SubscriptionModule
 	public static class SubscriptionUsage {
 
 		public final double changesPerMinute;
+		public final Double changesPerMinuteAvg;
 
-		SubscriptionUsage(double changesPerMinute) {
+		SubscriptionUsage(double changesPerMinute, Double changesPerMinuteAvg) {
 			this.changesPerMinute = changesPerMinute;
+			this.changesPerMinuteAvg = changesPerMinuteAvg;
 		}
 
 		private static SubscriptionUsage fromElement(Element elem) throws XMLException {
@@ -232,7 +234,13 @@ public class SubscriptionModule
 				changesPerMinute = Double.parseDouble(tmp);
 			}
 
-			return new SubscriptionUsage(changesPerMinute);
+			Double changesPerMinuteAvg = null;
+			tmp = elem.getAttribute("changes-per-minute-avg");
+			if (tmp != null) {
+				changesPerMinuteAvg = Double.parseDouble(tmp);
+			}
+
+			return new SubscriptionUsage(changesPerMinute, changesPerMinuteAvg);
 		}
 
 	}
