@@ -30,7 +30,7 @@ public class LightsDimmer
 		extends DeviceRemoteConfigAware<Integer, Light, tigase.iot.framework.client.devices.LightDimmer> {
 
 	public LightsDimmer(ClientFactory factory, tigase.iot.framework.client.devices.LightDimmer sensor) {
-		super(factory, "lights-dimmer", Icons.INSTANCE.lightBulb(), sensor);
+		super(factory, "lights-dimmer", Icons.INSTANCE.dimmer(), sensor);
 	}
 
 	@Override

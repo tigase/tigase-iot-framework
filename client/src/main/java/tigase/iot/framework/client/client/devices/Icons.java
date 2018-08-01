@@ -39,8 +39,8 @@ public interface Icons
 	@Source("icons/humidity-64.png")
 	ImageResource humidity();
 
-	@Source("icons/lightbulb-64.png")
-	ImageResource lightBulb();
+	@Source("icons/dimmer-64.png")
+	ImageResource dimmer();
 
 	@Source("icons/lightsensor-64.png")
 	ImageResource lightSensor();
