@@ -21,6 +21,7 @@
 package tigase.iot.framework.runtime;
 
 import tigase.bot.Autostart;
+import tigase.bot.runtime.BootstrapCompletedAware;
 import tigase.component.DSLBeanConfigurator;
 import tigase.conf.ConfigHelper;
 import tigase.conf.ConfigReader;
@@ -47,7 +48,7 @@ import java.util.logging.Logger;
 @Autostart
 @Bean(name = "configManager", parent = Kernel.class, active = false, exportable = true)
 public class ConfigManager
-		implements RegistrarBean, Initializable, UnregisterAware {
+		implements RegistrarBean, Initializable, UnregisterAware, BootstrapCompletedAware {
 
 	private static final Logger log = Logger.getLogger(ConfigManager.class.getCanonicalName());
 
@@ -64,6 +65,12 @@ public class ConfigManager
 	}
 
 	@Override
+	public void bootstrapCompleted() {
+		originalConfig.putAll(kernel.getParent().getInstance(DSLBeanConfigurator.class).getProperties());
+		applyConfigChanges();
+	}
+
+	@Override
 	public void initialize() {
 		File configFile = new File(this.configFile);
 		if (configFile.exists()) {
@@ -73,16 +80,6 @@ public class ConfigManager
 				throw new RuntimeException("failed to load local configuration file", ex);
 			}
 		}
-
-		Timer timer = new Timer(true);
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				timer.cancel();
-				originalConfig.putAll(kernel.getParent().getInstance(DSLBeanConfigurator.class).getProperties());
-				applyConfigChanges();
-			}
-		}, 500);
 	}
 
 	@Override
