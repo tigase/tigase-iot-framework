@@ -24,7 +24,7 @@ publishing {
 	}
 }
 
-def jaxmppVersion = '3.2.0-SNAPSHOT'
+def jaxmppVersion = '3.2.0'
 def gwtVersion = '2.8.2'
 
 dependencies {

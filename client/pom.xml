@@ -11,7 +11,7 @@
         <gwt.version>2.8.0</gwt.version>
         <runTarget>index.html</runTarget>
         <gwt.style>DETAILED</gwt.style>
-		<jaxmpp.version>3.2.0-SNAPSHOT</jaxmpp.version>
+		<jaxmpp.version>3.2.0</jaxmpp.version>
     </properties>
     <name>Tigase IoT Framework - Client</name>
     <dependencies>
