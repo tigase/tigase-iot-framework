@@ -43,6 +43,9 @@ public interface IDevice {
 	 * @return
 	 */
 	default Collection<Category> getCategories() {
+		if (getName() == null || getType() == null) {
+			throw new IllegalStateException("Name or type not set!");
+		}
 		return Collections.singleton(new Category(getType(), getName()));
 	}
 
